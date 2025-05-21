@@ -1,9 +1,118 @@
+# Function to compare the Loss of two models
+cvpat_compare_sm <- function(base_model = pls_one,
+                 alt_sm = sm_two,
+                 testtype = "two.sided",
+                 BootSamp = 2000) {
+
+  # Estimate model one
+  pls_two <- estimate_pls(
+    data = base_model$data,
+    measurement_model = base_model$measurement_model,
+    structural_model  = alt_sm,
+    missing = mean_replacement,
+    missing_value = "-99")
+
+
+  endo_lvs1 <- seminr:::all_endogenous(base_model$smMatrix)
+  endo_lvs2 <- seminr:::all_endogenous(alt_sm)
+
+  endo_mvs1 <- unlist(lapply(endo_lvs1,
+                            function(x) seminr:::items_of_construct(construct = x,
+                                                                    model = base_model)))
+  endo_mvs2 <- unlist(lapply(endo_lvs2,
+                             function(x) seminr:::items_of_construct(construct = x,
+                                                                     model = pls_two)))
+
+
+  # Calculate PLS predictions for each model
+  pls_predict_model_one <- predict_pls(base_model,
+                                       technique = predict_EA)
+  pls_predict_model_two <- predict_pls(pls_two,
+                                       technique = predict_EA)
+
+  PLS_predict_error_one <- pls_predict_model_one$PLS_out_of_sample_residuals[,endo_mvs1,drop = F]
+  PLS_predict_error_two <- pls_predict_model_two$PLS_out_of_sample_residuals[,endo_mvs2,drop = F]
+
+  ## Calculate LV losses for each PLS model
+  ## model one
+  LV_losses_PLS_one <- do.call("cbind", lapply(endo_lvs1,
+                                           function(x) lv_loss(construct = x,
+                                                               model = base_model,
+                                                               error = PLS_predict_error_one)))
+  ## model two
+  LV_losses_PLS_two <- do.call("cbind", lapply(endo_lvs2,
+                                               function(x) lv_loss(construct = x,
+                                                                   model = pls_two,
+                                                                   error = PLS_predict_error_two)))
+
+  # Name LVs
+  colnames(LV_losses_PLS_one) <- endo_lvs1
+  colnames(LV_losses_PLS_two) <- endo_lvs2
+
+  # Calculate overall loss
+  # for PLS model one (base)
+  PLS_overall_one <- overall_loss(LV_losses_PLS_one)
+
+  # for PLS model two (alt)
+  PLS_overall_two <- overall_loss(LV_losses_PLS_two)
+
+  # If there is 100% overlap in endogenous, then we direct compare
+  if (length(setdiff(endo_lvs1, endo_lvs2) ) == 0) {
+
+
+
+    # CVPAT: PLS vs IA overall
+    PLS_v_IA_overall <- bootstrap_cvpat(PLS_overall_one,
+                                        PLS_overall_two,
+                                        testtype = "two.sided",
+                                        BootSamp = 2000)
+    LV_cvpat <- cvpat_per_construct(loss_one = LV_losses_PLS_one,
+                                    loss_two = LV_losses_PLS_two,
+                                    testtype = "two.sided",
+                                    BootSamp = 2000)
+  }
+  # if there is less than 100% overlap in endogneous, we compare only the
+  # relevant endogenous
+  if (length(intersect(endo_lvs1, endo_lvs2) ) > 0) {
+
+
+
+    # CVPAT: PLS vs IA overall
+    PLS_v_PLS_overall <- bootstrap_cvpat(PLS_overall_one,
+                                        PLS_overall_two,
+                                        testtype = "two.sided",
+                                        BootSamp = 2000)
+    LV_cvpat <- cvpat_per_construct(loss_one = LV_losses_PLS_one,
+                                    loss_two = LV_losses_PLS_two,
+                                    testtype = "two.sided",
+                                    BootSamp = 2000)
+  }
+  if (length(intersect(endo_lvs1, endo_lvs2) ) == 0) {
+    return(list(results = "Cannot compare directly"))
+  }
+
+
+  mat_one <- cbind(colMeans(LV_losses_PLS_one),colMeans(LV_losses_PLS_two),
+                   colMeans(LV_losses_PLS_one) - colMeans(LV_losses_PLS_two),
+                   LV_cvpat[,-1])
+  colnames(mat_one)[1:3] <- c("Base Model Loss", "Alt Model Loss", "Diff")
+  mat_one <- rbind(mat_one, c(mean(PLS_overall_one),
+                              mean(PLS_overall_two),
+                              mean(PLS_overall_one) -  mean(PLS_overall_two),
+                              PLS_v_PLS_overall))
+  rownames(mat_one)[nrow(mat_one)] <- "Overall"
+  mat_one <- mat_one[,c(1,2,3,6,7)]
+  return(mat_one)
+}
+
+
+
 
 ## Sharma, P.N., Liengaard, B.D., Hair, J.F., Sarstedt, M., Ringle, C.M. (2023)
 ## "Predictive model assessment and selection in composite-based modeling using
 ## PLS-SEM: extensions and guidelines for using CVPAT", European Journal of
 ## Marketing, Vol. 57 No. 6, pp. 1662-1677.
-## https://doi-org.elib.tcd.ie/10.1108/EJM-08-2020-0636
+## DOI: 10.1108/EJM-08-2020-0636
 # Example
 # Create measurement model ----
 # corp_rep_mm <- constructs(
@@ -28,8 +137,7 @@
 #
 # assess_overall_cvpat(pls_model)
 # assess_overall_cvpat(corp_rep_pls_model_ext)
-
-# Example usage
+# Function to assess model cv_pat
 assess_overall_cvpat <- function(model) {
 
   # First we must calculate a IA model which is the "indicator average" model ----
@@ -96,9 +204,6 @@ assess_overall_cvpat <- function(model) {
                       testtype = "two.sided",
                       BootSamp = 2000)
 
-  colMeans(LV_losses_PLS)
-  colMeans(LV_losses_IA)
-  colMeans(LV_losses_LM)
   mat_one <- cbind(colMeans(LV_losses_PLS),colMeans(LV_losses_LM),
         colMeans(LV_losses_PLS) - colMeans(LV_losses_LM),
         lm_cvpat[,-1])
