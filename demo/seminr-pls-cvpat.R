@@ -42,13 +42,11 @@ mobi_pls <- estimate_pls(data = mobi,
                          structural_model = mobi_sm)
 
 # Function to compare the Loss of two models
-cvpat_compare_sm(base_model = mobi_pls,
+cvpat_compare_compare(base_model = mobi_pls,
                  alt_sm = mobi_sm_alt,
                  testtype = "two.sided",
                  BootSamp = 2000,
                  seed = 123)
 
 # Assess the base model ----
-# assess_cvpat
-# assess_cvpat_compare
-assess_overall_cvpat(mobi_pls,seed = 123)
+assess_cvpat(mobi_pls,seed = 123)

@@ -1,9 +1,10 @@
 # Function to compare the Loss of two models
-cvpat_compare_sm <- function(base_model,
-                             alt_sm ,
-                             testtype = "greater",
-                             BootSamp = 1000,
-                             seed = 123) {
+#' @export
+assess_cvpat_compare <- function(base_model,
+                                 alt_sm ,
+                                 testtype = "greater",
+                                 BootSamp = 1000,
+                                 seed = 123) {
   # Abort if received a higher-order-model or moderated model
   if (!is.null(base_model$hoc)) {
     message("There is no published solution for applying PLSpredict to higher-order-models")
@@ -122,9 +123,11 @@ cvpat_compare_sm <- function(base_model,
 ## PLS-SEM: extensions and guidelines for using CVPAT", European Journal of
 ## Marketing, Vol. 57 No. 6, pp. 1662-1677.
 ## DOI: 10.1108/EJM-08-2020-0636
+
 # Function to assess model cv_pat
-assess_overall_cvpat <- function(model,
-                                 seed = 123) {
+#' @export
+assess_cvpat <- function(model,
+                         seed = 123) {
 
   set.seed(seed)
   # Abort if received a higher-order-model or moderated model
