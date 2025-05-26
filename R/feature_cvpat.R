@@ -1,28 +1,37 @@
 # Function to compare the Loss of two models
-cvpat_compare_sm <- function(base_model = pls_one,
-                 alt_sm = sm_two,
-                 testtype = "two.sided",
-                 BootSamp = 2000) {
-
-  # Estimate model one
+cvpat_compare_sm <- function(base_model,
+                             alt_sm ,
+                             testtype = "greater",
+                             BootSamp = 1000,
+                             seed = 123) {
+  # Abort if received a higher-order-model or moderated model
+  if (!is.null(base_model$hoc)) {
+    message("There is no published solution for applying PLSpredict to higher-order-models")
+    return()
+  }
+  if (!is.null(base_model$interaction)) {
+    message("There is no published solution for applying PLSpredict to moderated models")
+    return()
+  }
+  set.seed(seed)
+  # Estimate model two
   pls_two <- estimate_pls(
     data = base_model$data,
     measurement_model = base_model$measurement_model,
     structural_model  = alt_sm,
     missing = mean_replacement,
-    missing_value = "-99")
+    missing_value = base_model$settings$missing_value)
 
 
   endo_lvs1 <- seminr:::all_endogenous(base_model$smMatrix)
   endo_lvs2 <- seminr:::all_endogenous(alt_sm)
 
   endo_mvs1 <- unlist(lapply(endo_lvs1,
-                            function(x) seminr:::items_of_construct(construct = x,
-                                                                    model = base_model)))
+                             function(x) seminr:::items_of_construct(construct = x,
+                                                                     model = base_model)))
   endo_mvs2 <- unlist(lapply(endo_lvs2,
                              function(x) seminr:::items_of_construct(construct = x,
                                                                      model = pls_two)))
-
 
   # Calculate PLS predictions for each model
   pls_predict_model_one <- predict_pls(base_model,
@@ -36,9 +45,9 @@ cvpat_compare_sm <- function(base_model = pls_one,
   ## Calculate LV losses for each PLS model
   ## model one
   LV_losses_PLS_one <- do.call("cbind", lapply(endo_lvs1,
-                                           function(x) lv_loss(construct = x,
-                                                               model = base_model,
-                                                               error = PLS_predict_error_one)))
+                                               function(x) lv_loss(construct = x,
+                                                                   model = base_model,
+                                                                   error = PLS_predict_error_one)))
   ## model two
   LV_losses_PLS_two <- do.call("cbind", lapply(endo_lvs2,
                                                function(x) lv_loss(construct = x,
@@ -79,9 +88,9 @@ cvpat_compare_sm <- function(base_model = pls_one,
 
     # CVPAT: PLS vs IA overall
     PLS_v_PLS_overall <- bootstrap_cvpat(PLS_overall_one,
-                                        PLS_overall_two,
-                                        testtype = "two.sided",
-                                        BootSamp = 2000)
+                                         PLS_overall_two,
+                                         testtype = "two.sided",
+                                         BootSamp = 2000)
     LV_cvpat <- cvpat_per_construct(loss_one = LV_losses_PLS_one,
                                     loss_two = LV_losses_PLS_two,
                                     testtype = "two.sided",
@@ -113,39 +122,26 @@ cvpat_compare_sm <- function(base_model = pls_one,
 ## PLS-SEM: extensions and guidelines for using CVPAT", European Journal of
 ## Marketing, Vol. 57 No. 6, pp. 1662-1677.
 ## DOI: 10.1108/EJM-08-2020-0636
-# Example
-# Create measurement model ----
-# corp_rep_mm <- constructs(
-#   composite("COMP", multi_items("comp_", 1:3)),
-#   composite("LIKE", multi_items("like_", 1:3)),
-#   composite("CUSA", single_item("cusa")),
-#   composite("CUSL", multi_items("cusl_", 1:3))
-# )
-#
-# # Create structural model ----
-# sm_one <- relationships(
-#   paths(from = c("COMP", "LIKE"), to = c("CUSA", "CUSL")),
-#   paths(from = c("CUSA"), to = c("CUSL")))
-#
-# pls_model <- estimate_pls(
-#   data = corp_rep_data,
-#   measurement_model = corp_rep_mm,
-#   structural_model  = sm_one,
-#   missing = mean_replacement,
-#   missing_value = "-99")
-#
-#
-# assess_overall_cvpat(pls_model)
-# assess_overall_cvpat(corp_rep_pls_model_ext)
 # Function to assess model cv_pat
-assess_overall_cvpat <- function(model) {
+assess_overall_cvpat <- function(model,
+                                 seed = 123) {
 
+  set.seed(seed)
+  # Abort if received a higher-order-model or moderated model
+  if (!is.null(model$hoc)) {
+    message("There is no published solution for applying PLSpredict to higher-order-models")
+    return()
+  }
+  if (!is.null(model$interaction)) {
+    message("There is no published solution for applying PLSpredict to moderated models")
+    return()
+  }
   # First we must calculate a IA model which is the "indicator average" model ----
   # we must identify endogenous latents and measures
   endo_lvs <- seminr:::all_endogenous(model$smMatrix)
   endo_mvs <- unlist(lapply(endo_lvs,
-                     function(x) seminr:::items_of_construct(construct = x,
-                                                             model = model)))
+                            function(x) seminr:::items_of_construct(construct = x,
+                                                                    model = model)))
   # Indicator average (IA) from the training model
   IA <- model$meanData[endo_mvs]
   # Calculate IA predictive error
@@ -160,9 +156,9 @@ assess_overall_cvpat <- function(model) {
   # Calculate LV-specific losses
   ## for IA model
   LV_losses_IA <- do.call("cbind", lapply(endo_lvs,
-         function(x) lv_loss(construct = x,
-                             model = model,
-                             error = IA_pred_error)))
+                                          function(x) lv_loss(construct = x,
+                                                              model = model,
+                                                              error = IA_pred_error)))
   ## for LM model
   LV_losses_LM <- do.call("cbind", lapply(endo_lvs,
                                           function(x) lv_loss(construct = x,
@@ -170,9 +166,9 @@ assess_overall_cvpat <- function(model) {
                                                               error = LM_predict_error)))
   ## for PLS model
   LV_losses_PLS <- do.call("cbind", lapply(endo_lvs,
-                                          function(x) lv_loss(construct = x,
-                                                              model = model,
-                                                              error = PLS_predict_error)))
+                                           function(x) lv_loss(construct = x,
+                                                               model = model,
+                                                               error = PLS_predict_error)))
   # Name LVs
   colnames(LV_losses_IA) <-  colnames(LV_losses_LM) <- colnames(LV_losses_PLS) <- endo_lvs
 
@@ -186,9 +182,9 @@ assess_overall_cvpat <- function(model) {
 
   # CVPAT: PLS vs IA overall
   PLS_v_IA_overall <- bootstrap_cvpat(PLS_overall,
-                               IA_overall,
-                              testtype = "two.sided",
-                              BootSamp = 2000)
+                                      IA_overall,
+                                      testtype = "two.sided",
+                                      BootSamp = 2000)
 
   # CVPAT: PLS vs LM overall
   PLS_v_LM_overall <- bootstrap_cvpat(LossM1 = PLS_overall,
@@ -196,17 +192,17 @@ assess_overall_cvpat <- function(model) {
                                       testtype = "two.sided",
                                       BootSamp = 2000)
   ia_cvpat <- cvpat_per_construct(loss_one = LV_losses_PLS,
-                      loss_two = LV_losses_IA,
-                      testtype = "two.sided",
-                      BootSamp = 2000)
+                                  loss_two = LV_losses_IA,
+                                  testtype = "two.sided",
+                                  BootSamp = 2000)
   lm_cvpat <- cvpat_per_construct(loss_one = LV_losses_PLS,
-                      loss_two = LV_losses_LM,
-                      testtype = "two.sided",
-                      BootSamp = 2000)
+                                  loss_two = LV_losses_LM,
+                                  testtype = "two.sided",
+                                  BootSamp = 2000)
 
   mat_one <- cbind(colMeans(LV_losses_PLS),colMeans(LV_losses_LM),
-        colMeans(LV_losses_PLS) - colMeans(LV_losses_LM),
-        lm_cvpat[,-1])
+                   colMeans(LV_losses_PLS) - colMeans(LV_losses_LM),
+                   lm_cvpat[,-1])
   colnames(mat_one)[1:3] <- c("PLS Loss", "LM Loss", "Diff")
   mat_one
   mat_one <- rbind(mat_one, c(mean(PLS_overall),
@@ -243,16 +239,16 @@ cvpat_per_construct <- function(loss_one = LV_losses_PLS,
                                 testtype = "two.sided",
                                 BootSamp = 2000) {
 
-    index <- colnames(loss_one)
-    results <- matrix(nrow = 0, ncol = 6)
-    colnames(results) <- c("Construct","Std. T value", "Std. P value", "Boot T value", "Boot P Value", "Perc. P Value")
-    for (iter in index) {
-       results <- rbind(results,c(iter,bootstrap_cvpat(loss_one[,iter],
-                                       loss_two[,iter],
-                                       testtype = testtype,
-                                       BootSamp = BootSamp)))
-    }
-return(results)
+  index <- colnames(loss_one)
+  results <- matrix(nrow = 0, ncol = 6)
+  colnames(results) <- c("Construct","Std. T value", "Std. P value", "Boot T value", "Boot P Value", "Perc. P Value")
+  for (iter in index) {
+    results <- rbind(results,c(iter,bootstrap_cvpat(loss_one[,iter],
+                                                    loss_two[,iter],
+                                                    testtype = testtype,
+                                                    BootSamp = BootSamp)))
+  }
+  return(results)
 }
 
 lv_loss <- function(construct, model, error) {
