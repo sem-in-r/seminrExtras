@@ -9,7 +9,7 @@ Description: This package serves to support SEMinR with additional features
     and is bundled with SEMinR. 
 Imports:
     seminr (>= 2.3.0),
-    parallel
+    stats
 License: GPL-3
 Encoding: UTF-8
 LazyData: true

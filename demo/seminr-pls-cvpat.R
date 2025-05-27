@@ -1,52 +1,46 @@
-# Simple Style: Seperate declaration of measurement and structural model, no interactions.
+# CV-PAT applied to the Corporate Reputation Model and dataset
 library(seminr)
+library(seminrExtras)
 
-# Creating measurement mode
-# - note: composite() has a default parameter setting of mode A
-# - note: items can be a list of names: c("CUEX1", "CUEX2", "CUEX3")
-#         which can be constructed quickly as: multi_items("CUEX", 1:3)
-mobi_mm <- constructs(
-  composite("Image",        multi_items("IMAG", 1:5)),
-  composite("Expectation",  multi_items("CUEX", 1:3)),
-  composite("Quality",      multi_items("PERQ", 1:7)),
-  composite("Value",        multi_items("PERV", 1:2)),
-  composite("Satisfaction", multi_items("CUSA", 1:3)),
-  composite("Complaints",   single_item("CUSCO")),
-  composite("Loyalty",      multi_items("CUSL", 1:3))
+# Create measurement model ----
+corp_rep_mm_ext <- constructs(
+  composite("QUAL", multi_items("qual_", 1:8), weights = mode_B),
+  composite("PERF", multi_items("perf_", 1:5), weights = mode_B),
+  composite("CSOR", multi_items("csor_", 1:5), weights = mode_B),
+  composite("ATTR", multi_items("attr_", 1:3), weights = mode_B),
+  composite("COMP", multi_items("comp_", 1:3)),
+  composite("LIKE", multi_items("like_", 1:3)),
+  composite("CUSA", single_item("cusa")),
+  composite("CUSL", multi_items("cusl_", 1:3))
 )
 
-# Creating structural model
-# - note, multiple paths can be created in each line
-mobi_sm <- relationships(
-  paths(from = "Image",        to = c("Expectation", "Satisfaction", "Loyalty")),
-  paths(from = "Expectation",  to = c("Quality", "Value", "Satisfaction")),
-  paths(from = "Quality",      to = c("Value", "Satisfaction")),
-  paths(from = "Value",        to = c("Satisfaction")),
-  paths(from = "Satisfaction", to = c("Complaints", "Loyalty")),
-  paths(from = "Complaints",   to = "Loyalty")
+# Create structural model ----
+corp_rep_sm_ext <- relationships(
+  paths(from = c("QUAL", "PERF", "CSOR", "ATTR"), to = c("COMP", "LIKE")),
+  paths(from = c("COMP", "LIKE"), to = c("CUSA", "CUSL")),
+  paths(from = c("CUSA"),         to = c("CUSL"))
+)
+alt_sm <- relationships(
+  paths(from = c("QUAL", "PERF", "CSOR", "ATTR"), to = c("COMP", "LIKE")),
+  paths(from = c("COMP", "LIKE"), to = c("CUSA"))
 )
 
-mobi_sm_alt <- relationships(
-  paths(from = "Image",        to = c("Expectation", "Satisfaction")),
-  paths(from = "Expectation",  to = c("Quality", "Value", "Satisfaction")),
-  paths(from = "Quality",      to = c("Value", "Satisfaction")),
-  paths(from = "Value",        to = c("Satisfaction")),
-  paths(from = "Satisfaction", to = c("Complaints", "Loyalty")),
-  paths(from = "Complaints",   to = "Loyalty")
-)
 
-# Estimating the model
-# - note, the mobi dataset is bundled with seminr
-mobi_pls <- estimate_pls(data = mobi,
-                         measurement_model = mobi_mm,
-                         structural_model = mobi_sm)
+# Estimate the model ----
+corp_rep_pls_model_ext <- estimate_pls(
+  data = corp_rep_data,
+  measurement_model = corp_rep_mm_ext,
+  structural_model  = corp_rep_sm_ext,
+  missing = mean_replacement,
+  missing_value = "-99")
 
 # Function to compare the Loss of two models
-cvpat_compare_compare(base_model = mobi_pls,
-                 alt_sm = mobi_sm_alt,
+assess_cvpat_compare(base_model = corp_rep_pls_model_ext,
+                 alt_sm = alt_sm,
                  testtype = "two.sided",
                  BootSamp = 2000,
+                 technique = predict_DA,
                  seed = 123)
 
 # Assess the base model ----
-assess_cvpat(mobi_pls,seed = 123)
+assess_cvpat(corp_rep_pls_model_ext,seed = 123)

@@ -31,10 +31,12 @@ model_one <- estimate_pls(
 Results1 <- assess_cvpat_compare(base_model = model_one,
                                  alt_sm = sm_two,
                                  testtype = "two.sided",
-                                 BootSamp = 2000)
+                                 BootSamp = 2000,
+                                 technique = predict_EA,
+                                 cores = 1)
 
 # Assess the base model ----
-Results2 <- as.data.frame(assess_cvpat(model_one))
+Results2 <- as.data.frame(assess_cvpat(model_one, technique = predict_EA, cores = 1))
 
 
 ## Output originally created using following lines
@@ -83,10 +85,12 @@ model_one <- estimate_pls(
 Results1 <- assess_cvpat_compare(base_model = model_one,
                                  alt_sm = sm_two,
                                  testtype = "two.sided",
-                                 BootSamp = 2000)
+                                 BootSamp = 2000,
+                                 technique = predict_EA,
+                                 cores = 1)
 
 # Assess the base model ----
-Results2 <- assess_cvpat(model_one)
+Results2 <- assess_cvpat(model_one, technique = predict_EA, cores = 1)
 
 test_that("CVPAT_compare can handle higher_composite\n", {
   expect_null(Results1)
