@@ -8,7 +8,7 @@ corp_rep_mm <- constructs(
   composite("LIKE", multi_items("like_", 1:3)),
   composite("CUSA", single_item("cusa")),
   composite("CUSL", multi_items("cusl_", 1:3))
-  )
+)
 
 # Create structural model ----
 sm_one <- relationships(
@@ -28,13 +28,15 @@ model_one <- estimate_pls(
   missing_value = "-99")
 
 # Function to compare the Loss of two models
-Results1 <- cvpat_compare_sm(base_model = model_one,
-                 alt_sm = sm_two,
-                 testtype = "two.sided",
-                 BootSamp = 2000)
+Results1 <- assess_cvpat_compare(base_model = model_one,
+                                 alt_sm = sm_two,
+                                 testtype = "two.sided",
+                                 BootSamp = 2000,
+                                 technique = predict_EA,
+                                 cores = 1)
 
 # Assess the base model ----
-Results2 <- as.data.frame(assess_overall_cvpat(model_one))
+Results2 <- as.data.frame(assess_cvpat(model_one, technique = predict_EA, cores = 1))
 
 
 ## Output originally created using following lines
@@ -80,13 +82,15 @@ model_one <- estimate_pls(
   missing_value = "-99")
 
 # Function to compare the Loss of two models
-Results1 <- cvpat_compare_sm(base_model = model_one,
-                             alt_sm = sm_two,
-                             testtype = "two.sided",
-                             BootSamp = 2000)
+Results1 <- assess_cvpat_compare(base_model = model_one,
+                                 alt_sm = sm_two,
+                                 testtype = "two.sided",
+                                 BootSamp = 2000,
+                                 technique = predict_EA,
+                                 cores = 1)
 
 # Assess the base model ----
-Results2 <- assess_overall_cvpat(model_one)
+Results2 <- assess_cvpat(model_one, technique = predict_EA, cores = 1)
 
 test_that("CVPAT_compare can handle higher_composite\n", {
   expect_null(Results1)
