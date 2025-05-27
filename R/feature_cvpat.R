@@ -106,8 +106,13 @@ assess_cvpat_compare <- function(base_model,
                                        reps = reps,
                                        cores = cores)
 
-  PLS_predict_error_one <- pls_predict_model_one$PLS_out_of_sample_residuals[,endo_mvs1,drop = F]
-  PLS_predict_error_two <- pls_predict_model_two$PLS_out_of_sample_residuals[,endo_mvs2,drop = F]
+  pls_predict_error_one_item <- as.matrix(pls_predict_model_one$PLS_out_of_sample_residuals)
+  colnames(pls_predict_error_one_item) <- endo_mvs1
+  pls_predict_error_two_item <- as.matrix(pls_predict_model_two$PLS_out_of_sample_residuals)
+  colnames(pls_predict_error_two_item) <- endo_mvs2
+
+  PLS_predict_error_one <- pls_predict_error_one_item[,endo_mvs1,drop = F]
+  PLS_predict_error_two <- pls_predict_error_two_item[,endo_mvs2,drop = F]
 
   ## Calculate LV losses for each PLS model
   ## model one
@@ -157,14 +162,14 @@ assess_cvpat_compare <- function(base_model,
                                          testtype = testtype,
                                          BootSamp = BootSamp)
 
-    LV_cvpat <- cvpat_per_construct(loss_one = LV_losses_PLS_one[,overlap],
-                                    loss_two = LV_losses_PLS_two[,overlap],
+    LV_cvpat <- cvpat_per_construct(loss_one = LV_losses_PLS_one[,overlap,drop = F],
+                                    loss_two = LV_losses_PLS_two[,overlap, drop = F],
                                     testtype = testtype,
                                     BootSamp = BootSamp)
     message("Not all endogenous vars co-occur in models 1 and 2. Only comparing overlap. ")
     mat_one <- cbind(colMeans(LV_losses_PLS_one)[overlap],colMeans(LV_losses_PLS_two)[overlap],
                      colMeans(LV_losses_PLS_one)[overlap] - colMeans(LV_losses_PLS_two)[overlap],
-                     LV_cvpat[,-1])
+                     LV_cvpat[,-1,drop = F])
 
   }
   if (length(intersect(endo_lvs1, endo_lvs2) ) == 0) {
@@ -269,10 +274,15 @@ assess_cvpat <- function(model,
                             function(x) seminr:::items_of_construct(construct = x,
                                                                     model = model)))
   # Indicator average (IA) from the training model
-  IA <- model$meanData[endo_mvs]
+  IA <- model$meanData[endo_mvs,drop = F]
 
   # Calculate IA predictive error
-  IA_pred_error <- sweep(model$data[,endo_mvs],2 ,IA)
+  if (length(endo_mvs) > 1) {
+    IA_pred_error <- sweep(model$data[,endo_mvs,drop = F],2 ,IA)
+  }
+  if (length(endo_mvs) == 1) {
+    IA_pred_error <- model$data[,endo_mvs,drop = F] - IA
+  }
 
   # Calculate PLS and LM predictions
   pls_predict_model <- predict_pls(model = model,
@@ -280,9 +290,14 @@ assess_cvpat <- function(model,
                                    noFolds = noFolds,
                                    reps = reps,
                                    cores = cores)
-
-  PLS_predict_error <- pls_predict_model$PLS_out_of_sample_residuals[,endo_mvs,drop = F]
-  LM_predict_error <- pls_predict_model$lm_out_of_sample_residuals[,endo_mvs,drop = F]
+#####
+  pls_predict_error <- as.matrix(pls_predict_model$PLS_out_of_sample_residuals)
+  colnames(pls_predict_error) <- endo_mvs
+  LM_predict_error <- as.matrix(pls_predict_model$lm_out_of_sample_residuals)
+  colnames(LM_predict_error) <- endo_mvs
+#####
+  PLS_predict_error <- pls_predict_error[,endo_mvs,drop = F]
+  LM_predict_error <- LM_predict_error[,endo_mvs,drop = F]
 
   # Calculate LV-specific losses
   ## for IA model
@@ -333,7 +348,9 @@ assess_cvpat <- function(model,
 
   mat_one <- cbind(colMeans(LV_losses_PLS),colMeans(LV_losses_LM),
                    colMeans(LV_losses_PLS) - colMeans(LV_losses_LM),
-                   lm_cvpat[,-1])
+                   lm_cvpat[,-1,drop = F])
+
+
   colnames(mat_one)[1:3] <- c("PLS Loss", "LM Loss", "Diff")
   mat_one
   mat_one <- rbind(mat_one, c(mean(PLS_overall),
@@ -345,7 +362,7 @@ assess_cvpat <- function(model,
 
   mat_two <- cbind(colMeans(LV_losses_PLS),colMeans(LV_losses_IA),
                    colMeans(LV_losses_PLS) - colMeans(LV_losses_IA),
-                   ia_cvpat[,-1])
+                   ia_cvpat[,-1,drop = F])
   colnames(mat_two)[1:3] <- c("PLS Loss", "IA Loss", "Diff")
   PLS_v_IA_overall
 
@@ -381,11 +398,11 @@ cvpat_per_construct <- function(loss_one,
 
 lv_loss <- function(construct, model, error) {
 
-  if(is.data.frame(error) | is.matrix(error)) {
+  if(length(dim((error))) > 1) {
     loss <- rowMeans(error[,seminr:::items_of_construct(construct = construct,
                                                         model = model),drop = F]^2)
   }
-  if (is.numeric(error)) {
+  if (length(dim((error))) == 1) {
     loss <- error[,seminr:::items_of_construct(construct = construct,
                                                model = model),drop = F]^2
   }
@@ -393,7 +410,7 @@ lv_loss <- function(construct, model, error) {
 }
 
 overall_loss <- function(error) {
-  if(length(dim((error))) > 0) {return(rowMeans(error))}
+  if(length(dim((error))) > 1) {return(rowMeans(error))}
   return(error)
 }
 
