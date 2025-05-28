@@ -28,7 +28,7 @@ model_one <- estimate_pls(
   missing_value = "-99")
 
 # Function to compare the Loss of two models
-Results1 <- assess_cvpat_compare(base_model = model_one,
+Results1 <- assess_cvpat_compare(seminr_model = model_one,
                                  alt_sm = sm_two,
                                  testtype = "two.sided",
                                  BootSamp = 2000,
@@ -47,7 +47,7 @@ cvpat_control <- as.matrix(read.csv(file = paste(test_folder,"cvpat1.csv", sep =
 
 # Testing
 test_that("CVPAT comnpares models correctly\n", {
-  expect_equal(as.numeric(Results1), as.numeric(cvpat_control[,1:5]), tolerance = 0.1)
+  expect_equal(as.numeric(unlist(Results1)), as.numeric(cvpat_control[,1:5]), tolerance = 0.1)
 })
 
 test_that("CVPAT assesses model correctly\n", {
@@ -82,7 +82,7 @@ model_one <- estimate_pls(
   missing_value = "-99")
 
 # Function to compare the Loss of two models
-Results1 <- assess_cvpat_compare(base_model = model_one,
+Results1 <- assess_cvpat_compare(seminr_model = model_one,
                                  alt_sm = sm_two,
                                  testtype = "two.sided",
                                  BootSamp = 2000,

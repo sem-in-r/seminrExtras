@@ -22,7 +22,8 @@ corp_rep_sm_ext <- relationships(
 )
 alt_sm <- relationships(
   paths(from = c("QUAL", "PERF", "CSOR", "ATTR"), to = c("COMP", "LIKE")),
-  paths(from = c("COMP", "LIKE"), to = c("CUSA"))
+  paths(from = c("COMP", "LIKE"), to = c("CUSA")),
+  paths(from = c("CUSA"),         to = c("CUSL"))
 )
 
 
@@ -35,12 +36,20 @@ corp_rep_pls_model_ext <- estimate_pls(
   missing_value = "-99")
 
 # Function to compare the Loss of two models
-assess_cvpat_compare(base_model = corp_rep_pls_model_ext,
-                 alt_sm = alt_sm,
-                 testtype = "two.sided",
-                 BootSamp = 2000,
-                 technique = predict_DA,
-                 seed = 123)
+compare_results <- assess_cvpat_compare(seminr_model = corp_rep_pls_model_ext,
+                                        alt_sm = alt_sm,
+                                        testtype = "two.sided",
+                                        BootSamp = 2000,
+                                        technique = predict_DA,
+                                        seed = 123)
+
+print(compare_results,
+      digits = 3)
 
 # Assess the base model ----
-assess_cvpat(corp_rep_pls_model_ext,seed = 123)
+assess_results <- assess_cvpat(corp_rep_pls_model_ext,
+                               seed = 123)
+print(assess_results$CVPAT_compare_LM,
+      digits = 3)
+print(assess_results$CVPAT_compare_IA,
+      digits = 3)

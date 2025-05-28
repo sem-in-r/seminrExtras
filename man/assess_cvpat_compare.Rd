@@ -5,7 +5,7 @@
 \title{SEMinR function to compare CV-PAT loss of two models}
 \usage{
 assess_cvpat_compare(
-  base_model,
+  seminr_model,
   alt_sm,
   testtype = "two.sided",
   BootSamp = 2000,
@@ -17,7 +17,7 @@ assess_cvpat_compare(
 )
 }
 \arguments{
-\item{base_model}{The base model for CV-PAT comparison.}
+\item{seminr_model}{The base model for CV-PAT comparison.}
 
 \item{alt_sm}{The alternate structural model for CV-PAT comparison.}
 
@@ -74,7 +74,7 @@ corp_rep_pls_model_ext <- estimate_pls(
  missing_value = "-99")
 
 # Function to compare the Loss of two models
-assess_cvpat_compare(base_model = corp_rep_pls_model_ext,
+assess_cvpat_compare(seminr_model = corp_rep_pls_model_ext,
                     alt_sm = alt_sm,
                     testtype = "two.sided",
                     BootSamp = 100,
@@ -82,4 +82,15 @@ assess_cvpat_compare(base_model = corp_rep_pls_model_ext,
                     seed = 123,
                     cores = 1)
 
+}
+\references{
+Sharma, P. N., Liengaard, B. D., Hair, J. F., Sarstedt, M., &
+Ringle, C. M. (2022). Predictive model assessment and selection in
+composite-based modeling using PLS-SEM: extensions and guidelines for
+using CVPAT. European journal of marketing, 57(6), 1662-1677.
+
+Liengaard, B. D., Sharma, P. N., Hult, G. T. M., Jensen, M. B.,
+Sarstedt, M., Hair, J. F., & Ringle, C. M. (2021). Prediction: coveted,
+yet forsaken? Introducing a cross‐validated predictive ability test in
+partial least squares path modeling. Decision Sciences, 52(2), 362-392.
 }
