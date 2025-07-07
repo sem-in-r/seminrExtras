@@ -3,11 +3,11 @@
 #' `assess_cvpat_compare` conducts a CV-PAT significance test of loss between
 #' two models.
 #'
-#' @param seminr_model The base model for CV-PAT comparison.
-#' @param alt_sm The alternate structural model for CV-PAT comparison.
+#' @param seminr_model The base seminr model for CV-PAT comparison.
+#' @param alternative_model The alternate seminr model for CV-PAT comparison.
 #' @param testtype Either "two.sided" (default) or "greater".
-#' @param BootSamp The number of bootstrap subsamples to execute (defaults to 2000).
-#' @param seed The seed for reproducibility (defaults to 123).
+#' @param nboot The number of bootstrap subsamples to execute (defaults to 2000).
+#' @param seed The seed for reproducibility (defaults to NULL).
 #' @param technique predict_EA or predict_DA (default).
 #' @param noFolds Mumber of folds for k-fold cross validation.
 #' @param reps Number of repetitions for cross validation.
@@ -56,61 +56,69 @@
 #'  missing = mean_replacement,
 #'  missing_value = "-99")
 #'
+#'corp_rep_pls_model_alt <- estimate_pls(
+#'  data = corp_rep_data,
+#'  measurement_model = corp_rep_mm_ext,
+#'  structural_model  = alt_sm,
+#'  missing = mean_replacement,
+#'  missing_value = "-99")
+#'
 #'# Function to compare the Loss of two models
-#'assess_cvpat_compare(seminr_model = corp_rep_pls_model_ext,
-#'                     alt_sm = alt_sm,
+#'assess_cvpat_compare(established_model = corp_rep_pls_model_ext,
+#'                     alternative_model = corp_rep_pls_model_alt,
 #'                     testtype = "two.sided",
-#'                     BootSamp = 100,
+#'                     nboot = 100,
 #'                     technique = predict_DA,
 #'                     seed = 123,
 #'                     cores = 1)
 #'
 #' @export
-assess_cvpat_compare <- function(seminr_model,
-                                 alt_sm ,
+assess_cvpat_compare <- function(established_model,
+                                 alternative_model ,
                                  testtype = "two.sided",
-                                 BootSamp = 2000,
+                                 nboot = 2000,
                                  seed = 123,
                                  technique = predict_DA,
                                  noFolds = NULL,
                                  reps = NULL,
                                  cores = NULL) {
   # Abort if received a higher-order-model or moderated model
-  if (!is.null(seminr_model$hoc)) {
+  if (!(is.null(established_model$hoc) & is.null(alternative_model$hoc))) {
     message("There is no published solution for applying PLSpredict to higher-order-models")
     return()
   }
-  if (!is.null(seminr_model$interaction)) {
+  if (!(is.null(established_model$interaction) & is.null(alternative_model$interaction))) {
     message("There is no published solution for applying PLSpredict to moderated models")
     return()
   }
   set.seed(seed)
-  # Estimate model two
-  pls_two <- estimate_pls(
-    data = seminr_model$data,
-    measurement_model = seminr_model$measurement_model,
-    structural_model  = alt_sm,
-    missing = mean_replacement,
-    missing_value = seminr_model$settings$missing_value)
+
+  # Rerieve the endogenous constructs
+  endo_lvs1 <- seminr:::all_endogenous(established_model$smMatrix)
+  endo_lvs2 <- seminr:::all_endogenous(alternative_model$smMatrix)
 
 
-  endo_lvs1 <- seminr:::all_endogenous(seminr_model$smMatrix)
-  endo_lvs2 <- seminr:::all_endogenous(alt_sm)
-
+  # Retrieve the items of endogenous constructs
   endo_mvs1 <- unlist(lapply(endo_lvs1,
                              function(x) seminr:::items_of_construct(construct = x,
-                                                                     model = seminr_model)))
+                                                                     model = established_model)))
   endo_mvs2 <- unlist(lapply(endo_lvs2,
                              function(x) seminr:::items_of_construct(construct = x,
-                                                                     model = pls_two)))
-
+                                                                     model = alternative_model)))
+  # The models must have identical endogenous constructs and items to compare.
+  if (!(all(endo_mvs1 %in% endo_mvs2) &
+        all(endo_mvs2 %in% endo_mvs1) &
+        all(endo_lvs1 %in% endo_lvs2) &
+        all(endo_lvs2 %in% endo_lvs1))) {
+    stop("CV-PAT can only be applied to models with identical endogenous constructs and measures")
+  }
   # Calculate PLS predictions for each model
-  pls_predict_model_one <- predict_pls(seminr_model,
+  pls_predict_model_one <- predict_pls(established_model,
                                        technique = technique,
                                        noFolds = noFolds,
                                        reps = reps,
                                        cores = cores)
-  pls_predict_model_two <- predict_pls(pls_two,
+  pls_predict_model_two <- predict_pls(alternative_model,
                                        technique = technique,
                                        noFolds = noFolds,
                                        reps = reps,
@@ -128,12 +136,12 @@ assess_cvpat_compare <- function(seminr_model,
   ## model one
   LV_losses_PLS_one <- do.call("cbind", lapply(endo_lvs1,
                                                function(x) lv_loss(construct = x,
-                                                                   model = seminr_model,
+                                                                   model = established_model,
                                                                    error = PLS_predict_error_one)))
   ## model two
   LV_losses_PLS_two <- do.call("cbind", lapply(endo_lvs2,
                                                function(x) lv_loss(construct = x,
-                                                                   model = pls_two,
+                                                                   model = alternative_model,
                                                                    error = PLS_predict_error_two)))
 
   # Name LVs
@@ -153,11 +161,11 @@ assess_cvpat_compare <- function(seminr_model,
     PLS_v_PLS_overall <- bootstrap_cvpat(PLS_overall_one,
                                         PLS_overall_two,
                                         testtype = testtype,
-                                        BootSamp = BootSamp)
+                                        nboot = nboot)
     LV_cvpat <- cvpat_per_construct(loss_one = LV_losses_PLS_one,
                                     loss_two = LV_losses_PLS_two,
                                     testtype = testtype,
-                                    BootSamp = BootSamp)
+                                    nboot = nboot)
     mat_one <- cbind(colMeans(LV_losses_PLS_one),colMeans(LV_losses_PLS_two),
                      colMeans(LV_losses_PLS_one) - colMeans(LV_losses_PLS_two),
                      LV_cvpat[,-1])
@@ -170,12 +178,12 @@ assess_cvpat_compare <- function(seminr_model,
     PLS_v_PLS_overall <- bootstrap_cvpat(PLS_overall_one,
                                          PLS_overall_two,
                                          testtype = testtype,
-                                         BootSamp = BootSamp)
+                                         nboot = nboot)
 
     LV_cvpat <- cvpat_per_construct(loss_one = LV_losses_PLS_one[,overlap,drop = F],
                                     loss_two = LV_losses_PLS_two[,overlap, drop = F],
                                     testtype = testtype,
-                                    BootSamp = BootSamp)
+                                    nboot = nboot)
     message("Not all endogenous vars co-occur in models 1 and 2. Only comparing overlap. ")
     mat_one <- cbind(colMeans(LV_losses_PLS_one)[overlap],colMeans(LV_losses_PLS_two)[overlap],
                      colMeans(LV_losses_PLS_one)[overlap] - colMeans(LV_losses_PLS_two)[overlap],
@@ -197,8 +205,10 @@ assess_cvpat_compare <- function(seminr_model,
   rownames(mat_out) <- rownames(mat_one)
   rownames(mat_out)[nrow(mat_one)] <- "Overall"
   mat_out <- mat_out[,c(1,2,3,6,7)]
-  comment(mat_out) <- "CV-PAT as per Sharma et al. (2023). Differences in models
-  might lead to difficuly making comparisons."
+  comment(mat_out) <- "CV-PAT as per Sharma et al. (2023).
+  Both models under comparison have identical endoogenous constructs with identical measurement models.
+  Purely exogenous constructs can be differ in regards to their relationships with both nomological
+  partners and measurement indicators."
   colnames(mat_out) <- c("Base Model Loss", "Alt Model Loss", "Diff", "Boot T value", "Boot P Value"    )
   class(mat_out) <- append(class(mat_out), c("table_output"))
   return(mat_out)
@@ -216,7 +226,7 @@ assess_cvpat_compare <- function(seminr_model,
 #'
 #' @param seminr_model The SEMinR model for CV-PAT comparison.
 #' @param testtype Either "two.sided" (default) or "greater".
-#' @param BootSamp The number of bootstrap subsamples to execute (defaults to 2000).
+#' @param nboot The number of bootstrap subsamples to execute (defaults to 2000).
 #' @param seed The seed for reproducibility (defaults to 123).
 #' @param technique predict_EA or predict_DA (default).
 #' @param noFolds Mumber of folds for k-fold cross validation.
@@ -265,7 +275,7 @@ assess_cvpat_compare <- function(seminr_model,
 #' # Assess the base model ----
 #' assess_cvpat(corp_rep_pls_model_ext,
 #'              testtype = "two.sided",
-#'              BootSamp = 100,
+#'              nboot = 100,
 #'              seed = 123,
 #'              technique = predict_DA,
 #'              noFolds = 10,
@@ -275,7 +285,7 @@ assess_cvpat_compare <- function(seminr_model,
 #' @export
 assess_cvpat <- function(seminr_model,
                          testtype = "two.sided",
-                         BootSamp = 2000,
+                         nboot = 2000,
                          seed = 123,
                          technique = predict_DA,
                          noFolds = NULL,
@@ -359,21 +369,21 @@ assess_cvpat <- function(seminr_model,
   PLS_v_IA_overall <- bootstrap_cvpat(PLS_overall,
                                       IA_overall,
                                       testtype = testtype,
-                                      BootSamp = BootSamp)
+                                      nboot = nboot)
 
   # CVPAT: PLS vs LM overall
   PLS_v_LM_overall <- bootstrap_cvpat(LossM1 = PLS_overall,
                                       LossM2 = LM_overall,
                                       testtype = testtype,
-                                      BootSamp = BootSamp)
+                                      nboot = nboot)
   ia_cvpat <- cvpat_per_construct(loss_one = LV_losses_PLS,
                                   loss_two = LV_losses_IA,
                                   testtype = testtype,
-                                  BootSamp = BootSamp)
+                                  nboot = nboot)
   lm_cvpat <- cvpat_per_construct(loss_one = LV_losses_PLS,
                                   loss_two = LV_losses_LM,
                                   testtype = testtype,
-                                  BootSamp = BootSamp)
+                                  nboot = nboot)
 
   mat_one <- cbind(colMeans(LV_losses_PLS),colMeans(LV_losses_LM),
                    colMeans(LV_losses_PLS) - colMeans(LV_losses_LM),
@@ -415,7 +425,7 @@ assess_cvpat <- function(seminr_model,
 cvpat_per_construct <- function(loss_one,
                                 loss_two,
                                 testtype = "two.sided",
-                                BootSamp = 2000) {
+                                nboot = 2000) {
 
   index <- colnames(loss_one)
   results <- as.data.frame(matrix(nrow = 0, ncol = 6))
@@ -423,7 +433,7 @@ cvpat_per_construct <- function(loss_one,
     results <- rbind(results,c(iter,unlist(bootstrap_cvpat(loss_one[,iter],
                                                     loss_two[,iter],
                                                     testtype = testtype,
-                                                    BootSamp = BootSamp))))
+                                                    nboot = nboot))))
   }
   colnames(results) <- c("Construct","Std. T value", "Std. P value", "Boot T value", "Boot P Value", "Perc. P Value")
   return(results)
@@ -450,7 +460,7 @@ overall_loss <- function(error) {
 bootstrap_cvpat <- function(LossM1,
                             LossM2,
                             testtype = "two.sided",
-                            BootSamp = 2000) {
+                            nboot = 2000) {
 
   N <- length(LossM1)
   OrgTtest <- t.test(LossM2,
@@ -468,13 +478,13 @@ bootstrap_cvpat <- function(LossM1,
   D <- LossM2-LossM1
 
   #Allocating memory to bootrap
-  BootSample <- matrix(0,ncol=2,nrow=length(D))
-  BootDbar <- rep(0,BootSamp)
+  nbootle <- matrix(0,ncol=2,nrow=length(D))
+  BootDbar <- rep(0,nboot)
   m_losses<-cbind(LossM1,LossM2)
-  tStat <- rep(0,BootSamp)
-  for (b in 1:BootSamp) {
-    BootSample <- m_losses[sample((1:length(D)), length(D), replace=TRUE),]
-    tStat[b]<-t.test(BootSample[,2],BootSample[,1],mu=mean(D),alternative=testtype, paired=TRUE)$statistic
+  tStat <- rep(0,nboot)
+  for (b in 1:nboot) {
+    nbootle <- m_losses[sample((1:length(D)), length(D), replace=TRUE),]
+    tStat[b]<-t.test(nbootle[,2],nbootle[,1],mu=mean(D),alternative=testtype, paired=TRUE)$statistic
     BootDbar[b] <- mean(sample(D_0, length(D_0), replace=TRUE))
   }
   SorttStat<-sort(tStat, decreasing = FALSE)
@@ -484,13 +494,13 @@ bootstrap_cvpat <- function(LossM1,
   tstat_boot_Var<-OrgDbar/std
   # Calculating p-values
   if (testtype=="two.sided") {
-    p.value_perc_Ttest<-(sum(SorttStat>abs(OrgTtest))+sum(SorttStat<=(-abs(OrgTtest))))/BootSamp
-    p.value_perc_D<-(sum(SortBootDbar>abs(OrgDbar))+sum(SortBootDbar<=(-abs(OrgDbar))))/BootSamp
+    p.value_perc_Ttest<-(sum(SorttStat>abs(OrgTtest))+sum(SorttStat<=(-abs(OrgTtest))))/nboot
+    p.value_perc_D<-(sum(SortBootDbar>abs(OrgDbar))+sum(SortBootDbar<=(-abs(OrgDbar))))/nboot
     p.value_var_ttest<-2*pt(-abs(tstat_boot_Var),(N-1), lower.tail = TRUE)
   }
   if (testtype=="greater") {
-    p.value_perc_Ttest<-1-(head(which(SorttStat>OrgTtest),1)-1)/(BootSamp+1)
-    p.value_perc_D<-1-(head(which(SortBootDbar>OrgDbar),1)-1)/(BootSamp+1)
+    p.value_perc_Ttest<-1-(head(which(SorttStat>OrgTtest),1)-1)/(nboot+1)
+    p.value_perc_D<-1-(head(which(SortBootDbar>OrgDbar),1)-1)/(nboot+1)
     p.value_var_ttest<-pt(tstat_boot_Var,(N-1), lower.tail = FALSE)
     if (length(which(SorttStat>OrgTtest))==0){
       p.value_perc_Ttest=0

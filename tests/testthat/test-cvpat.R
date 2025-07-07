@@ -27,11 +27,18 @@ model_one <- estimate_pls(
   missing = mean_replacement,
   missing_value = "-99")
 
+model_two<- estimate_pls(
+  data = corp_rep,
+  measurement_model = corp_rep_mm,
+  structural_model  = sm_two,
+  missing = mean_replacement,
+  missing_value = "-99")
+
 # Function to compare the Loss of two models
-Results1 <- assess_cvpat_compare(seminr_model = model_one,
-                                 alt_sm = sm_two,
+Results1 <- assess_cvpat_compare(established_model = model_one,
+                                 alternative_model = model_two,
                                  testtype = "two.sided",
-                                 BootSamp = 2000,
+                                 nboot = 2000,
                                  technique = predict_EA,
                                  cores = 1)
 
@@ -81,11 +88,18 @@ model_one <- estimate_pls(
   missing = mean_replacement,
   missing_value = "-99")
 
+model_two <- estimate_pls(
+  data = corp_rep_data,
+  measurement_model = corp_rep_mm,
+  structural_model  = sm_two,
+  missing = mean_replacement,
+  missing_value = "-99")
+
 # Function to compare the Loss of two models
-Results1 <- assess_cvpat_compare(seminr_model = model_one,
-                                 alt_sm = sm_two,
+Results1 <- assess_cvpat_compare(established_model = model_one,
+                                 alternative_model = model_two,
                                  testtype = "two.sided",
-                                 BootSamp = 2000,
+                                 nboot = 2000,
                                  technique = predict_EA,
                                  cores = 1)
 
