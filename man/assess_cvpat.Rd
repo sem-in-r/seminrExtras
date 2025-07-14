@@ -7,7 +7,7 @@
 assess_cvpat(
   seminr_model,
   testtype = "two.sided",
-  BootSamp = 2000,
+  nboot = 2000,
   seed = 123,
   technique = predict_DA,
   noFolds = NULL,
@@ -20,7 +20,7 @@ assess_cvpat(
 
 \item{testtype}{Either "two.sided" (default) or "greater".}
 
-\item{BootSamp}{The number of bootstrap subsamples to execute (defaults to 2000).}
+\item{nboot}{The number of bootstrap subsamples to execute (defaults to 2000).}
 
 \item{seed}{The seed for reproducibility (defaults to 123).}
 
@@ -67,13 +67,13 @@ corp_rep_pls_model_ext <- estimate_pls(
   missing_value = "-99")
 
 # Assess the base model ----
-assess_cvpat(corp_rep_pls_model_ext,
+assess_cvpat(seminr_model = corp_rep_pls_model_ext,
              testtype = "two.sided",
-             BootSamp = 100,
+             nboot = 20,
              seed = 123,
              technique = predict_DA,
-             noFolds = 10,
-             reps = 10,
+             noFolds = NULL,
+             reps = NULL,
              cores = 1)
 
 }

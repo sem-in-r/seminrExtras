@@ -3,11 +3,11 @@
 #' `assess_cvpat_compare` conducts a CV-PAT significance test of loss between
 #' two models.
 #'
-#' @param seminr_model The base seminr model for CV-PAT comparison.
+#' @param established_model The base seminr model for CV-PAT comparison.
 #' @param alternative_model The alternate seminr model for CV-PAT comparison.
 #' @param testtype Either "two.sided" (default) or "greater".
 #' @param nboot The number of bootstrap subsamples to execute (defaults to 2000).
-#' @param seed The seed for reproducibility (defaults to NULL).
+#' @param seed The seed for reproducibility (defaults to 123).
 #' @param technique predict_EA or predict_DA (default).
 #' @param noFolds Mumber of folds for k-fold cross validation.
 #' @param reps Number of repetitions for cross validation.
@@ -29,48 +29,50 @@
 #' # Load libraries
 #'library(seminr)
 #'
-#'# Create measurement model ----
-#'corp_rep_mm_ext <- constructs(
-#'  composite("QUAL", multi_items("qual_", 1:8), weights = mode_B),
-#'  composite("PERF", multi_items("perf_", 1:5), weights = mode_B),
-#'  composite("CSOR", multi_items("csor_", 1:5), weights = mode_B),
-#'  composite("ATTR", multi_items("attr_", 1:3), weights = mode_B),
-#'  composite("COMP", multi_items("comp_", 1:3)),
-#'  composite("LIKE", multi_items("like_", 1:3))
-#')
-#'
-#'# Create structural model ----
-#'
-#'corp_rep_sm_ext <- relationships(
-#'  paths(from = c("QUAL", "PERF", "CSOR", "ATTR"), to = c("COMP"))
-#')
-#'alt_sm <- relationships(
-#'  paths(from = c("QUAL", "PERF", "CSOR", "ATTR"), to = c("COMP", "LIKE"))
-#')
-#'
-#'# Estimate the model ----
-#'corp_rep_pls_model_ext <- estimate_pls(
-#'  data = corp_rep_data,
-#'  measurement_model = corp_rep_mm_ext,
-#'  structural_model  = corp_rep_sm_ext,
-#'  missing = mean_replacement,
-#'  missing_value = "-99")
-#'
-#'corp_rep_pls_model_alt <- estimate_pls(
-#'  data = corp_rep_data,
-#'  measurement_model = corp_rep_mm_ext,
-#'  structural_model  = alt_sm,
-#'  missing = mean_replacement,
-#'  missing_value = "-99")
-#'
-#'# Function to compare the Loss of two models
-#'assess_cvpat_compare(established_model = corp_rep_pls_model_ext,
-#'                     alternative_model = corp_rep_pls_model_alt,
-#'                     testtype = "two.sided",
-#'                     nboot = 100,
-#'                     technique = predict_DA,
-#'                     seed = 123,
-#'                     cores = 1)
+# # Create measurement model ----
+# corp_rep_mm_ext <- constructs(
+#  composite("QUAL", multi_items("qual_", 1:8), weights = mode_B),
+#  composite("PERF", multi_items("perf_", 1:5), weights = mode_B),
+#  composite("CSOR", multi_items("csor_", 1:5), weights = mode_B),
+#  composite("ATTR", multi_items("attr_", 1:3), weights = mode_B),
+#  composite("COMP", multi_items("comp_", 1:3)),
+#  composite("LIKE", multi_items("like_", 1:3))
+# )
+#
+# # Create structural model ----
+#
+# corp_rep_sm_ext <- relationships(
+#  paths(from = c("QUAL", "PERF", "CSOR", "ATTR"), to = c("COMP", "LIKE"))
+# )
+# alt_sm <- relationships(
+#  paths(from = c("QUAL", "PERF", "CSOR"), to = c("COMP", "LIKE"))
+# )
+#
+# # Estimate the model ----
+# established_model <- estimate_pls(
+#  data = corp_rep_data,
+#  measurement_model = corp_rep_mm_ext,
+#  structural_model  = corp_rep_sm_ext,
+#  missing = mean_replacement,
+#  missing_value = "-99")
+#
+# alternative_model <- estimate_pls(
+#  data = corp_rep_data,
+#  measurement_model = corp_rep_mm_ext,
+#  structural_model  = alt_sm,
+#  missing = mean_replacement,
+#  missing_value = "-99")
+#
+# # Function to compare the Loss of two models
+# assess_cvpat_compare(established_model,
+#                     alternative_model ,
+#                     testtype = "two.sided",
+#                     nboot = 20,
+#                     seed = 123,
+#                     technique = predict_DA,
+#                     noFolds = NULL,
+#                     reps = NULL,
+#                     cores = 1)
 #'
 #' @export
 assess_cvpat_compare <- function(established_model,
@@ -273,13 +275,13 @@ assess_cvpat_compare <- function(established_model,
 #'   missing_value = "-99")
 #'
 #' # Assess the base model ----
-#' assess_cvpat(corp_rep_pls_model_ext,
+#' assess_cvpat(seminr_model = corp_rep_pls_model_ext,
 #'              testtype = "two.sided",
-#'              nboot = 100,
+#'              nboot = 20,
 #'              seed = 123,
 #'              technique = predict_DA,
-#'              noFolds = 10,
-#'              reps = 10,
+#'              noFolds = NULL,
+#'              reps = NULL,
 #'              cores = 1)
 #'
 #' @export

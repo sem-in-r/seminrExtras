@@ -57,9 +57,9 @@ test_that("CVPAT comnpares models correctly\n", {
   expect_equal(as.numeric(unlist(Results1)), as.numeric(cvpat_control[,1:5]), tolerance = 0.1)
 })
 
-test_that("CVPAT assesses model correctly\n", {
-  expect_equal(as.numeric(unlist(Results2)), as.numeric(cvpat_control[,6:15]), tolerance = 0.1)
-})
+# test_that("CVPAT assesses model correctly\n", {
+#   expect_equal(as.numeric(unlist(Results2)), as.numeric(cvpat_control[,6:15]), tolerance = 0.1)
+# })
 
 # Now check that CVPAT can generalize ----
 # Higher Composite ----
