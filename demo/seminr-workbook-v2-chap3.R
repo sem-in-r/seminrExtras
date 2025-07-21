@@ -15,8 +15,7 @@
 # library(seminr)
 
 # Load the corporate reputation data
-corp_rep_data <- read.csv(file = "Corporate Reputation Data.csv",
-                          header = TRUE, sep = ";")
+corp_rep_data <- corp_rep_data
 
 # Show the first several rows of the corporate reputation data
 head(corp_rep_data)
