@@ -6,6 +6,7 @@
 
 # Load the SEMinR library
 library(seminr)
+oldpar <- par(mfrow = c(1,1))
 
 # Load the data
 corp_rep_data <- corp_rep_data
@@ -81,7 +82,7 @@ par(mfrow=c(1,3))
 plot(sum_predict_corp_rep_ext, indicator = "cusl_1")
 plot(sum_predict_corp_rep_ext, indicator = "cusl_2")
 plot(sum_predict_corp_rep_ext, indicator = "cusl_3")
-par(mfrow=c(1,1))
+par(oldpar)
 
 # Inspect the results of PLSpredict
 sum_predict_corp_rep_ext

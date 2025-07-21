@@ -6,11 +6,13 @@
 
 # Download and install the SEMinR package
 # You only need to do this once to equip RStudio on your computer with SEMinR
-install.packages("seminr")
+# and you will have to delete the '#' and then execute the below line of code:
+# install.packages("seminr")
 
 # Make the SEMinR library ready to use
 # You must do this every time you restart RStudio and wish to use SEMinR
-library(seminr)
+# and you will have to delete the '#' and then execute the below line of code:
+# library(seminr)
 
 # Load the corporate reputation data
 corp_rep_data <- read.csv(file = "Corporate Reputation Data.csv",
@@ -70,7 +72,8 @@ sum_boot_simple_corp_rep$bootstrapped_paths
 sum_boot_simple_corp_rep$bootstrapped_loadings
 
 # Write the bootstrapped paths object to csv file
-write.csv(x = sum_boot_simple_corp_rep$bootstrapped_loadings, file = "boot_loadings.csv")
+# and you will have to delete the '#' and then execute the below line of code:
+# write.csv(x = sum_boot_simple_corp_rep$bootstrapped_loadings, file = "boot_loadings.csv")
 
 # Generate the plot for exporting
 plot(summary_simple_corp_rep$reliability)

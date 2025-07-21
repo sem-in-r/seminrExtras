@@ -70,8 +70,8 @@
 #                     nboot = 20,
 #                     seed = 123,
 #                     technique = predict_DA,
-#                     noFolds = NULL,
-#                     reps = NULL,
+#                     noFolds = 5,
+#                     reps = 1,
 #                     cores = 1)
 #'
 #' @export
@@ -280,8 +280,8 @@ assess_cvpat_compare <- function(established_model,
 #'              nboot = 20,
 #'              seed = 123,
 #'              technique = predict_DA,
-#'              noFolds = NULL,
-#'              reps = NULL,
+#'              noFolds = 5,
+#'              reps = 1,
 #'              cores = 1)
 #'
 #' @export

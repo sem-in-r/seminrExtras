@@ -1,11 +1,11 @@
 Package: seminrExtras
 Type: Package
-Title: Extra Features and Methods for SEMinR 
+Title: Conduct Additional Modeling and Analysis for 'seminr' 
 Version: 0.1.0
 Authors@R: c(person("Soumya", "Ray", email = "soumya.ray@gmail.com", role = c("aut", "ths")),
              person("Nicholas Patrick", "Danks", email = "nicholasdanks@hotmail.com", role = c("aut","cre"))
             )
-Description: This package serves to support SEMinR with additional features. 
+Description: Supplemental functions for estimating and analysing structural equation models including Cross Validated Prediction and Testing (CVPAT, Liengaard et al., 2021 <doi:10.1111/deci.12445>).
 Imports:
     seminr (>= 2.3.0),
     stats

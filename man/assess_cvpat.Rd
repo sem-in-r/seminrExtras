@@ -72,8 +72,8 @@ assess_cvpat(seminr_model = corp_rep_pls_model_ext,
              nboot = 20,
              seed = 123,
              technique = predict_DA,
-             noFolds = NULL,
-             reps = NULL,
+             noFolds = 5,
+             reps = 1,
              cores = 1)
 
 }

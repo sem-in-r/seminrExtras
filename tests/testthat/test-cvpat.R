@@ -53,7 +53,7 @@ Results2 <- as.data.frame(assess_cvpat(model_one, technique = predict_EA, cores 
 cvpat_control <- as.matrix(read.csv(file = paste(test_folder,"cvpat1.csv", sep = ""), row.names = 1))
 
 # Testing
-test_that("CVPAT comnpares models correctly\n", {
+test_that("CVPAT compares models correctly\n", {
   expect_equal(as.numeric(unlist(Results1)), as.numeric(cvpat_control[,1:5]), tolerance = 0.1)
 })
 
