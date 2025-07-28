@@ -5,9 +5,9 @@
 \title{SEMinR function to compare CV-PAT loss of two models}
 \usage{
 assess_cvpat(
-  model,
+  seminr_model,
   testtype = "two.sided",
-  BootSamp = 2000,
+  nboot = 2000,
   seed = 123,
   technique = predict_DA,
   noFolds = NULL,
@@ -16,11 +16,11 @@ assess_cvpat(
 )
 }
 \arguments{
-\item{model}{The SEMinR model for CV-PAT comparison.}
+\item{seminr_model}{The SEMinR model for CV-PAT comparison.}
 
 \item{testtype}{Either "two.sided" (default) or "greater".}
 
-\item{BootSamp}{The number of bootstrap subsamples to execute (defaults to 2000).}
+\item{nboot}{The number of bootstrap subsamples to execute (defaults to 2000).}
 
 \item{seed}{The seed for reproducibility (defaults to 123).}
 
@@ -67,13 +67,24 @@ corp_rep_pls_model_ext <- estimate_pls(
   missing_value = "-99")
 
 # Assess the base model ----
-assess_cvpat(corp_rep_pls_model_ext,
+assess_cvpat(seminr_model = corp_rep_pls_model_ext,
              testtype = "two.sided",
-             BootSamp = 100,
+             nboot = 20,
              seed = 123,
              technique = predict_DA,
-             noFolds = 10,
-             reps = 10,
+             noFolds = 5,
+             reps = 1,
              cores = 1)
 
+}
+\references{
+Sharma, P. N., Liengaard, B. D., Hair, J. F., Sarstedt, M., &
+Ringle, C. M. (2022). Predictive model assessment and selection in
+composite-based modeling using PLS-SEM: extensions and guidelines for
+using CVPAT. European journal of marketing, 57(6), 1662-1677.
+
+Liengaard, B. D., Sharma, P. N., Hult, G. T. M., Jensen, M. B.,
+Sarstedt, M., Hair, J. F., & Ringle, C. M. (2021). Prediction: coveted,
+yet forsaken? Introducing a cross‐validated predictive ability test in
+partial least squares path modeling. Decision Sciences, 52(2), 362-392.
 }

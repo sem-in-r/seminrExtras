@@ -5,10 +5,10 @@
 \title{SEMinR function to compare CV-PAT loss of two models}
 \usage{
 assess_cvpat_compare(
-  base_model,
-  alt_sm,
+  established_model,
+  alternative_model,
   testtype = "two.sided",
-  BootSamp = 2000,
+  nboot = 2000,
   seed = 123,
   technique = predict_DA,
   noFolds = NULL,
@@ -17,13 +17,13 @@ assess_cvpat_compare(
 )
 }
 \arguments{
-\item{base_model}{The base model for CV-PAT comparison.}
+\item{established_model}{The base seminr model for CV-PAT comparison.}
 
-\item{alt_sm}{The alternate structural model for CV-PAT comparison.}
+\item{alternative_model}{The alternate seminr model for CV-PAT comparison.}
 
 \item{testtype}{Either "two.sided" (default) or "greater".}
 
-\item{BootSamp}{The number of bootstrap subsamples to execute (defaults to 2000).}
+\item{nboot}{The number of bootstrap subsamples to execute (defaults to 2000).}
 
 \item{seed}{The seed for reproducibility (defaults to 123).}
 
@@ -46,40 +46,16 @@ two models.
 # Load libraries
 library(seminr)
 
-# Create measurement model ----
-corp_rep_mm_ext <- constructs(
- composite("QUAL", multi_items("qual_", 1:8), weights = mode_B),
- composite("PERF", multi_items("perf_", 1:5), weights = mode_B),
- composite("CSOR", multi_items("csor_", 1:5), weights = mode_B),
- composite("ATTR", multi_items("attr_", 1:3), weights = mode_B),
- composite("COMP", multi_items("comp_", 1:3)),
- composite("LIKE", multi_items("like_", 1:3))
-)
 
-# Create structural model ----
+}
+\references{
+Sharma, P. N., Liengaard, B. D., Hair, J. F., Sarstedt, M., &
+Ringle, C. M. (2022). Predictive model assessment and selection in
+composite-based modeling using PLS-SEM: extensions and guidelines for
+using CVPAT. European journal of marketing, 57(6), 1662-1677.
 
-corp_rep_sm_ext <- relationships(
- paths(from = c("QUAL", "PERF", "CSOR", "ATTR"), to = c("COMP"))
-)
-alt_sm <- relationships(
- paths(from = c("QUAL", "PERF", "CSOR", "ATTR"), to = c("COMP", "LIKE"))
-)
-
-# Estimate the model ----
-corp_rep_pls_model_ext <- estimate_pls(
- data = corp_rep_data,
- measurement_model = corp_rep_mm_ext,
- structural_model  = corp_rep_sm_ext,
- missing = mean_replacement,
- missing_value = "-99")
-
-# Function to compare the Loss of two models
-assess_cvpat_compare(base_model = corp_rep_pls_model_ext,
-                    alt_sm = alt_sm,
-                    testtype = "two.sided",
-                    BootSamp = 100,
-                    technique = predict_DA,
-                    seed = 123,
-                    cores = 1)
-
+Liengaard, B. D., Sharma, P. N., Hult, G. T. M., Jensen, M. B.,
+Sarstedt, M., Hair, J. F., & Ringle, C. M. (2021). Prediction: coveted,
+yet forsaken? Introducing a cross‐validated predictive ability test in
+partial least squares path modeling. Decision Sciences, 52(2), 362-392.
 }
