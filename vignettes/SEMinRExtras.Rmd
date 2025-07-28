@@ -1,6 +1,6 @@
 ---
 title: "seminrExtras"
-author: "S. Ray and N.P. Danks)"
+author: "S. Ray and N.P. Danks"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
