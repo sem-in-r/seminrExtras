@@ -4,3 +4,5 @@
 .Ruserdata
 .DS_*
 
+/doc/
+/Meta/
