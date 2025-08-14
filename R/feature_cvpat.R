@@ -1,10 +1,10 @@
-#' SEMinR function to compare CV-PAT loss of two models
+#' SEMinR function to compare CVPAT loss of two models
 #'
-#' `assess_cvpat_compare` conducts a CV-PAT significance test of loss between
+#' `assess_cvpat_compare` conducts a CVPAT significance test of loss between
 #' two models.
 #'
-#' @param established_model The base seminr model for CV-PAT comparison.
-#' @param alternative_model The alternate seminr model for CV-PAT comparison.
+#' @param established_model The base seminr model for CVPAT comparison.
+#' @param alternative_model The alternate seminr model for CVPAT comparison.
 #' @param testtype Either "two.sided" (default) or "greater".
 #' @param nboot The number of bootstrap subsamples to execute (defaults to 2000).
 #' @param seed The seed for reproducibility (defaults to 123).
@@ -84,15 +84,15 @@ assess_cvpat_compare <- function(established_model,
                                  noFolds = NULL,
                                  reps = NULL,
                                  cores = NULL) {
-  # Abort if received a higher-order-model or moderated model
+  # Abort if received a higher-order-model
   if (!(is.null(established_model$hoc) & is.null(alternative_model$hoc))) {
     message("There is no published solution for applying PLSpredict to higher-order-models")
     return()
   }
-  if (!(is.null(established_model$interaction) & is.null(alternative_model$interaction))) {
-    message("There is no published solution for applying PLSpredict to moderated models")
-    return()
-  }
+  # if (!(is.null(established_model$interaction) & is.null(alternative_model$interaction))) {
+  #   message("There is no published solution for applying PLSpredict to moderated models")
+  #   return()
+  # }
   set.seed(seed)
 
   # Rerieve the endogenous constructs
@@ -112,7 +112,7 @@ assess_cvpat_compare <- function(established_model,
         all(endo_mvs2 %in% endo_mvs1) &
         all(endo_lvs1 %in% endo_lvs2) &
         all(endo_lvs2 %in% endo_lvs1))) {
-    stop("CV-PAT can only be applied to models with identical endogenous constructs and measures")
+    stop("CVPAT can only be applied to models with identical endogenous constructs and measures")
   }
   # Calculate PLS predictions for each model
   pls_predict_model_one <- predict_pls(established_model,
@@ -126,9 +126,9 @@ assess_cvpat_compare <- function(established_model,
                                        reps = reps,
                                        cores = cores)
 
-  pls_predict_error_one_item <- as.matrix(pls_predict_model_one$PLS_out_of_sample_residuals)
+  pls_predict_error_one_item <- as.matrix(pls_predict_model_one$items$PLS_out_of_sample_residuals)
   colnames(pls_predict_error_one_item) <- endo_mvs1
-  pls_predict_error_two_item <- as.matrix(pls_predict_model_two$PLS_out_of_sample_residuals)
+  pls_predict_error_two_item <- as.matrix(pls_predict_model_two$items$PLS_out_of_sample_residuals)
   colnames(pls_predict_error_two_item) <- endo_mvs2
 
   PLS_predict_error_one <- pls_predict_error_one_item[,endo_mvs1,drop = F]
@@ -207,7 +207,7 @@ assess_cvpat_compare <- function(established_model,
   rownames(mat_out) <- rownames(mat_one)
   rownames(mat_out)[nrow(mat_one)] <- "Overall"
   mat_out <- mat_out[,c(1,2,3,6,7)]
-  comment(mat_out) <- "CV-PAT as per Sharma et al. (2023).
+  comment(mat_out) <- "CVPAT as per Sharma et al. (2023).
   Both models under comparison have identical endoogenous constructs with identical measurement models.
   Purely exogenous constructs can be differ in regards to their relationships with both nomological
   partners and measurement indicators."
@@ -221,19 +221,18 @@ assess_cvpat_compare <- function(established_model,
 ## PLS-SEM: extensions and guidelines for using CVPAT", European Journal of
 ## Marketing, Vol. 57 No. 6, pp. 1662-1677.
 ## DOI: 10.1108/EJM-08-2020-0636
-#' SEMinR function to compare CV-PAT loss of two models
+#' SEMinR function to compare CVPAT loss of two models
 #'
-#' `assess_cvpat` conducts a single model CV-PAT assessment against item average
-#' and linear model benchmarks.
+#' `assess_cvpat` conducts a single model CVPAT assessment against item average
+#' and linear model prediction benchmarks.
 #'
-#' @param seminr_model The SEMinR model for CV-PAT comparison.
+#' @param seminr_model The SEMinR model for CVPAT analysis
 #' @param testtype Either "two.sided" (default) or "greater".
 #' @param nboot The number of bootstrap subsamples to execute (defaults to 2000).
 #' @param seed The seed for reproducibility (defaults to 123).
 #' @param technique predict_EA or predict_DA (default).
-#' @param noFolds Mumber of folds for k-fold cross validation.
+#' @param noFolds Number of folds for k-fold cross validation.
 #' @param reps Number of repetitions for cross validation.
-#' @param cores Number of cores for parallelization.
 #'
 #' @return A matrix of the estimated loss and results of significance testing.
 #'
@@ -281,8 +280,7 @@ assess_cvpat_compare <- function(established_model,
 #'              seed = 123,
 #'              technique = predict_DA,
 #'              noFolds = 5,
-#'              reps = 1,
-#'              cores = 1)
+#'              reps = 1)
 #'
 #' @export
 assess_cvpat <- function(seminr_model,
@@ -291,8 +289,7 @@ assess_cvpat <- function(seminr_model,
                          seed = 123,
                          technique = predict_DA,
                          noFolds = NULL,
-                         reps = NULL,
-                         cores = NULL) {
+                         reps = NULL) {
 
   set.seed(seed)
   # Abort if received a higher-order-model or moderated model
@@ -304,10 +301,10 @@ assess_cvpat <- function(seminr_model,
     message("There is no published solution for applying PLSpredict to higher-order-models")
     return()
   }
-  if (!is.null(seminr_model$interaction)) {
-    message("There is no published solution for applying PLSpredict to moderated models")
-    return()
-  }
+  # if (!is.null(seminr_model$interaction)) {
+  #   message("There is no published solution for applying PLSpredict to moderated models")
+  #   return()
+  # }
   # First we must calculate a IA model which is the "indicator average" model ----
   # we must identify endogenous latents and measures
   endo_lvs <- seminr:::all_endogenous(seminr_model$smMatrix)
@@ -326,15 +323,15 @@ assess_cvpat <- function(seminr_model,
   }
 
   # Calculate PLS and LM predictions
-  pls_predict_model <- predict_pls(model = seminr_model,
-                                   technique = technique,
-                                   noFolds = noFolds,
-                                   reps = reps,
-                                   cores = cores)
+  pls_predict_model <- suppressWarnings(predict_pls(model = seminr_model,
+                                                    technique = technique,
+                                                    noFolds = noFolds,
+                                                    reps = reps,
+                                                    cores = cores))
 
-  pls_predict_error <- as.matrix(pls_predict_model$PLS_out_of_sample_residuals)
+  pls_predict_error <- as.matrix(pls_predict_model$items$PLS_out_of_sample_residuals)
   colnames(pls_predict_error) <- endo_mvs
-  LM_predict_error <- as.matrix(pls_predict_model$lm_out_of_sample_residuals)
+  LM_predict_error <- as.matrix(pls_predict_model$items$lm_out_of_sample_residuals)
   colnames(LM_predict_error) <- endo_mvs
 
   PLS_predict_error <- pls_predict_error[,endo_mvs,drop = F]
@@ -415,7 +412,7 @@ assess_cvpat <- function(seminr_model,
 
   rownames(mat_two) <- c(endo_lvs, "Overall")
   mat_two <- mat_two[,c(1,2,3,6,7)]
-  comment(mat_two) <-comment(mat_one) <- "CV-PAT as per Sharma et al. (2023)."
+  comment(mat_two) <-comment(mat_one) <- "CVPAT as per Sharma et al. (2023)."
   class(mat_two) <- class(mat_one) <- append(class(mat_one), c("table_output"))
 
   return(list(CVPAT_compare_LM = mat_one,

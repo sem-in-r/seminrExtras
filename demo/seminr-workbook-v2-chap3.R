@@ -1,6 +1,6 @@
 ### Accompanying Code for:
-## Partial Least Squares Structural Equation Modeling (PLS-SEM) Using R - A Workbook (2021)
-## Hair, J.F. (Jr), Hult, T.M., Ringle, C.M., Sarstedt, M., Danks, N.P., and Ray, S.
+## Partial Least Squares Structural Equation Modeling (PLS-SEM) Using R - A Workbook 2nd Ed (2026)
+## Hair, J.F. (Jr), Hult, T.M., Ringle, C.M., Sarstedt, M., Danks, N.P., and Adler, S.
 
 ## Chapter 3: Introduction to SEMinR
 
@@ -8,11 +8,13 @@
 # You only need to do this once to equip RStudio on your computer with SEMinR
 # and you will have to delete the '#' and then execute the below line of code:
 # install.packages("seminr")
+# install.packages("seminrExtras")
 
 # Make the SEMinR library ready to use
 # You must do this every time you restart RStudio and wish to use SEMinR
 # and you will have to delete the '#' and then execute the below line of code:
 # library(seminr)
+# library(seminrExtras)
 
 # Load the corporate reputation data
 corp_rep_data <- corp_rep_data
@@ -43,8 +45,35 @@ corp_rep_simple_model <- estimate_pls(data = corp_rep_data,
 # Estimate the model with default settings
 corp_rep_simple_model <- estimate_pls(data = corp_rep_data,
   measurement_model = simple_mm,
-  structural_model  = simple_sm,
-  missing_value = "-99")
+  structural_model  = simple_sm)
+
+## Using the `assess_syntax` argument in `estimate_pls()`
+# Specify the measurement model with a bug in the spelling of the construct
+# `COMP`. Here it is `COP` and in the SM it is `COMP`.
+error_mm <- constructs(
+  composite("COP", multi_items("comp_", 1:3)),
+  composite("LIKE", multi_items("like_", 1:3)),
+  composite("CUSA", single_item("cusa")),
+  composite("CUSL", multi_items("cusl_", 1:3)))
+
+# Specify the structural model.
+simple_sm <- relationships(
+  paths(from = c("COMP", "LIKE"), to = c("CUSA", "CUSL")),
+  paths(from = c("CUSA"), to = c("CUSL")))
+
+# Note that I have specified the argument `assess_syntax` as TRUE
+# Now estimating the model should output an error
+estimate_pls(data = corp_rep,
+             measurement_model = error_mm,
+             structural_model = simple_sm,
+             assess_syntax = TRUE)
+
+## Plotting a model for debugging
+# Plot the measurement model
+plot(error_mm)
+
+# Plot the structural model
+plot(simple_sm)
 
 # Summarize the model results
 summary_simple_corp_rep <- summary(corp_rep_simple_model)

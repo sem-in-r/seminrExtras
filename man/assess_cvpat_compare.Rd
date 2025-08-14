@@ -2,7 +2,7 @@
 % Please edit documentation in R/feature_cvpat.R
 \name{assess_cvpat_compare}
 \alias{assess_cvpat_compare}
-\title{SEMinR function to compare CV-PAT loss of two models}
+\title{SEMinR function to compare CVPAT loss of two models}
 \usage{
 assess_cvpat_compare(
   established_model,
@@ -17,9 +17,9 @@ assess_cvpat_compare(
 )
 }
 \arguments{
-\item{established_model}{The base seminr model for CV-PAT comparison.}
+\item{established_model}{The base seminr model for CVPAT comparison.}
 
-\item{alternative_model}{The alternate seminr model for CV-PAT comparison.}
+\item{alternative_model}{The alternate seminr model for CVPAT comparison.}
 
 \item{testtype}{Either "two.sided" (default) or "greater".}
 
@@ -39,7 +39,7 @@ assess_cvpat_compare(
 A matrix of the estimated loss and results of significance testing.
 }
 \description{
-`assess_cvpat_compare` conducts a CV-PAT significance test of loss between
+`assess_cvpat_compare` conducts a CVPAT significance test of loss between
 two models.
 }
 \examples{

@@ -6,6 +6,7 @@
 
 # Load the SEMinR library
 library(seminr)
+library(seminrExtras)
 oldpar <- par(mfrow = c(1,1))
 
 # Load the data
@@ -67,7 +68,7 @@ summary_corp_rep_ext$paths
 # Inspect the effect sizes
 summary_corp_rep_ext$fSquare
 
-# Generate the model predictions
+# Generate the model predictions ----
 predict_corp_rep_ext <- predict_pls(
   model = corp_rep_pls_model_ext,
   technique = predict_DA,
@@ -87,6 +88,7 @@ par(oldpar)
 # Inspect the results of PLSpredict
 sum_predict_corp_rep_ext
 
+# Conduct predictive model comparison
 # Estimate alternative models
 # Create measurement model ----
 measurement_model <- constructs(
@@ -156,3 +158,37 @@ itcriteria_vector
 
 # Calculate the model BIC Akaike Weights
 compute_itcriteria_weights(itcriteria_vector)
+
+# Conduct CVPAT analysis ----
+# Select the models for analysis and comparison
+established_model <- pls_model1
+alternative_model <- pls_model3
+
+# Conduct CVPAT assessment of the established model
+assess_results <- assess_cvpat(seminr_model = established_model,
+                               testtype = "two.sided",
+                               nboot = 2000,
+                               seed = 123,
+                               technique = predict_DA,
+                               noFolds = 10,
+                               reps = 10)
+
+print(assess_results$CVPAT_compare_LM,
+      digits = 3)
+print(assess_results$CVPAT_compare_IA,
+      digits = 3)
+
+# Conduct CVPAT model comparison
+compare_results <- assess_cvpat_compare(established_model = established_model,
+                                        alternative_model = alternative_model,
+                                        testtype = "two.sided",
+                                        nboot = 2000,
+                                        technique = predict_DA,
+                                        seed = 123,
+                                        noFolds = 10,
+                                        reps = 10,
+                                        cores = NULL)
+
+print(compare_results,
+      digits = 3)
+

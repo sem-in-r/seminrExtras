@@ -2,7 +2,7 @@
 % Please edit documentation in R/feature_cvpat.R
 \name{assess_cvpat}
 \alias{assess_cvpat}
-\title{SEMinR function to compare CV-PAT loss of two models}
+\title{SEMinR function to compare CVPAT loss of two models}
 \usage{
 assess_cvpat(
   seminr_model,
@@ -16,7 +16,7 @@ assess_cvpat(
 )
 }
 \arguments{
-\item{seminr_model}{The SEMinR model for CV-PAT comparison.}
+\item{seminr_model}{The SEMinR model for CVPAT analysis}
 
 \item{testtype}{Either "two.sided" (default) or "greater".}
 
@@ -26,7 +26,7 @@ assess_cvpat(
 
 \item{technique}{predict_EA or predict_DA (default).}
 
-\item{noFolds}{Mumber of folds for k-fold cross validation.}
+\item{noFolds}{Number of folds for k-fold cross validation.}
 
 \item{reps}{Number of repetitions for cross validation.}
 
@@ -36,8 +36,8 @@ assess_cvpat(
 A matrix of the estimated loss and results of significance testing.
 }
 \description{
-`assess_cvpat` conducts a single model CV-PAT assessment against item average
-and linear model benchmarks.
+`assess_cvpat` conducts a single model CVPAT assessment against item average
+and linear model prediction benchmarks.
 }
 \examples{
 # Load libraries
