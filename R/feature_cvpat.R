@@ -233,6 +233,7 @@ assess_cvpat_compare <- function(established_model,
 #' @param technique predict_EA or predict_DA (default).
 #' @param noFolds Number of folds for k-fold cross validation.
 #' @param reps Number of repetitions for cross validation.
+#' @param cores Number of cores for parallelization.
 #'
 #' @return A matrix of the estimated loss and results of significance testing.
 #'
@@ -289,7 +290,8 @@ assess_cvpat <- function(seminr_model,
                          seed = 123,
                          technique = predict_DA,
                          noFolds = NULL,
-                         reps = NULL) {
+                         reps = NULL,
+                         cores = NULL) {
 
   set.seed(seed)
   # Abort if received a higher-order-model or moderated model

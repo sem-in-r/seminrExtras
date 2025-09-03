@@ -43,7 +43,7 @@ Results1 <- assess_cvpat_compare(established_model = model_one,
                                  cores = 1)
 
 # Assess the base model ----
-Results2 <- as.data.frame(assess_cvpat(model_one, technique = predict_EA, cores = 1))
+Results2 <- as.data.frame(assess_cvpat(model_one, technique = predict_EA))
 
 
 ## Output originally created using following lines
@@ -104,7 +104,9 @@ Results1 <- assess_cvpat_compare(established_model = model_one,
                                  cores = 1)
 
 # Assess the base model ----
-Results2 <- assess_cvpat(model_one, technique = predict_EA, cores = 1)
+Results2 <- assess_cvpat(model_one,
+                         technique = predict_EA,
+                         cores = 1)
 
 test_that("CVPAT_compare can handle higher_composite\n", {
   expect_null(Results1)
