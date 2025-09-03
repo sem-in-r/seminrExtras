@@ -4,9 +4,11 @@
 
 ## Chapter 6: Evaluation of the structural model
 
-# Load the SEMinR library
+# Load the SEMinR, SEMinRExtras libraries
 library(seminr)
 library(seminrExtras)
+
+# Setup the plotting environment
 oldpar <- par(mfrow = c(1,1))
 
 # Load the data
