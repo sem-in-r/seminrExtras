@@ -6,6 +6,7 @@
 
 # Load the SEMinR library
 library(seminr)
+library(MBESS)
 
 # Load the data
 corp_rep_data <- corp_rep_data
@@ -54,7 +55,7 @@ summary_boot_corp_rep_ext <- summary(boot_corp_rep_ext, alpha = 0.05)
 summary_corp_rep_ext$total_indirect_effects
 
 # Inspect indirect effects
-specific_effect_significance(boot_corp_rep_ext, from = "COMP", through = "CUSA", to = "CUSL", alpha = 0.05)
+specific_effect_significance(boot_corp_rep_ext, from = "COMP", through = "CUSA", to = "CUSL", alpha = 0.1)
 specific_effect_significance(boot_corp_rep_ext, from = "LIKE", through = "CUSA", to = "CUSL", alpha = 0.05)
 
 # Inspect the direct effects
@@ -62,6 +63,11 @@ summary_corp_rep_ext$paths
 
 # Inspect the confidence intervals for direct effects
 summary_boot_corp_rep_ext$bootstrapped_paths
+
+# Inspect the v-squared
+MBESS::upsilon(x = established_model$construct_scores[,"COMP"],
+               mediator = established_model$construct_scores[,"CUSA"],
+               dv = established_model$construct_scores[,"CUSL"] )
 
 # Calculate the sign of p1*p2*p3
 summary_corp_rep_ext$paths["LIKE", "CUSL"] *

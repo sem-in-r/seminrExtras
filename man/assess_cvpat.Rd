@@ -74,7 +74,6 @@ assess_cvpat(seminr_model = corp_rep_pls_model_ext,
              technique = predict_DA,
              noFolds = 5,
              reps = 1,
-             cores = 1)
 
 }
 \references{

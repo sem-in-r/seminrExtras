@@ -1,11 +1,12 @@
 ### Accompanying Code for:
 ## Partial Least Squares Structural Equation Modeling (PLS-SEM) Using R - A Workbook (2021)
-## Hair, J.F. (Jr), Hult, T.M., Ringle, C.M., Sarstedt, M., Danks, N.P., and Ray, S.
+## Hair, J.F. (Jr), Hult, T.M., Ringle, C.M., Sarstedt, M., Danks, N.P., and Adler, S.
 
 ## Chapter 4: Evaluation of reflective measurement models
 
 # Load the SEMinR library
 library(seminr)
+library(seminrExtras)
 
 # Load the data ----
 corp_rep_data <- corp_rep_data
@@ -63,3 +64,7 @@ sum_boot_corp_rep <- summary(boot_corp_rep, alpha = 0.10)
 
 # Extract the bootstrapped HTMT
 sum_boot_corp_rep$bootstrapped_HTMT
+
+# Calculate the congruence coefficient rc
+congruence_test(corp_rep_pls_model)
+

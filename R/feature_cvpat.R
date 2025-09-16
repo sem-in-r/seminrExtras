@@ -281,7 +281,8 @@ assess_cvpat_compare <- function(established_model,
 #'              seed = 123,
 #'              technique = predict_DA,
 #'              noFolds = 5,
-#'              reps = 1)
+#'              reps = 1,
+#               cores = 1)
 #'
 #' @export
 assess_cvpat <- function(seminr_model,

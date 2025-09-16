@@ -1,9 +1,8 @@
 ### Accompanying Code for:
-## Partial Least Squares Structural Equation Modeling (PLS-SEM) Using R - A Workbook (2021)
-## Hair, J.F. (Jr), Hult, T.M., Ringle, C.M., Sarstedt, M., Danks, N.P., and Ray, S.
+## Partial Least Squares Structural Equation Modeling (PLS-SEM) Using R - A Workbook (2025)
+## Hair, J.F. (Jr), Hult, T.M., Ringle, C.M., Sarstedt, M., Danks, N.P., and Adler, S.
 
 ## Chapter 6: Evaluation of the structural model
-
 # Load the SEMinR, SEMinRExtras libraries
 library(seminr)
 library(seminrExtras)
@@ -90,6 +89,20 @@ par(oldpar)
 # Inspect the results of PLSpredict
 sum_predict_corp_rep_ext
 
+# Conduct CVPAT assessment of the established model
+assess_results <- assess_cvpat(seminr_model = corp_rep_pls_model_ext,
+                               testtype = "greater",
+                               nboot = 2000,
+                               seed = 123,
+                               technique = predict_DA,
+                               noFolds = 10,
+                               reps = 10)
+
+print(assess_results$CVPAT_compare_LM,
+      digits = 3)
+print(assess_results$CVPAT_compare_IA,
+      digits = 3)
+
 # Conduct predictive model comparison
 # Estimate alternative models
 # Create measurement model ----
@@ -166,31 +179,15 @@ compute_itcriteria_weights(itcriteria_vector)
 established_model <- pls_model1
 alternative_model <- pls_model3
 
-# Conduct CVPAT assessment of the established model
-assess_results <- assess_cvpat(seminr_model = established_model,
-                               testtype = "two.sided",
-                               nboot = 2000,
-                               seed = 123,
-                               technique = predict_DA,
-                               noFolds = 10,
-                               reps = 10)
-
-print(assess_results$CVPAT_compare_LM,
-      digits = 3)
-print(assess_results$CVPAT_compare_IA,
-      digits = 3)
-
 # Conduct CVPAT model comparison
 compare_results <- assess_cvpat_compare(established_model = established_model,
                                         alternative_model = alternative_model,
-                                        testtype = "two.sided",
+                                        testtype = "greater",
                                         nboot = 2000,
                                         technique = predict_DA,
                                         seed = 123,
                                         noFolds = 10,
-                                        reps = 10,
-                                        cores = NULL)
+                                        reps = 10)
 
 print(compare_results,
       digits = 3)
-

@@ -2,6 +2,7 @@
 
 export(assess_cvpat)
 export(assess_cvpat_compare)
+export(congruence_test)
 importFrom(seminr,estimate_pls)
 importFrom(seminr,mean_replacement)
 importFrom(seminr,predict_DA)
