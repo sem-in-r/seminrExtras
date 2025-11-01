@@ -46,21 +46,21 @@
 #'   measurement_model = corp_rep_mm,
 #'   structural_model  = corp_rep_sm,
 #'   missing = mean_replacement,
-#'   missing_value = "-99")
+#'  missing_value = "-99")
 #'
 #' # Assess the base model ----
 #' congruence_test(seminr_model = corp_rep_pls_model,
-#'               nboot = 2000,
-#'               seed = 123,
-#'               alpha = 0.05,
-#'               threshold = 1)
+#'                 nboot = 20,
+#'                 seed = 123,
+#'                 alpha = 0.05,
+#'                 threshold = 1)
 #'
 #' @export
-congruence_test <- function(seminr_model = corp_rep_pls_model,
-                         nboot = 2000,
-                         seed = 123,
-                         alpha = 0.05,
-                         threshold = 1) {
+congruence_test <- function(seminr_model,
+                            nboot = 2000,
+                            seed = 123,
+                            alpha = 0.05,
+                            threshold = 1) {
 
   set.seed(seed)
   # Abort if received a higher-order-model or moderated model
@@ -84,26 +84,26 @@ congruence_test <- function(seminr_model = corp_rep_pls_model,
   # calc_congruence(mat = mat,
   #                 X = "COMP",
   #                 Y = "CUSA")
-  combns <- t(combn(construct_names,2))
+  combns <- t(utils::combn(construct_names,2))
   ret_array <- array(,
                      dim = list(length(construct_names),length(construct_names),nboot),
                      dimnames = list(construct_names,construct_names,1:nboot))
   for (iter in 1:nboot) {
-    it_model <- suppressMessages(seminr:::rerun(seminr_model, data = seminr_model$rawdata[sample(nrow(seminr_model$rawdata),nrow(seminr_model$rawdata), replace = TRUE),]))
-    ret_mat <- cor(it_model$construct_scores)
-    diag(ret_mat) <- seminr:::rhoC_AVE(x = it_model)[colnames(ret_mat),1]
+    it_model <- suppressMessages(seminr::rerun(seminr_model, data = seminr_model$rawdata[sample(nrow(seminr_model$rawdata),nrow(seminr_model$rawdata), replace = TRUE),]))
+    ret_mat <- stats::cor(it_model$construct_scores)
+    diag(ret_mat) <- seminr::rhoC_AVE(x = it_model)[colnames(ret_mat),1]
     ret_array[,,iter][upper.tri(ret_mat)] <- apply(combns,1,function(x) calc_congruence(ret_mat,x[1],x[2]))
   }
 
-  cor_mat <- cor(seminr_model$construct_scores)
-  diag(cor_mat) <- seminr:::rhoC_AVE(x = seminr_model)[colnames(ret_mat),1]
+  cor_mat <- stats::cor(seminr_model$construct_scores)
+  diag(cor_mat) <- seminr::rhoC_AVE(x = seminr_model)[colnames(ret_mat),1]
 
   original_matrix <- cor_mat
   original_matrix[lower.tri(original_matrix)] <- 0
   diag(original_matrix) <- 0
   original_matrix[upper.tri(original_matrix)] <- apply(combns,1,function(x) calc_congruence(cor_mat,x[1],x[2]))
 
-  # diag(original_matrix) <- seminr:::rhoC_AVE(x = seminr_model)[colnames(seminr_model$construct_scores),1]
+  # diag(original_matrix) <- seminr::rhoC_AVE(x = seminr_model)[colnames(seminr_model$construct_scores),1]
   boot_array <- ret_array
   Path <- c()
   original <- c()

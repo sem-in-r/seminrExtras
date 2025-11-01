@@ -5,7 +5,7 @@
 \title{SEMinR function to bootstrap calculate the congruence coefficient}
 \usage{
 congruence_test(
-  seminr_model = corp_rep_pls_model,
+  seminr_model,
   nboot = 2000,
   seed = 123,
   alpha = 0.05,
@@ -58,14 +58,14 @@ corp_rep_pls_model <- estimate_pls(
   measurement_model = corp_rep_mm,
   structural_model  = corp_rep_sm,
   missing = mean_replacement,
-  missing_value = "-99")
+ missing_value = "-99")
 
 # Assess the base model ----
 congruence_test(seminr_model = corp_rep_pls_model,
-              nboot = 2000,
-              seed = 123,
-              alpha = 0.05,
-              threshold = 1)
+                nboot = 20,
+                seed = 123,
+                alpha = 0.05,
+                threshold = 1)
 
 }
 \references{

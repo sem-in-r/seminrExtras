@@ -45,7 +45,60 @@ two models.
 \examples{
 # Load libraries
 library(seminr)
+library(seminrExtras)
 
+# Create measurement model ----
+corp_rep_mm_ext <- constructs(
+ composite("QUAL", multi_items("qual_", 1:8), weights = mode_B),
+ composite("PERF", multi_items("perf_", 1:5), weights = mode_B),
+ composite("CSOR", multi_items("csor_", 1:5), weights = mode_B),
+ composite("ATTR", multi_items("attr_", 1:3), weights = mode_B),
+ composite("COMP", multi_items("comp_", 1:3)),
+ composite("LIKE", multi_items("like_", 1:3))
+)
+
+alt_mm <- constructs(
+ composite("QUAL", multi_items("qual_", 1:8), weights = mode_B),
+ composite("PERF", multi_items("perf_", 1:5), weights = mode_B),
+ composite("CSOR", multi_items("csor_", 1:5), weights = mode_B),
+ composite("COMP", multi_items("comp_", 1:3)),
+ composite("LIKE", multi_items("like_", 1:3))
+)
+
+# Create structural model ----
+
+corp_rep_sm_ext <- relationships(
+ paths(from = c("QUAL", "PERF", "CSOR", "ATTR"), to = c("COMP", "LIKE"))
+)
+alt_sm <- relationships(
+ paths(from = c("QUAL", "PERF", "CSOR"), to = c("COMP", "LIKE"))
+)
+
+# Estimate the model ----
+established_model <- estimate_pls(
+ data = corp_rep_data,
+ measurement_model = corp_rep_mm_ext,
+ structural_model  = corp_rep_sm_ext,
+ missing = mean_replacement,
+ missing_value = "-99")
+
+alternative_model <- estimate_pls(
+ data = corp_rep_data,
+ measurement_model = alt_mm,
+ structural_model  = alt_sm,
+ missing = mean_replacement,
+ missing_value = "-99")
+
+# Function to compare the Loss of two models
+assess_cvpat_compare(established_model,
+                    alternative_model ,
+                    testtype = "two.sided",
+                    nboot = 20,
+                    seed = 123,
+                    technique = predict_DA,
+                    noFolds = 5,
+                    reps = 1,
+                    cores = 1)
 
 }
 \references{

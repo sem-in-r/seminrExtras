@@ -7,14 +7,14 @@
 # Download and install the SEMinR package
 # You only need to do this once to equip RStudio on your computer with SEMinR
 # and you will have to delete the '#' and then execute the below line of code:
-# install.packages("seminr")
-# install.packages("seminrExtras")
+install.packages("seminr")
+install.packages("seminrExtras")
 
 # Make the SEMinR library ready to use
 # You must do this every time you restart RStudio and wish to use SEMinR
 # and you will have to delete the '#' and then execute the below line of code:
-# library(seminr)
-# library(seminrExtras)
+library(seminr)
+library(seminrExtras)
 
 # Load the corporate reputation data
 corp_rep_data <- corp_rep_data
