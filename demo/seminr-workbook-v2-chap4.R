@@ -109,5 +109,5 @@ sum_boot_corp_rep$bootstrapped_HTMT
 
 # Calculate the congruence coefficient rc
 # must use the following line of code to load the development version of seminrExtras
-# devtools::install_github(repo = "https://github.com/sem-in-r/seminrExtras.git", ref = "textbook")
+# devtools::install_github(repo = "https://github.com/sem-in-r/seminrExtras.git", ref = "version_1_0_0")
 congruence_test(corp_rep_pls_model, alpha = 0.10)$results
