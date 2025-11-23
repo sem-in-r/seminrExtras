@@ -1,11 +1,12 @@
 ### Accompanying Code for:
-## Partial Least Squares Structural Equation Modeling (PLS-SEM) Using R - A Workbook (2021)
-## Hair, J.F. (Jr), Hult, T.M., Ringle, C.M., Sarstedt, M., Danks, N.P., and Ray, S.
+## Partial Least Squares Structural Equation Modeling (PLS-SEM) Using R - A Workbook 2nd Ed. (2026)
+## Hair, J.F. (Jr), Hult, T.M., Ringle, C.M., Sarstedt, M., Danks, N.P., and Adler, S.
 
 ## Chapter 5: Evaluation of formative measurement models
 
-# Load the SEMinR library
+# Load the SEMinR and seminrExtras libraries
 library(seminr)
+library(seminrExtras)
 
 # Load the corporate repuation data
 corp_rep_data <- corp_rep_data
@@ -45,7 +46,8 @@ summary_corp_rep_ext$iterations
 
 # Bootstrap the model
 boot_corp_rep_ext <- bootstrap_model(seminr_model = corp_rep_pls_model_ext,
-                                     nboot = 1000)
+                                     nboot = 1000,
+                                     seed = 123)
 
 # Store the summary of the bootstrapped model
 sum_boot_corp_rep_ext <- summary(boot_corp_rep_ext, alpha = 0.10)
@@ -187,3 +189,22 @@ sum_boot_corp_rep_ext$bootstrapped_weights
 
 # Inspect the bootstrapping results for the outer loadings
 sum_boot_corp_rep_ext$bootstrapped_loadings
+
+# Helper function to calculate the p-value for a bootstrap distribution
+p_value <- function(boot_object, from, to, greater_than_zero = TRUE) {
+  if (greater_than_zero) {
+    p_val <- mean(boot_object[from, to, ] < 0)
+  }
+  else {
+    p_val <- mean(boot_object[from, to, ] > 0)
+  }
+  return(p_val)
+}
+
+# Calculate the p-value for the indicator weight from qual_3 to QUAL
+p_value(
+  boot_object = boot_corp_rep_ext$boot_weights,
+  from = "qual_3",
+  to = "QUAL",
+  greater_than_zero = TRUE
+)

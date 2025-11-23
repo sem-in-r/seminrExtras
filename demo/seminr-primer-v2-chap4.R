@@ -1,17 +1,14 @@
 ### Accompanying Code for:
-## Partial Least Squares Structural Equation Modeling (PLS-SEM) Using R - A Workbook (2021)
+## Partial Least Squares Structural Equation Modeling (PLS-SEM) Using R - A Workbook (2026)
 ## Hair, J.F. (Jr), Hult, T.M., Ringle, C.M., Sarstedt, M., Danks, N.P., and Adler, S.
 
 ## Chapter 4: Evaluation of reflective measurement models
-
-# Load the SEMinR library
-# remember to install.packages("psych") if you have not already done so
+# This analysis requires the psych and paran packages (refer Section 2.6)
+# Load the SEMinR libraries
 library(seminr)
 library(seminrExtras)
-library(psych)
 
 # Load the data ----
-# hint: try changing corp_rep_data to corp_rep_data2 and compare results
 corp_rep_data <- corp_rep_data
 
 # Create measurement model ----
@@ -42,25 +39,26 @@ summary_corp_rep$iterations
 
 # Evaluate the undimensionality of reflective constructs
 ## Set up the list of reflective constructs
-cons.list <- list(COMP = multi_items("comp_", 1:3),
-                  LIKE = multi_items("like_", 1:3),
-                  CUSL = multi_items("cusl_", 1:3))
+con.list <- list(COMP = multi_items("comp_", 1:3),
+                 LIKE = multi_items("like_", 1:3),
+                 CUSL = multi_items("cusl_", 1:3))
 
-## Set up the data for dimensionality assessment
-dim_data <- scale(corp_rep_data[,unlist(cons.list)])
+## Collect the cleaned data from the seminr_model object
+## (The missing values have already been treated/imputed)
+dim_data <- corp_rep_pls_model$data
 
-## Set up helper functions
-est_dim <- function(construct) {
-  ret <- iclust(corp_rep_data[,construct],
-                nclusters = 1)$beta
+## Set up helper functions (using psych package)
+est_dim <- function(construct, data) {
+  ret <- psych::iclust(data[,construct],
+                       nclusters = 1)$beta
 }
 
 ## Test for unidimensionality
-test_undim <- function(cons.list, sum.model) {
-  dims_results <- lapply(cons.list, est_dim)
+test_unidim <- function(con.list, sum.model, dim_data) {
+  dims_results <- lapply(con.list, function(x) est_dim(x, dim_data))
   dims_results <- unlist(dims_results)
-  names(dims_results) <- names(cons.list)
-  alphas <- sum.model$reliability[names(cons.list),"alpha"]
+  names(dims_results) <- names(con.list)
+  alphas <- sum.model$reliability[names(con.list),"alpha"]
   dims_results <- data.frame(
     "Cronbach Alpha" = alphas,
     "Revelle Beta" = dims_results)
@@ -68,16 +66,32 @@ test_undim <- function(cons.list, sum.model) {
 }
 
 ## Principal Components Analysis Test
-PCA_results <- matrix(c(stats::prcomp(dim_data[,cons.list[["COMP"]]])$sdev,
-                        stats::prcomp(dim_data[,cons.list[["CUSL"]]])$sdev,
-                        stats::prcomp(dim_data[,cons.list[["LIKE"]]])$sdev),
+PCA_results <- matrix(c(base::eigen(cor(dim_data[,con.list[["COMP"]]]))$values,
+                        base::eigen(cor(dim_data[,con.list[["CUSL"]]]))$values,
+                        base::eigen(cor(dim_data[,con.list[["LIKE"]]]))$values),
                         nrow = 3, byrow = TRUE,
                         dimnames = list(c("COMP", "CUSL", "LIKE"),
-                                        c("PC1 SD", "PC2 SD", "PC3 SD")))
+                                        c("PC1 EV", "PC2 EV", "PC3 EV")))
+
+# Parallel analysis (using paran package)
+paran_comp <- paran::paran(dim_data[,con.list[["COMP"]]],
+                           iterations=1000,
+                           centile=95)
+paran_cusl <- paran::paran(dim_data[,con.list[["CUSL"]]],
+                           iterations=1000,
+                           centile=95)
+paran_like <- paran::paran(dim_data[,con.list[["LIKE"]]],
+                           iterations=1000,
+                           centile=95)
+para_results <- matrix(c(paran_comp$AdjEv,paran_cusl$AdjEv,paran_like$AdjEv),
+                       nrow = 3, byrow = TRUE,
+                       dimnames = list(c("COMP", "CUSL", "LIKE"),
+                                      c("PC1 EV", "PC2 EV", "PC3 EV")))
 
 ## Display the results of the unidimensionality tests
-round(test_undim(cons.list, summary_corp_rep),2)
+round(test_unidim(con.list, summary_corp_rep, dim_data),2)
 round(PCA_results,2)
+round(para_results,2)
 
 # Inspect the outer loadings
 summary_corp_rep$loadings
@@ -90,9 +104,6 @@ summary_corp_rep$reliability
 
 # Plot the reliabilities of constructs
 plot(summary_corp_rep$reliability)
-
-# Table of the FL criteria
-summary_corp_rep$validity$fl_criteria
 
 # HTMT Ratio
 summary_corp_rep$validity$htmt
@@ -108,6 +119,5 @@ sum_boot_corp_rep <- summary(boot_corp_rep, alpha = 0.10)
 sum_boot_corp_rep$bootstrapped_HTMT
 
 # Calculate the congruence coefficient rc
-# must use the following line of code to load the development version of seminrExtras
-# devtools::install_github(repo = "https://github.com/sem-in-r/seminrExtras.git", ref = "version_1_0_0")
 congruence_test(corp_rep_pls_model, alpha = 0.10)$results
+
