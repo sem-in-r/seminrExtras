@@ -68,10 +68,10 @@ estimate_pls(data = corp_rep_data,
 
 ## Plotting a model for debugging
 # Plot the measurement model
-plot(error_mm)
+plot(error_mm, theme = thm)
 
 # Plot the structural model
-plot(simple_sm)
+plot(simple_sm, theme = thm)
 
 # Summarize the model results
 summary_simple_corp_rep <- summary(corp_rep_simple_model)
