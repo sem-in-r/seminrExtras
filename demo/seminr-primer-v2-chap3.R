@@ -49,10 +49,10 @@ corp_rep_simple <- estimate_pls(data = corp_rep_data,
 # Specify the measurement model with a bug in the spelling of the construct
 # `COMP`. Here it is `COP` and in the SM it is `COMP`.
 error_mm <- constructs(
-  reflective("COP", multi_items("comp_", 1:3)),
-  reflective("LIKE", multi_items("like_", 1:3)),
-  reflective("CUSA", single_item("cusa")),
-  reflective("CUSL", multi_items("cusl_", 1:3)))
+  composite("COP", multi_items("comp_", 1:3)),
+  composite("LIKE", multi_items("like_", 1:3)),
+  composite("CUSL", multi_items("cusl_", 1:3)),
+  composite("CUSA", single_item("cusa")))
 
 # Specify the structural model.
 simple_sm <- relationships(
@@ -68,10 +68,10 @@ estimate_pls(data = corp_rep_data,
 
 ## Plotting a model for debugging
 # Plot the measurement model
-plot(error_mm)
+plot(error_mm, theme = thm)
 
 # Plot the structural model
-plot(simple_sm)
+plot(simple_sm, theme = thm)
 
 # Summarize the model results
 summary_simple_corp_rep <- summary(corp_rep_simple_model)
