@@ -13,7 +13,7 @@ install.packages(pkgs = "seminr")
 library(seminr)
 
 # Install the textbook packages from CRAN
-install.packages(pkgs = c("learnr","paran", "psych", "seminrExtras"))
+install.packages(pkgs = c("learnr", "paran", "psych", "seminrExtras"))
 
 # Load the learnr package into the environment
 library(learnr)
@@ -27,9 +27,8 @@ run_tutorial()
 # Check all vignettes available in R
 vignette()
 
-# Load the SEMinR vignette
-library(seminr)
-vignette("SEMinR")
+# Load the vignette for the reshape() function from the stats package
+vignette("reshape", "stats")
 
 # Check all demos available in R
 demo()

@@ -61,9 +61,6 @@ summary_corp_rep_ext$loadings^2
 # Inspect the internal consistency and reliability
 summary_corp_rep_ext$reliability
 
-# Table of the FL criteria
-summary_corp_rep_ext$validity$fl_criteria
-
 # HTMT Ratio
 summary_corp_rep_ext$validity$htmt
 

@@ -17,6 +17,9 @@ knitr::opts_chunk$set(
 library(seminr)
 library(seminrExtras)
 
+# set the theme for plotting output
+seminr_theme_set(seminr_theme_old())
+
 # Create measurement model ----
 corp_rep_mm_ext <- constructs(
   composite("QUAL", multi_items("qual_", 1:8), weights = mode_B),
@@ -71,8 +74,10 @@ competing_model <- estimate_pls(
 
 ```
 
-SEMinR (Ray & Danks) is a domaign specific language for modeling and estimating structural equation models. 
+SEMinR (Ray & Danks) is a domain specific language for modeling and estimating structural equation models. 
 This package serves to provide additional extra methods and functions that can be used to analyze PLS-SEM models. 
+
+SEMinRExtras provides advanced SEM tools which are compatible with SEMinR. In the current version, we provide an implementation of the Cross-Validated Predictive Ability Test (CV-PAT) as proposed by Liengaard et al. (2021) and Sharma et al. (2022).
 
 New features implemented with this package
 CVPAT 
@@ -202,8 +207,3 @@ print(assess_results$CVPAT_compare_IA,
 - Sharma, P. N., Liengaard, B. D., Hair, J. F., Sarstedt, M., & Ringle, C. M. (2022). Predictive model assessment and selection in composite-based modeling using PLS-SEM: extensions and guidelines for using CVPAT. European journal of marketing, 57(6), 1662-1677.
 - Liengaard, B. D., Sharma, P. N., Hult, G. T. M., Jensen, M. B., Sarstedt, M., Hair, J. F., & Ringle, C. M. (2021). Prediction: coveted,yet forsaken? Introducing a cross‐validated predictive ability test in partial least squares path modeling. Decision Sciences, 52(2), 362-392.
  - Ray, S., Danks, N.P., Calero Valdez, A. (2024) SEMinR: Domain-specific language for building, estimating, and visualizing structural equation models in R.
- 
-Also a quote using `>`:
-
-> "He who gives up [code] safety for [code] speed deserves neither."
-([via](https://twitter.com/hadleywickham/status/504368538874703872))
