@@ -1,16 +1,16 @@
-### Accompanying Code for:
-## Partial Least Squares Structural Equation Modeling (PLS-SEM) Using R - A Workbook 2nd Ed (2026)
+#### Accompanying Code for:
+## Partial Least Squares Structural Equation Modeling (PLS-SEM) Using R (Second Edition) - A Workbook (2026)
 ## Hair, J.F. (Jr), Hult, T.M., Ringle, C.M., Sarstedt, M., Danks, N.P., and Adler, S.
 
 ## Chapter 3: Introduction to SEMinR
 
 # Download and install the SEMinR package
-# You only need to do this once to equip RStudio on your computer with SEMinR
-install.packages("seminr")
-install.packages("seminrExtras")
+# You only need to do this once to equip RStudio with SEMinR and seminrExtras
+#install.packages("seminr") # remove the # to execute this line of code
+#install.packages("seminrExtras") # remove the # to execute this line of code
 
 # Make the SEMinR library ready to use
-# You must do this every time you restart RStudio and wish to use SEMinR
+# You must do this every time you restart RStudio and wish to use packages
 library(seminr)
 library(seminrExtras)
 
@@ -68,10 +68,10 @@ estimate_pls(data = corp_rep_data,
 
 ## Plotting a model for debugging
 # Plot the measurement model
-plot(error_mm, theme = thm)
+plot(error_mm, theme = seminr_theme_academic())
 
 # Plot the structural model
-plot(simple_sm, theme = thm)
+plot(simple_sm, theme = seminr_theme_academic())
 
 # Summarize the model results
 summary_simple_corp_rep <- summary(corp_rep_simple_model)

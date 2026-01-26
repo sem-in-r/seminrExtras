@@ -9,7 +9,7 @@
 #' @param nboot The number of bootstrap subsamples to execute (defaults to 2000).
 #' @param seed The seed for reproducibility (defaults to 123).
 #' @param technique predict_EA or predict_DA (default).
-#' @param noFolds Mumber of folds for k-fold cross validation.
+#' @param noFolds Number of folds for k-fold cross validation.
 #' @param reps Number of repetitions for cross validation.
 #' @param cores Number of cores for parallelization.
 #'
@@ -216,9 +216,9 @@ assess_cvpat_compare <- function(established_model,
   rownames(mat_out) <- rownames(mat_one)
   rownames(mat_out)[nrow(mat_one)] <- "Overall"
   mat_out <- mat_out[,c(1,2,3,6,7)]
-  comment(mat_out) <- "CVPAT as per Sharma et al. (2023).
-  Both models under comparison have identical endoogenous constructs with identical measurement models.
-  Purely exogenous constructs can be differ in regards to their relationships with both nomological
+  comment(mat_out) <- "CVPAT as per Sharma, Liengaard, Hair, Sarstedt, & Ringle, (2023).
+  Both models under comparison have identical endogenous constructs with identical measurement models.
+  Purely exogenous constructs can differ in regards to their relationships with both nomological
   partners and measurement indicators."
   colnames(mat_out) <- c("Base Model Loss", "Alt Model Loss", "Diff", "Boot T value", "Boot P Value"    )
   class(mat_out) <- append(class(mat_out), c("table_output"))

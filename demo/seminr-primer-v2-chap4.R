@@ -4,7 +4,7 @@
 
 ## Chapter 4: Evaluation of reflective measurement models
 # This analysis requires the psych and paran packages (refer Section 2.6)
-# Load the SEMinR libraries
+# Load the SEMinR and seminrExtras libraries
 library(seminr)
 library(seminrExtras)
 
@@ -105,7 +105,7 @@ summary_corp_rep$reliability
 # Plot the reliabilities of constructs
 plot(summary_corp_rep$reliability)
 
-# HTMT Ratio
+# HTMT criterion
 summary_corp_rep$validity$htmt
 
 # Bootstrap the model

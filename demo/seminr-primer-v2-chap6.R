@@ -69,26 +69,6 @@ summary_corp_rep_ext$paths
 # Inspect the effect sizes
 summary_corp_rep_ext$fSquare
 
-# Generate the model predictions ----
-predict_corp_rep_ext <- predict_pls(
-  model = corp_rep_pls_model_ext,
-  technique = predict_DA,
-  noFolds = 10,
-  reps = 10)
-
-# Summarize the prediction results
-sum_predict_corp_rep_ext <- summary(predict_corp_rep_ext)
-
-# Analyze the distribution of prediction error
-par(mfrow=c(1,3))
-plot(sum_predict_corp_rep_ext, indicator = "cusl_1")
-plot(sum_predict_corp_rep_ext, indicator = "cusl_2")
-plot(sum_predict_corp_rep_ext, indicator = "cusl_3")
-par(oldpar)
-
-# Inspect the results of PLSpredict
-sum_predict_corp_rep_ext
-
 # Conduct CVPAT assessment of the established model
 assess_results <- assess_cvpat(seminr_model = corp_rep_pls_model_ext,
                                testtype = "greater",

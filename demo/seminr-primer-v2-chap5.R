@@ -186,22 +186,3 @@ sum_boot_corp_rep_ext$bootstrapped_weights
 
 # Inspect the bootstrapping results for the outer loadings
 sum_boot_corp_rep_ext$bootstrapped_loadings
-
-# Helper function to calculate the p-value for a bootstrap distribution
-p_value <- function(boot_object, from, to, greater_than_zero = TRUE) {
-  if (greater_than_zero) {
-    p_val <- mean(boot_object[from, to, ] < 0)
-  }
-  else {
-    p_val <- mean(boot_object[from, to, ] > 0)
-  }
-  return(p_val)
-}
-
-# Calculate the p-value for the indicator weight from qual_3 to QUAL
-p_value(
-  boot_object = boot_corp_rep_ext$boot_weights,
-  from = "qual_3",
-  to = "QUAL",
-  greater_than_zero = TRUE
-)

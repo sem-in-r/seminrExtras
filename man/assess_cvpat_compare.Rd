@@ -29,7 +29,7 @@ assess_cvpat_compare(
 
 \item{technique}{predict_EA or predict_DA (default).}
 
-\item{noFolds}{Mumber of folds for k-fold cross validation.}
+\item{noFolds}{Number of folds for k-fold cross validation.}
 
 \item{reps}{Number of repetitions for cross validation.}
 
