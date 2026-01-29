@@ -73,15 +73,23 @@ summary_corp_rep_ext$paths
 # Inspect the confidence intervals for direct effects
 summary_boot_corp_rep_ext$bootstrapped_paths
 
-# Calculate the sign of p1*p2*p3
+# Calculate the sign of p1*p2*p3 for LIKE->CUSA->CUSL
 summary_corp_rep_ext$paths["LIKE", "CUSL"] *
   summary_corp_rep_ext$paths["LIKE","CUSA"] *
   summary_corp_rep_ext$paths["CUSA","CUSL"]
 
-# Calculate the effect size v ----
+# Calculate the sign of p1*p2*p3 for COMP->CUSA->CUSL
+summary_corp_rep_ext$paths["COMP", "CUSL"] *
+  summary_corp_rep_ext$paths["COMP","CUSA"] *
+  summary_corp_rep_ext$paths["CUSA","CUSL"]
+
+# Calculate the effect size v for LIKE->CUSA->CUSL
 summary_corp_rep_ext$paths["LIKE","CUSA"]^2 *
   summary_corp_rep_ext$paths["CUSA","CUSL"]^2
 
+# Calculate the effect size v for COMP->CUSA->CUSL
+summary_corp_rep_ext$paths["COMP","CUSA"]^2 *
+  summary_corp_rep_ext$paths["CUSA","CUSL"]^2
 
 # Conduct a moderated mediation analysis ----
 # Create the measurement model ----
