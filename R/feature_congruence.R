@@ -32,6 +32,8 @@
 #' @return A list containing a matrix of congruence coefficients and
 #'   significance test results for all construct pairs.
 #'
+#' @seealso [assess_cvpat()] and [assess_cvpat_compare()] for predictive validity testing
+#'
 #' @references Franke, G. R., Sarstedt, M., & Danks, N. P. (2021). Assessing
 #' measure congruence in nomological networks. Journal of Business Research,
 #' 130, 318-334.
