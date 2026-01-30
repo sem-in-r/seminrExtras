@@ -63,19 +63,12 @@ congruence_test <- function(seminr_model,
                             threshold = 1) {
 
   set.seed(seed)
-  # Abort if received a higher-order-model or moderated model
-  if (!any(class(seminr_model) == "seminr_model")) {
-    message("This function only works with SEMinR models. ")
-    return()
+
+  # Validate model using shared helper
+  if (!validate_seminr_model(seminr_model, "congruence_test")) {
+    return(NULL)
   }
-  # if (!is.null(seminr_model$hoc)) {
-  #   message("There is no published solution for applying PLSpredict to higher-order-models")
-  #   return()
-  # }
-  # if (!is.null(seminr_model$interaction)) {
-  #   message("There is no published solution for applying PLSpredict to moderated models")
-  #   return()
-  # }
+
   construct_names <- colnames(seminr_model$construct_scores)
 
   calc_congruence <- function(mat,X,Y) {

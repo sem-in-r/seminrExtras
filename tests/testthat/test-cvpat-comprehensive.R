@@ -119,17 +119,17 @@ test_that("assess_cvpat differs with different seeds", {
 # ============================================================================
 
 test_that("assess_cvpat rejects non-seminr model objects", {
-  expect_message(
+  expect_warning(
     result <- assess_cvpat(list(not = "a_model"), nboot = 50, cores = 1),
-    "This function only works with SEMinR models"
+    "only works with SEMinR models"
   )
   expect_null(result)
 })
 
 test_that("assess_cvpat rejects data frame input", {
-  expect_message(
+  expect_warning(
     result <- assess_cvpat(data.frame(x = 1:10), nboot = 50, cores = 1),
-    "This function only works with SEMinR models"
+    "only works with SEMinR models"
   )
   expect_null(result)
 })

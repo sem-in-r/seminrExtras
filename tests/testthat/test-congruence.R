@@ -131,25 +131,25 @@ test_that("congruence_test works with custom threshold", {
 # ============================================================================
 
 test_that("congruence_test rejects non-seminr model objects", {
-  expect_message(
+  expect_warning(
     result <- congruence_test(list(not = "a_model"), nboot = 50),
-    "This function only works with SEMinR models"
+    "only works with SEMinR models"
   )
   expect_null(result)
 })
 
 test_that("congruence_test rejects NULL input", {
-  expect_message(
+  expect_warning(
     result <- congruence_test(NULL, nboot = 50),
-    "This function only works with SEMinR models"
+    "only works with SEMinR models"
   )
   expect_null(result)
 })
 
 test_that("congruence_test rejects data frame input", {
-  expect_message(
+  expect_warning(
     result <- congruence_test(data.frame(x = 1:10), nboot = 50),
-    "This function only works with SEMinR models"
+    "only works with SEMinR models"
   )
   expect_null(result)
 })
