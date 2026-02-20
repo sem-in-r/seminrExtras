@@ -171,3 +171,13 @@ compare_results <- assess_cvpat_compare(established_model = established_model,
 
 print(compare_results,
       digits = 3)
+
+# Calculate overfit ratio ----
+predict_established <- summary(predict_pls(model = established_model))
+predict_alternative <- summary(predict_pls(model = alternative_model))
+
+# Overfit ratio for established model
+predict_established$construct_error
+
+# Overfit ratio for alternative model
+predict_alternative$construct_error
