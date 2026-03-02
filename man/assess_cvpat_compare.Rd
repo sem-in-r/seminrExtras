@@ -2,7 +2,7 @@
 % Please edit documentation in R/feature_cvpat.R
 \name{assess_cvpat_compare}
 \alias{assess_cvpat_compare}
-\title{SEMinR function to compare CV-PAT loss of two models}
+\title{SEMinR function to compare CVPAT loss of two models}
 \usage{
 assess_cvpat_compare(
   established_model,
@@ -17,9 +17,9 @@ assess_cvpat_compare(
 )
 }
 \arguments{
-\item{established_model}{The base seminr model for CV-PAT comparison.}
+\item{established_model}{The base seminr model for CVPAT comparison.}
 
-\item{alternative_model}{The alternate seminr model for CV-PAT comparison.}
+\item{alternative_model}{The alternate seminr model for CVPAT comparison.}
 
 \item{testtype}{Either "two.sided" (default) or "greater".}
 
@@ -29,7 +29,7 @@ assess_cvpat_compare(
 
 \item{technique}{predict_EA or predict_DA (default).}
 
-\item{noFolds}{Mumber of folds for k-fold cross validation.}
+\item{noFolds}{Number of folds for k-fold cross validation.}
 
 \item{reps}{Number of repetitions for cross validation.}
 
@@ -39,13 +39,66 @@ assess_cvpat_compare(
 A matrix of the estimated loss and results of significance testing.
 }
 \description{
-`assess_cvpat_compare` conducts a CV-PAT significance test of loss between
+`assess_cvpat_compare` conducts a CVPAT significance test of loss between
 two models.
 }
 \examples{
 # Load libraries
 library(seminr)
+library(seminrExtras)
 
+# Create measurement model ----
+corp_rep_mm_ext <- constructs(
+ composite("QUAL", multi_items("qual_", 1:8), weights = mode_B),
+ composite("PERF", multi_items("perf_", 1:5), weights = mode_B),
+ composite("CSOR", multi_items("csor_", 1:5), weights = mode_B),
+ composite("ATTR", multi_items("attr_", 1:3), weights = mode_B),
+ composite("COMP", multi_items("comp_", 1:3)),
+ composite("LIKE", multi_items("like_", 1:3))
+)
+
+alt_mm <- constructs(
+ composite("QUAL", multi_items("qual_", 1:8), weights = mode_B),
+ composite("PERF", multi_items("perf_", 1:5), weights = mode_B),
+ composite("CSOR", multi_items("csor_", 1:5), weights = mode_B),
+ composite("COMP", multi_items("comp_", 1:3)),
+ composite("LIKE", multi_items("like_", 1:3))
+)
+
+# Create structural model ----
+
+corp_rep_sm_ext <- relationships(
+ paths(from = c("QUAL", "PERF", "CSOR", "ATTR"), to = c("COMP", "LIKE"))
+)
+alt_sm <- relationships(
+ paths(from = c("QUAL", "PERF", "CSOR"), to = c("COMP", "LIKE"))
+)
+
+# Estimate the model ----
+established_model <- estimate_pls(
+ data = corp_rep_data,
+ measurement_model = corp_rep_mm_ext,
+ structural_model  = corp_rep_sm_ext,
+ missing = mean_replacement,
+ missing_value = "-99")
+
+alternative_model <- estimate_pls(
+ data = corp_rep_data,
+ measurement_model = alt_mm,
+ structural_model  = alt_sm,
+ missing = mean_replacement,
+ missing_value = "-99")
+
+# Function to compare the Loss of two models
+assess_cvpat_compare(established_model,
+                    alternative_model ,
+                    testtype = "two.sided",
+                    nboot = 20,
+                    seed = 123,
+                    technique = predict_DA,
+                    noFolds = 5,
+                    reps = 1,
+                    cores = 1)
 
 }
 \references{

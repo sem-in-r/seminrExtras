@@ -1,13 +1,29 @@
 ---
-title: "seminrExtras"
-author: "Nicholas .P. Danks and Soumya Ray"
-date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{seminrExtras}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+output: github_document
+always_allow_html: true
 ---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, echo = FALSE, warning=FALSE, message=FALSE}
+library(seminr)
+library(seminrExtras)
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "README-"
+)
+```
+
+```{r echo=FALSE, out.width='25%'}
+knitr::include_graphics('vignettes/SEMinR_logo.jpg')
+```
+
+<!-- ![Build Status](https://travis-ci.org/sem-in-r/seminr.svg?branch=master) -->
+[![CRAN_Status_Badge](https://www.r-pkg.org/badges/version/seminrExtras)](https://cran.r-project.org/package=seminrExtras)
+[![metacran downloads](https://cranlogs.r-pkg.org/badges/grand-total/seminrExtras)](https://cran.r-project.org/package=seminrExtras)
+
+SEMinRExtras adds functionality to the SEMinRpackage. 
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
@@ -100,16 +116,32 @@ In order to access the demo files for the textbook, you can run the ```demo()```
 - seminr-primer-v2-chap7 
 - seminr-primer-v2-chap8
 
-E.g. ```demo("seminr-pls-cvpat", package = "seminrExtras")```
+E.g. ```demo("seminr-help-debugging", package = "seminrExtras")```
 
 ## The Example model: Corporate Reputation
 
 We are applying the CVPAT process to the corporate reputation example bundled with SEMinR. Since we will be comparing two models, we will first estimate and plot both models. Below you will find the competing and established models which will be compared. 
 
-```{r, fig.show='hold'}
-plot(established_model)
-plot(competing_model)
+```{r include = FALSE, eval = FALSE}
+pl1 <- plot(established_model)
+pl2 <- plot(competing_model)
+save_plot("vignettes/est_mod.png", width = 2400, plot = pl1)
+save_plot("vignettes/comp_mod.png", width = 2400, plot = pl2)
+
 ```
+
+### Established Model
+```{r echo=FALSE, out.width='75%'}
+knitr::include_graphics('vignettes/est_mod.png')
+```
+
+
+### Competing Model
+```{r echo=FALSE, out.width='75%'}
+knitr::include_graphics('vignettes/comp_mod.png')
+
+```
+
 
 ## Example
 ```{r, eval=FALSE, echo=TRUE}

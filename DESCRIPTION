@@ -1,13 +1,13 @@
 Package: seminrExtras
 Type: Package
 Title: Conduct Additional Modeling and Analysis for 'seminr' 
-Version: 0.1.0
-Authors@R: c(person("Soumya", "Ray", email = "soumya.ray@gmail.com", role = c("aut", "ths")),
-             person("Nicholas Patrick", "Danks", email = "nicholasdanks@hotmail.com", role = c("aut","cre"))
+Version: 0.9.0
+Authors@R: c(person("Nicholas Patrick", "Danks", email = "nicholasdanks@hotmail.com", role = c("aut","cre")),
+             person("Soumya", "Ray", email = "soumya.ray@gmail.com", role = c("aut", "ths"))
             )
 Description: Supplemental functions for estimating and analysing structural equation models including Cross Validated Prediction and Testing (CVPAT, Liengaard et al., 2021 <doi:10.1111/deci.12445>).
 Imports:
-    seminr (>= 2.3.0),
+    seminr (>= 2.4.0),
     stats
 License: GPL-3
 Encoding: UTF-8
@@ -15,7 +15,10 @@ LazyData: true
 Suggests: 
     testthat (>= 3.0.0),
     knitr, 
-    rmarkdown
+    rmarkdown,
+    psych,
+    learnr,
+    paran
 Config/testthat/edition: 3
 URL: https://github.com/sem-in-r/seminr
 BugReports: https://github.com/sem-in-r/seminr/issues
