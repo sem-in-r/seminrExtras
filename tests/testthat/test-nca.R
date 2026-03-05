@@ -212,6 +212,104 @@ test_that("assess_nca works with higher-order construct model", {
 # Edge case: different dataset
 # ============================================================================
 
+# ============================================================================
+# NCA-ESSE tests
+# ============================================================================
+
+# Pre-compute ESSE result once (no permutation tests for speed)
+esse_result <- assess_nca_esse(pls_model,
+                                target = "Satisfaction",
+                                thresholds = seq(0, 0.05, by = 0.01),
+                                seed = 123)
+
+test_that("assess_nca_esse returns correct S3 class and elements", {
+  expect_s3_class(esse_result, "nca_esse")
+  expected_names <- c("effect_sizes", "benchmark", "delta", "significance",
+                      "pls_model", "target", "predictors", "thresholds",
+                      "ceiling", "n_obs")
+  expect_true(all(expected_names %in% names(esse_result)))
+})
+
+test_that("ESSE effect_sizes matrix has correct dimensions", {
+  expect_equal(nrow(esse_result$effect_sizes), 6)  # 0, 1, 2, 3, 4, 5%
+  expect_equal(ncol(esse_result$effect_sizes), 2)  # Image, Value
+  expect_equal(colnames(esse_result$effect_sizes), c("Image", "Value"))
+})
+
+test_that("ESSE benchmark matches analytical formula d = t(1 - ln(t))", {
+  thresholds <- esse_result$thresholds
+  expected <- ifelse(thresholds == 0, 0, thresholds * (1 - log(thresholds)))
+  expect_equal(unname(esse_result$benchmark[, 1]), expected)
+})
+
+test_that("ESSE delta equals empirical minus benchmark", {
+  expect_equal(esse_result$delta,
+               esse_result$effect_sizes - esse_result$benchmark)
+})
+
+test_that("ESSE effect sizes are non-negative", {
+  expect_true(all(esse_result$effect_sizes >= 0, na.rm = TRUE))
+})
+
+test_that("ESSE standard NCA (threshold 0%) matches assess_nca()", {
+  # Effect sizes at threshold 0% should match standard NCA
+  standard_d <- nca_result$effect_sizes[, "ce_fdh"]
+  esse_d <- esse_result$effect_sizes["0%", ]
+  expect_equal(esse_d, standard_d, tolerance = 1e-4)
+})
+
+test_that("ESSE significance is NULL when test.rep = 0", {
+  expect_null(esse_result$significance)
+})
+
+test_that("ESSE effect sizes increase with higher thresholds", {
+  # Effect sizes should generally be non-decreasing (allowing for
+  # small variations due to discrete data)
+  for (pred in esse_result$predictors) {
+    d <- esse_result$effect_sizes[, pred]
+    # At least the last threshold should be >= the first
+    expect_true(d[length(d)] >= d[1])
+  }
+})
+
+test_that("ESSE errors on invalid thresholds", {
+  expect_error(
+    assess_nca_esse(pls_model, target = "Satisfaction", thresholds = c(-0.1, 0.5)),
+    "thresholds"
+  )
+})
+
+test_that("ESSE print method runs without error", {
+  expect_output(print(esse_result), "NCA-ESSE")
+})
+
+test_that("ESSE summary returns correct class", {
+  s <- summary(esse_result)
+  expect_s3_class(s, "summary.nca_esse")
+  expect_true(all(c("tables", "target", "predictors") %in% names(s)))
+})
+
+test_that("ESSE plot sensitivity runs without error", {
+  expect_no_error(plot(esse_result, type = "sensitivity"))
+})
+
+test_that("ESSE plot difference runs without error", {
+  expect_no_error(plot(esse_result, type = "difference"))
+})
+
+test_that("ESSE warns for non-CE-FDH ceiling", {
+  expect_warning(
+    assess_nca_esse(pls_model, target = "Satisfaction",
+                     ceiling = "cr_fdh",
+                     thresholds = c(0, 0.01), seed = 123),
+    "CE-FDH"
+  )
+})
+
+# ============================================================================
+# Edge case: different dataset
+# ============================================================================
+
 test_that("assess_nca works with corp_rep_data model", {
   corp_mm <- constructs(
     composite("COMP", multi_items("comp_", 1:3)),

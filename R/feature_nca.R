@@ -480,3 +480,450 @@ plot_nca_effects <- function(nca_result, ...) {
            cex = 0.7, bty = "n")
   }
 }
+
+# =============================================================================
+# NCA-ESSE: EFFECT SIZE SENSITIVITY EXTENSION
+# =============================================================================
+# Implements the NCA-ESSE method from:
+#
+# - Becker, J.-M., Richter, N. F., Ringle, C. M., & Sarstedt, M. (2026).
+#   "Must-have, or maybe not? A sensitivity-based extension to necessary
+#   condition analysis." Journal of Business Research, 206, 115920.
+#
+# NCA-ESSE assesses the sensitivity of NCA effect sizes to extreme response
+# patterns by systematically varying the ECDF ceiling threshold. It compares
+# empirical effect size changes against a theoretical benchmark (joint uniform
+# distribution) to determine whether a necessary condition is robust.
+# =============================================================================
+
+#' Compute the joint empirical CDF for NCA: P(X <= x_i, Y >= y_i).
+#'
+#' For each observation (x_i, y_i), computes the proportion of observations
+#' with X <= x_i AND Y >= y_i. Low values indicate extreme upper-left
+#' combinations (low X, high Y) that populate the NCA ceiling zone.
+#' @noRd
+compute_ecdf_nca <- function(x, y) {
+  n <- length(x)
+  vapply(seq_len(n), function(i) {
+    sum(x <= x[i] & y >= y[i])
+  }, numeric(1)) / n
+}
+
+#' Compute theoretical CE-FDH benchmark effect size under joint uniform.
+#'
+#' Under a joint uniform distribution, the CE-FDH effect size at ECDF
+#' threshold t is d = t(1 - ln(t)). Derived from the area of the region
+#' \{(x,y) : x(1-y) <= t\} on the unit square (Becker et al., 2026).
+#' @noRd
+benchmark_effect_size <- function(t) {
+  ifelse(t == 0, 0, t * (1 - log(t)))
+}
+
+#' NCA with Effect Size Sensitivity Extension (NCA-ESSE)
+#'
+#' \code{assess_nca_esse} applies the NCA-ESSE method (Becker et al., 2026)
+#' to assess how sensitive NCA effect sizes are to extreme response patterns.
+#' It systematically varies the ECDF ceiling threshold and compares empirical
+#' effect size changes against a theoretical benchmark (joint uniform
+#' distribution) to determine whether a necessary condition is robust.
+#'
+#' The method proceeds in three steps:
+#' \enumerate{
+#'   \item Run standard NCA (threshold 0\%) to identify potential necessary
+#'     conditions
+#'   \item Apply NCA-ESSE: vary the ECDF threshold from 0\% to a maximum
+#'     (default 5\%), computing CE-FDH effect sizes at each level and
+#'     comparing against the uniform benchmark
+#'   \item (Optional) Select a threshold where the empirical effect size
+#'     meaningfully exceeds the benchmark for further evaluation
+#' }
+#'
+#' At each threshold \code{t}, observations whose joint ECDF_NCA value
+#' (P(X <= x, Y >= y)) is at most \code{t} are treated as extreme and
+#' excluded before computing the CE-FDH ceiling. The uniform benchmark
+#' d = t(1 - ln(t)) gives the expected effect size if no necessity exists.
+#'
+#' @param seminr_model An estimated SEMinR model from \code{estimate_pls()}.
+#' @param target Name of the endogenous (outcome) construct.
+#' @param predictors Optional character vector of predictor construct names.
+#'   If \code{NULL} (default), auto-detected from the structural model.
+#' @param thresholds Numeric vector of ECDF thresholds to evaluate
+#'   (default \code{seq(0, 0.05, by = 0.005)}). Values must be in [0, 1].
+#' @param ceiling Ceiling technique (default \code{"ce_fdh"}). The analytical
+#'   benchmark is derived for CE-FDH; other techniques will trigger a warning.
+#' @param test.rep Number of permutation test repetitions at each threshold
+#'   (default 0). Set > 0 to obtain p-values, but note this multiplies
+#'   computation time by the number of thresholds.
+#' @param steps Number of steps in the bottleneck table (default 10).
+#' @param seed Random seed for reproducibility (default 123).
+#' @param ... Additional arguments passed to \code{NCA::nca_analysis()}.
+#'
+#' @return An object of class \code{nca_esse} containing:
+#'   \item{effect_sizes}{Matrix of empirical effect sizes (thresholds x predictors)}
+#'   \item{benchmark}{Matrix of theoretical benchmark effect sizes}
+#'   \item{delta}{Matrix of empirical minus benchmark differences}
+#'   \item{significance}{Matrix of p-values (NULL if test.rep = 0)}
+#'   \item{pls_model}{The original estimated seminr model}
+#'   \item{target}{Name of the target construct}
+#'   \item{predictors}{Character vector of predictor names}
+#'   \item{thresholds}{Numeric vector of ECDF thresholds used}
+#'   \item{ceiling}{Ceiling technique used}
+#'   \item{n_obs}{Number of observations}
+#'
+#' @seealso \code{\link{assess_nca}} for standard NCA analysis
+#'
+#' @references
+#' Becker, J.-M., Richter, N. F., Ringle, C. M., & Sarstedt, M. (2026).
+#' Must-have, or maybe not? A sensitivity-based extension to necessary
+#' condition analysis. Journal of Business Research, 206, 115920.
+#'
+#' @examples
+#' library(seminr)
+#' library(seminrExtras)
+#'
+#' mobi_mm <- constructs(
+#'   composite("Image",        multi_items("IMAG", 1:5)),
+#'   composite("Value",        multi_items("PERV", 1:2)),
+#'   composite("Satisfaction", multi_items("CUSA", 1:3))
+#' )
+#'
+#' mobi_sm <- relationships(
+#'   paths(from = c("Image", "Value"), to = "Satisfaction")
+#' )
+#'
+#' mobi_pls <- estimate_pls(data = mobi,
+#'                           measurement_model = mobi_mm,
+#'                           structural_model  = mobi_sm)
+#'
+#' \donttest{
+#' esse_result <- assess_nca_esse(mobi_pls,
+#'                                 target = "Satisfaction",
+#'                                 seed = 123)
+#' print(esse_result)
+#' plot(esse_result, type = "sensitivity")
+#' }
+#'
+#' @export
+assess_nca_esse <- function(seminr_model,
+                             target,
+                             predictors = NULL,
+                             thresholds = seq(0, 0.05, by = 0.005),
+                             ceiling = "ce_fdh",
+                             test.rep = 0,
+                             steps = 10,
+                             seed = 123,
+                             ...) {
+
+  check_nca_installed()
+
+  # ---------------------------------------------------------------------------
+  # Step 1: Validate inputs
+  # ---------------------------------------------------------------------------
+  if (!validate_seminr_model(seminr_model, "assess_nca_esse")) return(NULL)
+
+  if (any(thresholds < 0) || any(thresholds > 1)) {
+    stop("thresholds must be between 0 and 1.", call. = FALSE)
+  }
+  if (!is.numeric(test.rep) || length(test.rep) != 1 || test.rep < 0 ||
+      test.rep != as.integer(test.rep)) {
+    stop("test.rep must be a non-negative integer.", call. = FALSE)
+  }
+
+  construct_names <- colnames(seminr_model$construct_scores)
+  if (!(target %in% construct_names)) {
+    stop("target '", target, "' not found in model constructs: ",
+         paste(construct_names, collapse = ", "), call. = FALSE)
+  }
+
+  if (is.null(predictors)) {
+    predictors <- get_direct_predictors(seminr_model, target)
+    if (length(predictors) == 0) {
+      stop("No direct predictors found for target '", target, "'.", call. = FALSE)
+    }
+  } else {
+    invalid <- setdiff(predictors, construct_names)
+    if (length(invalid) > 0) {
+      stop("Predictor(s) not found: ", paste(invalid, collapse = ", "), call. = FALSE)
+    }
+  }
+
+  if (ceiling != "ce_fdh") {
+    warning("NCA-ESSE benchmark is derived for CE-FDH (Becker et al., 2026). ",
+            "Benchmark may not be directly comparable with '", ceiling, "'.",
+            call. = FALSE)
+  }
+
+  scores <- as.data.frame(seminr_model$construct_scores)
+  n_obs <- nrow(scores)
+
+  set.seed(seed)
+
+  # ---------------------------------------------------------------------------
+  # Step 2: Initialize result matrices
+  # ---------------------------------------------------------------------------
+  threshold_labels <- paste0(thresholds * 100, "%")
+  empirical <- matrix(NA_real_, nrow = length(thresholds), ncol = length(predictors),
+                       dimnames = list(threshold_labels, predictors))
+  significance <- if (test.rep > 0) {
+    matrix(NA_real_, nrow = length(thresholds), ncol = length(predictors),
+           dimnames = list(threshold_labels, predictors))
+  } else NULL
+
+  # ---------------------------------------------------------------------------
+  # Step 3: Compute empirical effect sizes at each ECDF threshold
+  # ---------------------------------------------------------------------------
+  # For each predictor, compute ECDF_NCA(x_i, y_i) = P(X <= x_i, Y >= y_i),
+  # then at each threshold t, remove observations with ECDF_NCA <= t (extreme
+  # upper-left cases) and run standard NCA on the remaining data.
+  for (p_idx in seq_along(predictors)) {
+    pred <- predictors[p_idx]
+    x <- scores[[pred]]
+    y <- scores[[target]]
+
+    ecdf_nca <- compute_ecdf_nca(x, y)
+
+    for (t_idx in seq_along(thresholds)) {
+      t_val <- thresholds[t_idx]
+
+      # At threshold 0, keep all observations (standard NCA)
+      if (t_val == 0) {
+        filtered_scores <- scores
+      } else {
+        keep <- ecdf_nca > t_val
+        filtered_scores <- scores[keep, , drop = FALSE]
+      }
+
+      if (nrow(filtered_scores) < 10) {
+        warning("Fewer than 10 observations at threshold ", threshold_labels[t_idx],
+                " for ", pred, "; skipping.", call. = FALSE)
+        next
+      }
+
+      nca_res <- suppressMessages(
+        NCA::nca_analysis(
+          data = filtered_scores,
+          x = pred,
+          y = target,
+          ceilings = ceiling,
+          test.rep = test.rep,
+          steps = steps,
+          ...
+        )
+      )
+
+      params <- nca_res$summaries[[pred]]$params
+      if (!is.null(params) && "Effect size" %in% rownames(params) &&
+          ceiling %in% colnames(params)) {
+        empirical[t_idx, p_idx] <- params["Effect size", ceiling]
+      }
+
+      if (!is.null(significance) && !is.null(params) &&
+          "p-value" %in% rownames(params) && ceiling %in% colnames(params)) {
+        significance[t_idx, p_idx] <- params["p-value", ceiling]
+      }
+    }
+  }
+
+  # ---------------------------------------------------------------------------
+  # Step 4: Compute theoretical benchmark (joint uniform distribution)
+  # ---------------------------------------------------------------------------
+  # Under joint uniform, CE-FDH effect size at threshold t is d = t(1 - ln(t))
+  benchmark <- matrix(benchmark_effect_size(thresholds),
+                       nrow = length(thresholds), ncol = length(predictors),
+                       dimnames = list(threshold_labels, predictors))
+
+  # ---------------------------------------------------------------------------
+  # Step 5: Compute sensitivity (empirical - benchmark)
+  # ---------------------------------------------------------------------------
+  delta <- empirical - benchmark
+
+  result <- list(
+    effect_sizes = empirical,
+    benchmark = benchmark,
+    delta = delta,
+    significance = significance,
+    pls_model = seminr_model,
+    target = target,
+    predictors = predictors,
+    thresholds = thresholds,
+    ceiling = ceiling,
+    n_obs = n_obs
+  )
+
+  class(result) <- c("nca_esse", class(result))
+  result
+}
+
+# =============================================================================
+# NCA-ESSE S3 METHODS
+# =============================================================================
+
+#' @export
+print.nca_esse <- function(x, ...) {
+  cat("NCA-ESSE: Effect Size Sensitivity Extension\n")
+  cat("=============================================\n")
+  cat("Target:", x$target, "\n")
+  cat("Predictors:", paste(x$predictors, collapse = ", "), "\n")
+  cat("Ceiling:", x$ceiling, "\n")
+  cat("Observations:", x$n_obs, "\n")
+  cat("Thresholds:", paste0(min(x$thresholds) * 100, "% to ",
+      max(x$thresholds) * 100, "%"), "\n\n")
+
+  cat("Empirical effect sizes by ECDF threshold:\n")
+  print(round(x$effect_sizes, 4), ...)
+  cat("\n")
+
+  cat("Benchmark (uniform) effect sizes:\n")
+  bench_vec <- x$benchmark[, 1]
+  names(bench_vec) <- rownames(x$benchmark)
+  print(round(bench_vec, 4), ...)
+  cat("\n")
+
+  cat("Sensitivity (empirical - benchmark):\n")
+  print(round(x$delta, 4), ...)
+
+  if (!is.null(x$significance)) {
+    cat("\nPermutation p-values:\n")
+    print(round(x$significance, 4), ...)
+  }
+
+  invisible(x)
+}
+
+#' @export
+summary.nca_esse <- function(object, ...) {
+  # Build Table A2-style output per predictor
+  tables <- lapply(object$predictors, function(pred) {
+    emp <- object$effect_sizes[, pred]
+    bench <- object$benchmark[, pred]
+    df <- data.frame(
+      ECDF_threshold = object$thresholds,
+      Empirical_d = emp,
+      Benchmark_d = bench,
+      Difference = emp - bench,
+      row.names = NULL
+    )
+    if (!is.null(object$significance)) {
+      df$p_value <- object$significance[, pred]
+    }
+    df
+  })
+  names(tables) <- object$predictors
+
+  result <- list(
+    target = object$target,
+    predictors = object$predictors,
+    ceiling = object$ceiling,
+    n_obs = object$n_obs,
+    tables = tables
+  )
+
+  class(result) <- c("summary.nca_esse", class(result))
+  result
+}
+
+#' @export
+print.summary.nca_esse <- function(x, ...) {
+  cat("NCA-ESSE Summary (Becker et al., 2026)\n")
+  cat("=======================================\n")
+  cat("Target:", x$target, "\n")
+  cat("Ceiling:", x$ceiling, "\n")
+  cat("Observations:", x$n_obs, "\n\n")
+
+  for (pred in x$predictors) {
+    cat("Predictor:", pred, "\n")
+    cat(strrep("-", 60), "\n")
+    print(round(x$tables[[pred]], 4), row.names = FALSE, ...)
+    cat("\n")
+  }
+
+  invisible(x)
+}
+
+#' Plot NCA-ESSE Results
+#'
+#' @param x An \code{nca_esse} object from \code{assess_nca_esse()}.
+#' @param type One of \code{"sensitivity"} (effect size vs threshold, Fig. 4
+#'   in Becker et al.) or \code{"difference"} (incremental empirical minus
+#'   benchmark difference, Fig. 6 in Becker et al.).
+#' @param ... Additional arguments passed to the underlying plot function.
+#'
+#' @export
+plot.nca_esse <- function(x, type = c("sensitivity", "difference"), ...) {
+  type <- match.arg(type)
+
+  switch(type,
+    sensitivity = plot_esse_sensitivity(x, ...),
+    difference  = plot_esse_difference(x, ...)
+  )
+}
+
+#' Sensitivity plot (Fig. 4): empirical and benchmark effect sizes vs threshold.
+#' @noRd
+plot_esse_sensitivity <- function(esse, ...) {
+  n_pred <- length(esse$predictors)
+  thresholds <- esse$thresholds
+
+  old_par <- par(no.readonly = TRUE)
+  on.exit(par(old_par))
+
+  if (n_pred > 1) {
+    ncol_plot <- min(n_pred, 3)
+    nrow_plot <- ceiling(n_pred / ncol_plot)
+    par(mfrow = c(nrow_plot, ncol_plot))
+  }
+
+  for (pred in esse$predictors) {
+    emp <- esse$effect_sizes[, pred]
+    bench <- esse$benchmark[, pred]
+    ylim <- c(0, max(c(emp, bench, 0.1), na.rm = TRUE) * 1.2)
+
+    plot(thresholds, emp, type = "b", pch = 19,
+         ylim = ylim, xlab = "ECDF threshold",
+         ylab = "NCA effect size (d)",
+         main = paste("NCA-ESSE:", pred, "->", esse$target),
+         bty = "n", ...)
+    lines(thresholds, bench, type = "b", pch = 17, lty = 2, col = "gray50")
+    abline(h = 0.1, col = "darkgray", lty = 3)
+    legend("topleft", legend = c("Empirical", "Benchmark (uniform)"),
+           pch = c(19, 17), lty = c(1, 2), col = c("black", "gray50"),
+           cex = 0.7, bty = "n")
+  }
+}
+
+#' Difference plot (Fig. 6): incremental empirical - benchmark difference.
+#' @noRd
+plot_esse_difference <- function(esse, ...) {
+  n_pred <- length(esse$predictors)
+  # Skip the first threshold (0%) since diff requires pairs
+  thresholds <- esse$thresholds[-1]
+
+  old_par <- par(no.readonly = TRUE)
+  on.exit(par(old_par))
+
+  if (n_pred > 1) {
+    ncol_plot <- min(n_pred, 3)
+    nrow_plot <- ceiling(n_pred / ncol_plot)
+    par(mfrow = c(nrow_plot, ncol_plot))
+  }
+
+  for (pred in esse$predictors) {
+    emp <- esse$effect_sizes[, pred]
+    bench <- esse$benchmark[, pred]
+
+    # Incremental changes between consecutive thresholds
+    delta_emp <- diff(emp)
+    delta_bench <- diff(bench)
+    delta_diff <- delta_emp - delta_bench
+
+    ylim <- range(c(delta_diff, 0), na.rm = TRUE)
+    ylim <- ylim + c(-1, 1) * max(0.05, diff(ylim) * 0.1)
+
+    plot(thresholds, delta_diff, type = "b", pch = 19,
+         ylim = ylim, xlab = "ECDF threshold",
+         ylab = expression(Delta ~ "Empirical" - Delta ~ "Benchmark"),
+         main = paste("ESSE Difference:", pred, "->", esse$target),
+         bty = "n", ...)
+    abline(h = 0, col = "darkgray", lty = 2)
+  }
+}

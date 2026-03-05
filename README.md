@@ -9,34 +9,57 @@
 [![metacran
 downloads](https://cranlogs.r-pkg.org/badges/grand-total/seminrExtras)](https://cran.r-project.org/package=seminrExtras)
 
-SEMinRExtras adds functionality to the SEMinRpackage.
+SEMinRExtras adds functionality to the SEMinR package.
 
-SEMinR (Ray, Danks, & calero-Valdez, 2026) is a domain specific language
+SEMinR (Ray, Danks, & Calero Valdez, 2026) is a domain specific language
 for modeling and estimating structural equation models. This is a
 supplementary package for SEMinR and not a standalone package. This
 package serves to provide additional extra methods and functions that
 can be used to analyze PLS-SEM models.
 
 SEMinRExtras provides advanced SEM tools which are compatible with
-SEMinR. In the current version, we provide an implementation of the
-Cross-Validated Predictive Ability Test (CVPAT) as proposed by Liengaard
-et al. (2021) and Sharma et al. (2022).
+SEMinR. It implements several methods for evaluating PLS-SEM models:
+
+- **Cross-Validated Predictive Ability Test (CVPAT)** — Compare model
+  predictive performance against benchmarks or alternative models
+  (Liengaard et al., 2021; Sharma et al., 2022).
+- **Composite Overfit Analysis (COA)** — Detect observation-level
+  overfitting in PLS composite models via predictive deviance trees
+  and parameter instability analysis.
+- **Necessary Condition Analysis (NCA)** — Test whether predictors are
+  necessary conditions for an outcome, complementing PLS-SEM's
+  sufficiency logic (Dul, 2016; Richter et al., 2020).
+- **NCA-ESSE** — Effect Size Sensitivity Extension that assesses how
+  robust NCA results are to extreme response patterns (Becker et al.,
+  2026).
+- **Congruence Testing** — Bootstrapped congruence coefficient testing
+  for construct validity.
 
 SEMinRExtras also serves to host the example models used in the PLS-SEM
 in R workbook (Hair et al., 2026).
 
-### New features implemented with this package
+### Functions
 
-- assess_cvpat_compare
-- assess_cvpat
+| Function | Description |
+|---|---|
+| `assess_cvpat()` | CVPAT against LM and IA benchmarks |
+| `assess_cvpat_compare()` | Compare predictive loss of two PLS models |
+| `assess_coa()` | Composite Overfit Analysis (full pipeline) |
+| `predictive_deviance()` | Compute predictive deviance scores |
+| `deviance_tree()` | Identify deviant case groups via decision tree |
+| `unstable_params()` | Parameter instability analysis |
+| `assess_nca()` | Necessary Condition Analysis for PLS-SEM |
+| `assess_nca_esse()` | NCA with Effect Size Sensitivity Extension |
+| `congruence_test()` | Bootstrapped congruence coefficient testing |
 
-## The demo files for Hair et al. (2026)
+## The demo files for Hair et al. (2026)
 
 In order to access the demo files for the textbook, you can run the
 `demo()` function after loading the SEMinRExtras package.
 
 - seminr-help-debugging
 - seminr-pls-cvpat
+- seminr-pls-nca
 - seminr-primer-v2-chap2
 - seminr-primer-v2-chap3
 - seminr-primer-v2-chap4
@@ -134,7 +157,7 @@ print(compare_results,
 
 # Assess the base model ----
 assess_results <- assess_cvpat(established_model,
-                               seed = 123, 
+                               seed = 123,
                                cores = 1)
 print(assess_results$CVPAT_compare_LM,
       digits = 3)
@@ -147,7 +170,7 @@ print(assess_results$CVPAT_compare_IA,
 ``` r
 # Assess the base model ----
 assess_results <- assess_cvpat(established_model,
-                               seed = 123, 
+                               seed = 123,
                                cores = 1)
 print(assess_results$CVPAT_compare_LM,
       digits = 3)
@@ -157,7 +180,7 @@ print(assess_results$CVPAT_compare_LM,
 #> CUSA       0.994   0.983  0.011       -0.489        0.625
 #> CUSL       1.560   1.600 -0.040        2.914        0.004
 #> Overall    1.416   1.464 -0.048        3.482        0.001
-#> 
+#>
 #> CVPAT as per Sharma et al. (2023).
 print(assess_results$CVPAT_compare_IA,
       digits = 3)
@@ -167,7 +190,7 @@ print(assess_results$CVPAT_compare_IA,
 #> CUSA       0.994   1.374 -0.379        5.004        0.000
 #> CUSL       1.560   2.663 -1.102        7.572        0.000
 #> Overall    1.416   2.290 -0.874       10.301        0.000
-#> 
+#>
 #> CVPAT as per Sharma et al. (2023).
 ```
 
@@ -189,7 +212,7 @@ compare_results <- assess_cvpat_compare(established_model = established_model,
                                         reps = 10,
                                         cores = 1)
 
-print(compare_results, 
+print(compare_results,
       cores = 1,
       digits = 3)
 #>         Base Model Loss Alt Model Loss   Diff Boot T value Boot P Value
@@ -198,7 +221,7 @@ print(compare_results,
 #> CUSA              0.988          0.992 -0.004        0.809        0.419
 #> CUSL              1.562          1.715 -0.152        3.286        0.001
 #> Overall           1.418          1.459 -0.041        3.293        0.001
-#> 
+#>
 #> CVPAT as per Sharma, Liengaard, Hair, Sarstedt, & Ringle, (2023).
 #>   Both models under comparison have identical endoogenous constructs with identical measurement models.
 #>   Purely exogenous constructs can differ in regards to their relationships with both nomological
@@ -211,17 +234,27 @@ superior predictive performance compared to the competing model.
 
 # References
 
+- Becker, J.-M., Richter, N. F., Ringle, C. M., & Sarstedt, M. (2026).
+  Must-have, or maybe not? A sensitivity-based extension to necessary
+  condition analysis. Journal of Business Research, 206, 115920.
+- Dul, J. (2016). Necessary Condition Analysis (NCA): Logic and
+  methodology of "necessary but not sufficient" causality.
+  Organizational Research Methods, 19(1), 10-52.
 - Hair, J.F. (Jr), Hult, T.M., Ringle, C.M., Sarstedt, M., Danks, N.P.,
   and Adler, S. (2026). Partial Least Squares Structural Equation
   Modeling (PLS-SEM) Using R (Second Edition) - A Workbook. Springer.
 - Liengaard, B. D., Sharma, P. N., Hult, G. T. M., Jensen, M. B.,
   Sarstedt, M., Hair, J. F., & Ringle, C. M. (2021). Prediction:
-  coveted,yet forsaken? Introducing a cross‐validated predictive ability
+  coveted, yet forsaken? Introducing a cross-validated predictive ability
   test in partial least squares path modeling. Decision Sciences, 52(2),
   362-392.
 - Ray, S., Danks, N.P., Calero Valdez, A. (2026) SEMinR: Domain-specific
   language for building, estimating, and visualizing structural equation
   models in R.
+- Richter, N. F., Schubring, S., Hauff, S., Ringle, C. M., &
+  Sarstedt, M. (2020). When predictors of outcomes are necessary:
+  guidelines for the combined use of PLS-SEM and NCA. Industrial
+  Management & Data Systems, 120(12), 2243-2267.
 - Sharma, P. N., Liengaard, B. D., Hair, J. F., Sarstedt, M., &
   Ringle, C. M. (2022). Predictive model assessment and selection in
   composite-based modeling using PLS-SEM: extensions and guidelines for
