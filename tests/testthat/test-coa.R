@@ -330,104 +330,66 @@ test_that("assess_coa errors on invalid focal construct", {
 })
 
 # ============================================================================
-# Rules extraction
+# Rules extraction, S3 methods, and plots (shared fixture)
 # ============================================================================
 
+# Compute once for rules, S3, and plot tests
+coa_fixture <- assess_coa(
+  pls_model, "CUSL",
+  predict_model = pls_predictions, seed = 123
+)
+
 test_that("group_rules returns data frame with correct columns", {
-  coa_result <- assess_coa(
-    pls_model, "CUSL",
-    predict_model = pls_predictions, seed = 123
-  )
-  skip_if(length(coa_result$deviance_tree$deviant_groups) == 0,
+  skip_if(length(coa_fixture$deviance_tree$deviant_groups) == 0,
           "No deviant groups found")
 
-  group_name <- names(coa_result$deviance_tree$deviant_groups)[1]
-  rules <- group_rules(group_name, coa_result)
+  group_name <- names(coa_fixture$deviance_tree$deviant_groups)[1]
+  rules <- group_rules(group_name, coa_fixture)
 
   expect_s3_class(rules, "data.frame")
   expect_true(all(c("construct", "gte", "lt") %in% colnames(rules)))
 })
 
 test_that("competes returns data frame with correct columns", {
-  coa_result <- assess_coa(
-    pls_model, "CUSL",
-    predict_model = pls_predictions, seed = 123
-  )
-  skip_if(length(coa_result$deviance_tree$deviant_groups) == 0,
+  skip_if(length(coa_fixture$deviance_tree$deviant_groups) == 0,
           "No deviant groups found")
 
-  group_name <- names(coa_result$deviance_tree$deviant_groups)[1]
-  node_id <- coa_result$deviance_tree$group_roots[[group_name]]
-  comp <- competes(node_id, coa_result$deviance_tree)
+  group_name <- names(coa_fixture$deviance_tree$deviant_groups)[1]
+  node_id <- coa_fixture$deviance_tree$group_roots[[group_name]]
+  comp <- competes(node_id, coa_fixture$deviance_tree)
 
   expect_s3_class(comp, "data.frame")
   expect_true(all(c("criterion", "sign", "value", "improve") %in% colnames(comp)))
 })
 
 test_that("competes errors for root node", {
-  coa_result <- assess_coa(
-    pls_model, "CUSL",
-    predict_model = pls_predictions, seed = 123
-  )
-  expect_error(competes(1, coa_result$deviance_tree), "root")
+  expect_error(competes(1, coa_fixture$deviance_tree), "root")
 })
 
-# ============================================================================
-# S3 methods
-# ============================================================================
-
 test_that("print.coa_analysis runs without error", {
-  coa_result <- assess_coa(
-    pls_model, "CUSL",
-    predict_model = pls_predictions, seed = 123
-  )
-  expect_output(print(coa_result))
+  expect_output(print(coa_fixture))
 })
 
 test_that("summary.coa_analysis returns summary object", {
-  coa_result <- assess_coa(
-    pls_model, "CUSL",
-    predict_model = pls_predictions, seed = 123
-  )
-  s <- summary(coa_result)
+  s <- summary(coa_fixture)
   expect_type(s, "list")
   expect_s3_class(s, "summary.coa_analysis")
 })
 
-# ============================================================================
-# Plot tests (verify no errors)
-# ============================================================================
-
 test_that("plot.coa_analysis type='pd' runs without error", {
-  coa_result <- assess_coa(
-    pls_model, "CUSL",
-    predict_model = pls_predictions, seed = 123
-  )
-  expect_no_error(plot(coa_result, type = "pd"))
+  expect_no_error(plot(coa_fixture, type = "pd"))
 })
 
 test_that("plot.coa_analysis type='groups' runs without error", {
-  coa_result <- assess_coa(
-    pls_model, "CUSL",
-    predict_model = pls_predictions, seed = 123
-  )
-  skip_if(length(coa_result$deviance_tree$deviant_groups) == 0,
+  skip_if(length(coa_fixture$deviance_tree$deviant_groups) == 0,
           "No deviant groups found")
-  expect_no_error(plot(coa_result, type = "groups"))
+  expect_no_error(plot(coa_fixture, type = "groups"))
 })
 
 test_that("plot.coa_analysis type='tree' runs without error", {
-  coa_result <- assess_coa(
-    pls_model, "CUSL",
-    predict_model = pls_predictions, seed = 123
-  )
-  expect_no_error(plot(coa_result, type = "tree"))
+  expect_no_error(plot(coa_fixture, type = "tree"))
 })
 
 test_that("plot.coa_analysis defaults to 'pd' type", {
-  coa_result <- assess_coa(
-    pls_model, "CUSL",
-    predict_model = pls_predictions, seed = 123
-  )
-  expect_no_error(plot(coa_result))
+  expect_no_error(plot(coa_fixture))
 })

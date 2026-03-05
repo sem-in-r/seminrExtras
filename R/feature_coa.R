@@ -106,8 +106,6 @@ assess_coa <- function(seminr_model,
          call. = FALSE)
   }
 
-  set.seed(seed)
-
   pd <- predictive_deviance(seminr_model, focal_construct,
                             technique = technique,
                             noFolds = noFolds, reps = reps,
@@ -171,6 +169,9 @@ predictive_deviance <- function(seminr_model,
                                 predict_model = NULL) {
 
   if (is.null(predict_model)) {
+    if (!validate_for_prediction(seminr_model, "predictive_deviance")) {
+      return(NULL)
+    }
     set.seed(seed)
     predict_model <- predict_pls(seminr_model,
                                  technique = technique,
@@ -350,7 +351,6 @@ extract_nodes <- function(frame, dev_interval) {
 
   list(
     is_leaf = is_leaf,
-    is_deviant = is_deviant,
     is_deviant_leaf = is_deviant_leaf,
     names = names,
     leaves = leaves,
@@ -414,7 +414,11 @@ group_rules <- function(group_name, coa_result) {
   group_root <- dtree$group_roots[[group_name]]
   node_path <- path_to(group_root)[-1]
 
-  splits <- do.call(rbind, lapply(node_path, split_criteria, tree = dtree$tree))
+  tree_info <- tree_split_index(dtree$tree)
+
+  splits <- do.call(rbind, lapply(node_path, function(nid) {
+    get_split_at_node(nid, dtree$tree, tree_info)
+  }))
 
   splits_df <- data.frame(
     var   = splits$var,
@@ -444,18 +448,17 @@ competes <- function(node_id, dtree) {
   if (node_id == 1) stop("No splits before root (node 1) of tree")
 
   tree <- dtree$tree
-  frame <- tree$frame
+  tree_info <- tree_split_index(tree)
+  is_odd <- node_id %% 2 == 1
 
-  search_node <- ifelse(node_id %% 2 == 1, node_id - 1, node_id)
-  frame_row <- match(search_node / 2, as.integer(row.names(frame)))
-  is_leaf_vec <- frame$var == "<leaf>"
-  index <- cumsum(c(1, frame$ncompete + frame$nsurrogate + !is_leaf_vec))
+  search_node <- if (is_odd) node_id - 1 else node_id
+  frame_row <- match(search_node / 2, tree_info$node_ids)
 
-  start <- index[frame_row - 1]
-  end <- start + frame$ncompete[frame_row]
+  start <- tree_info$split_index[frame_row - 1]
+  end <- start + tree$frame$ncompete[frame_row]
   splits <- as.data.frame(tree$splits[start:end, ])
 
-  if (node_id %% 2 == 1) splits$ncat <- splits$ncat * -1
+  if (is_odd) splits$ncat <- splits$ncat * -1
 
   data.frame(
     criterion = row.names(splits),
@@ -467,24 +470,33 @@ competes <- function(node_id, dtree) {
   )
 }
 
+#' Pre-compute tree frame metadata for split lookups
 #' @noRd
-split_criteria <- function(node_id, tree) {
+tree_split_index <- function(tree) {
   frame <- tree$frame
   is_leaf_vec <- frame$var == "<leaf>"
-  index <- cumsum(c(1, frame$ncompete + frame$nsurrogate + !is_leaf_vec))
-  all_splits <- data.frame(
-    var = rownames(tree$splits),
-    ncat = tree$splits[, "ncat"],
-    index = tree$splits[, "index"],
+  list(
+    split_index = cumsum(c(1, frame$ncompete + frame$nsurrogate + !is_leaf_vec)),
+    node_ids = as.integer(row.names(frame))
+  )
+}
+
+#' Get the primary split at a given node
+#' @noRd
+get_split_at_node <- function(node_id, tree, tree_info) {
+  is_odd <- node_id %% 2 == 1
+  search_node <- if (is_odd) node_id - 1 else node_id
+  frame_row <- match(search_node, tree_info$node_ids)
+  split_row <- tree_info$split_index[frame_row - 1]
+
+  split <- data.frame(
+    var = rownames(tree$splits)[split_row],
+    ncat = tree$splits[split_row, "ncat"],
+    index = tree$splits[split_row, "index"],
     row.names = NULL,
     stringsAsFactors = FALSE
   )
-
-  search_node <- ifelse(node_id %% 2 == 1, node_id - 1, node_id)
-  frame_row <- match(search_node, as.integer(row.names(frame)))
-  split_row <- index[frame_row - 1]
-  split <- all_splits[split_row, ]
-  if (node_id %% 2 == 1) split$ncat <- split$ncat * -1
+  if (is_odd) split$ncat <- split$ncat * -1
   split
 }
 
@@ -680,7 +692,12 @@ plot_pd <- function(coa, ...) {
   points(pd_df$order[non_dev], pd_df$pd[non_dev], pch = 19, col = "lightgray", cex = 0.6)
 
   if (any(!non_dev)) {
-    cols <- c("black", grDevices::palette.colors(n = max(pd_df$group) - 1, palette = "Set1"))
+    n_group_colors <- max(0, max(pd_df$group) - 1)
+    cols <- if (n_group_colors > 0) {
+      c("black", grDevices::palette.colors(n = n_group_colors, palette = "Set1"))
+    } else {
+      "black"
+    }
     is_unique <- pd_df$group == 1
     is_group <- !non_dev & !is_unique
 
@@ -783,6 +800,5 @@ plot_group_scores <- function(coa, remove = NULL, ...) {
 plot_tree <- function(coa, ...) {
   tree <- coa$deviance_tree$tree
   plot(tree, uniform = TRUE, main = paste("Deviance Tree:", coa$focal_construct), ...)
-  rpart_text <- utils::getFromNamespace("text.rpart", "rpart")
-  rpart_text(tree, use.n = TRUE, cex = 0.7)
+  text(tree, use.n = TRUE, cex = 0.7)
 }
