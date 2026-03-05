@@ -1,6 +1,17 @@
+# =============================================================================
+# helpers.R - Internal helper functions for seminrExtras
+# =============================================================================
+# This file contains shared utility functions used across the package:
+# - Model validation helpers
+# - Endogenous construct extraction helpers
+# - Loss calculation helpers for CVPAT
+# - Bootstrap significance testing helpers
+# =============================================================================
+
 #' @importFrom stats pt
 #' @importFrom stats t.test
 #' @importFrom stats var
+#' @importFrom stats sd
 #' @importFrom utils head
 #' @importFrom seminr predict_DA
 #' @importFrom seminr predict_EA

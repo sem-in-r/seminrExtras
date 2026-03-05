@@ -40,10 +40,16 @@ Results1 <- assess_cvpat_compare(established_model = model_one,
                                  testtype = "two.sided",
                                  nboot = 2000,
                                  technique = predict_EA,
+                                 noFolds = NULL,
+                                 reps = NULL,
                                  cores = 1)
 
 # Assess the base model ----
-Results2 <- as.data.frame(assess_cvpat(model_one, technique = predict_EA, cores = 1))
+Results2 <- as.data.frame(assess_cvpat(model_one,
+                                       technique = predict_EA,
+                                       noFolds = NULL,
+                                       reps = NULL,
+                                       cores = 1))
 
 
 ## Output originally created using following lines
@@ -57,9 +63,9 @@ test_that("CVPAT compares models correctly\n", {
   expect_equal(as.numeric(unlist(Results1)), as.numeric(cvpat_control[,1:5]), tolerance = 0.1)
 })
 
-# test_that("CVPAT assesses model correctly\n", {
-#   expect_equal(as.numeric(unlist(Results2)), as.numeric(cvpat_control[,6:15]), tolerance = 0.1)
-# })
+test_that("CVPAT assesses model correctly\n", {
+  expect_equal(as.numeric(unlist(Results2)), as.numeric(cvpat_control[,6:15]), tolerance = 0.1)
+})
 
 # Now check that CVPAT can generalize ----
 # Higher Composite ----
@@ -101,10 +107,16 @@ Results1 <- assess_cvpat_compare(established_model = model_one,
                                  testtype = "two.sided",
                                  nboot = 2000,
                                  technique = predict_EA,
+                                 noFolds = NULL,
+                                 reps = NULL,
                                  cores = 1)
 
 # Assess the base model ----
-Results2 <- assess_cvpat(model_one, technique = predict_EA, cores = 1)
+Results2 <- assess_cvpat(model_one,
+                         technique = predict_EA,
+                         noFolds = NULL,
+                         reps = NULL,
+                         cores = 1)
 
 test_that("CVPAT_compare can handle higher_composite\n", {
   expect_null(Results1)

@@ -1,4 +1,4 @@
-# CV-PAT applied to the Corporate Reputation Model and dataset
+# CVPAT applied to the Corporate Reputation Model and dataset
 library(seminr)
 library(seminrExtras)
 
@@ -69,7 +69,12 @@ print(compare_results,
 
 # Assess the base model ----
 assess_results <- assess_cvpat(established_model,
-                               seed = 123)
+                               testtype = "two.sided",
+                               nboot = 2000,
+                               seed = 123,
+                               technique = predict_DA,
+                               noFolds = 10,
+                               reps = 10)
 print(assess_results$CVPAT_compare_LM,
       digits = 3)
 print(assess_results$CVPAT_compare_IA,
