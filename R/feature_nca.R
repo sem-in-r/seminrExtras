@@ -32,6 +32,10 @@ check_nca_installed <- function() {
 # PREDICTOR EXTRACTION
 # =============================================================================
 
+#' Extract direct predictor construct names for a given target from the
+#' structural model matrix. unname() is required because subsetting smMatrix
+#' retains row names, which would cause NCA::nca_analysis() to fail on
+#' predictor name matching.
 #' @noRd
 get_direct_predictors <- function(model, target) {
   sm <- model$smMatrix
@@ -135,8 +139,16 @@ assess_nca <- function(seminr_model,
 
   check_nca_installed()
 
+  # ---------------------------------------------------------------------------
+  # Step 1: Validate inputs
+  # ---------------------------------------------------------------------------
   if (!validate_seminr_model(seminr_model, "assess_nca")) {
     return(NULL)
+  }
+
+  if (!is.numeric(test.rep) || length(test.rep) != 1 || test.rep < 0 ||
+      test.rep != as.integer(test.rep)) {
+    stop("test.rep must be a non-negative integer.", call. = FALSE)
   }
 
   # Validate target
@@ -164,10 +176,12 @@ assess_nca <- function(seminr_model,
     }
   }
 
-  # Build data frame of construct scores
+  # ---------------------------------------------------------------------------
+  # Step 2: Run NCA analysis on construct scores
+  # ---------------------------------------------------------------------------
   scores <- as.data.frame(seminr_model$construct_scores)
 
-  # Run NCA analysis
+  # Delegate to NCA package for ceiling envelope fitting and permutation tests
   set.seed(seed)
   nca_raw <- suppressMessages(
     NCA::nca_analysis(
@@ -181,16 +195,23 @@ assess_nca <- function(seminr_model,
     )
   )
 
-  # Extract effect sizes and p-values
+  # ---------------------------------------------------------------------------
+  # Step 3: Extract and format results
+  # ---------------------------------------------------------------------------
   effect_sizes <- format_nca_effects(nca_raw, predictors, ceilings)
   significance <- format_nca_significance(nca_raw, predictors, ceilings)
   bottleneck <- format_nca_bottleneck(nca_raw, ceilings)
+
+  # Identify necessary conditions: d >= 0.1 AND p < 0.05 (Dul, 2016)
+  necessary <- identify_necessary(effect_sizes, significance)
+  necessary_predictors <- rownames(effect_sizes)[apply(necessary, 1, any)]
 
   result <- list(
     nca_raw      = nca_raw,
     effect_sizes = effect_sizes,
     significance = significance,
     bottleneck   = bottleneck,
+    necessary_predictors = necessary_predictors,
     pls_model    = seminr_model,
     target       = target,
     predictors   = predictors,
@@ -205,6 +226,11 @@ assess_nca <- function(seminr_model,
 # EXTRACTION HELPERS
 # =============================================================================
 
+#' Extract effect sizes from NCA result into a predictor x ceiling matrix.
+#'
+#' NCA stores results per-predictor in nca_raw$summaries[[pred]]$params,
+#' a matrix with rows like "Scope", "Effect size", "p-value" and columns
+#' for each ceiling technique. We extract the "Effect size" row.
 #' @noRd
 format_nca_effects <- function(nca_raw, predictors, ceilings) {
   mat <- matrix(NA_real_,
@@ -228,6 +254,8 @@ format_nca_effects <- function(nca_raw, predictors, ceilings) {
   mat
 }
 
+#' Extract p-values from NCA result, same structure as format_nca_effects().
+#' Returns NULL if no significance testing was performed (test.rep = 0).
 #' @noRd
 format_nca_significance <- function(nca_raw, predictors, ceilings) {
   # Check if significance testing was performed
@@ -260,6 +288,7 @@ format_nca_significance <- function(nca_raw, predictors, ceilings) {
   mat
 }
 
+#' Extract bottleneck tables (one per ceiling) from NCA result.
 #' @noRd
 format_nca_bottleneck <- function(nca_raw, ceilings) {
   bn <- list()
@@ -271,6 +300,9 @@ format_nca_bottleneck <- function(nca_raw, ceilings) {
   bn
 }
 
+#' Identify necessary conditions per Dul (2016): a predictor is necessary
+#' when effect size d >= 0.1 AND permutation p-value < 0.05.
+#' When significance is NULL (no permutation test), uses d threshold only.
 #' @noRd
 identify_necessary <- function(effect_sizes, significance, d_threshold = 0.1,
                                 p_threshold = 0.05) {
@@ -303,13 +335,9 @@ print.nca_analysis <- function(x, ...) {
     cat("\n")
   }
 
-  # Identify necessary conditions
-  necessary <- identify_necessary(x$effect_sizes, x$significance)
-  necessary_preds <- rownames(x$effect_sizes)[apply(necessary, 1, any)]
-
-  if (length(necessary_preds) > 0) {
+  if (length(x$necessary_predictors) > 0) {
     cat("Necessary conditions (d >= 0.1, p < 0.05):",
-        paste(necessary_preds, collapse = ", "), "\n")
+        paste(x$necessary_predictors, collapse = ", "), "\n")
   } else {
     cat("No necessary conditions identified (d >= 0.1, p < 0.05)\n")
   }
@@ -319,9 +347,6 @@ print.nca_analysis <- function(x, ...) {
 
 #' @export
 summary.nca_analysis <- function(object, ...) {
-  necessary <- identify_necessary(object$effect_sizes, object$significance)
-  necessary_preds <- rownames(object$effect_sizes)[apply(necessary, 1, any)]
-
   result <- list(
     target       = object$target,
     predictors   = object$predictors,
@@ -330,8 +355,7 @@ summary.nca_analysis <- function(object, ...) {
     effect_sizes = object$effect_sizes,
     significance = object$significance,
     bottleneck   = object$bottleneck,
-    necessary    = necessary,
-    necessary_predictors = necessary_preds
+    necessary_predictors = object$necessary_predictors
   )
 
   class(result) <- c("summary.nca_analysis", class(result))

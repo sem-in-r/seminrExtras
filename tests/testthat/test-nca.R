@@ -40,8 +40,8 @@ nca_result <- assess_nca(pls_model,
 test_that("assess_nca returns correct S3 class and elements", {
   expect_s3_class(nca_result, "nca_analysis")
   expected_names <- c("nca_raw", "effect_sizes", "significance",
-                      "bottleneck", "pls_model", "target",
-                      "predictors", "ceilings")
+                      "bottleneck", "necessary_predictors", "pls_model",
+                      "target", "predictors", "ceilings")
   expect_true(all(expected_names %in% names(nca_result)))
 })
 
@@ -144,6 +144,10 @@ test_that("summary.nca_analysis returns correct class with expected elements", {
   expect_true(all(c("bottleneck", "necessary_predictors") %in% names(s)))
 })
 
+test_that("necessary_predictors is precomputed in result", {
+  expect_type(nca_result$necessary_predictors, "character")
+})
+
 test_that("plot.nca_analysis type='effects' runs without error", {
   expect_no_error(plot(nca_result, type = "effects"))
 })
@@ -159,6 +163,49 @@ test_that("significance matrix is correct when test.rep > 0", {
   expect_equal(dim(result_sig$significance), dim(result_sig$effect_sizes))
   expect_true(all(result_sig$significance >= 0 &
                     result_sig$significance <= 1, na.rm = TRUE))
+})
+
+# ============================================================================
+# Edge case: different dataset
+# ============================================================================
+
+test_that("assess_nca errors on negative test.rep", {
+  expect_error(
+    assess_nca(pls_model, target = "Satisfaction", test.rep = -1),
+    "non-negative integer"
+  )
+})
+
+test_that("assess_nca errors on non-integer test.rep", {
+  expect_error(
+    assess_nca(pls_model, target = "Satisfaction", test.rep = 1.5),
+    "non-negative integer"
+  )
+})
+
+# ============================================================================
+# Edge case: HOC model (should work — NCA uses construct scores directly)
+# ============================================================================
+
+test_that("assess_nca works with higher-order construct model", {
+  hoc_mm <- constructs(
+    composite("Image", multi_items("IMAG", 1:5)),
+    composite("Value", multi_items("PERV", 1:2)),
+    higher_composite("Rep", c("Image", "Value"), method = two_stage),
+    composite("Satisfaction", multi_items("CUSA", 1:3)),
+    composite("Loyalty", multi_items("CUSL", 1:3))
+  )
+  hoc_sm <- relationships(
+    paths(from = "Rep", to = "Satisfaction"),
+    paths(from = "Satisfaction", to = "Loyalty")
+  )
+  hoc_model <- estimate_pls(data = mobi, measurement_model = hoc_mm,
+                             structural_model = hoc_sm)
+
+  result <- assess_nca(hoc_model, target = "Satisfaction", test.rep = 0, seed = 123)
+
+  expect_s3_class(result, "nca_analysis")
+  expect_equal(result$predictors, "Rep")
 })
 
 # ============================================================================

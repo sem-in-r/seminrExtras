@@ -329,6 +329,33 @@ test_that("assess_coa errors on invalid focal construct", {
   )
 })
 
+test_that("assess_coa errors on invalid deviance_bounds", {
+  expect_error(
+    assess_coa(pls_model, focal_construct = "CUSL",
+               deviance_bounds = c(0.975, 0.025)),
+    "deviance_bounds"
+  )
+  expect_error(
+    assess_coa(pls_model, focal_construct = "CUSL",
+               deviance_bounds = c(-0.1, 1.2)),
+    "deviance_bounds"
+  )
+  expect_error(
+    assess_coa(pls_model, focal_construct = "CUSL",
+               deviance_bounds = c(0.5)),
+    "deviance_bounds"
+  )
+})
+
+test_that("assess_coa errors on invalid params", {
+  expect_error(
+    assess_coa(pls_model, focal_construct = "CUSL",
+               params = "nonexistent_param",
+               predict_model = pls_predictions, seed = 123),
+    "Invalid params"
+  )
+})
+
 # ============================================================================
 # Rules extraction, S3 methods, and plots (shared fixture)
 # ============================================================================

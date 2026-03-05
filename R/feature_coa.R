@@ -94,6 +94,9 @@ assess_coa <- function(seminr_model,
                         seed = 123,
                         predict_model = NULL) {
 
+  # ---------------------------------------------------------------------------
+  # Step 1: Validate inputs
+  # ---------------------------------------------------------------------------
   if (!validate_for_prediction(seminr_model, "assess_coa")) {
     return(NULL)
   }
@@ -106,14 +109,40 @@ assess_coa <- function(seminr_model,
          call. = FALSE)
   }
 
+  # Validate deviance_bounds: must be two probabilities with lower < upper
+  if (length(deviance_bounds) != 2 ||
+      any(deviance_bounds < 0) || any(deviance_bounds > 1) ||
+      deviance_bounds[1] >= deviance_bounds[2]) {
+    stop("deviance_bounds must be two values in [0, 1] with first < second, e.g. c(0.025, 0.975)",
+         call. = FALSE)
+  }
+
+  # Validate params against known model slots
+  valid_params <- c("path_coef", "outer_weights", "outer_loadings", "rSquared")
+  invalid_params <- setdiff(params, valid_params)
+  if (length(invalid_params) > 0) {
+    stop("Invalid params: ", paste(invalid_params, collapse = ", "),
+         ". Valid options: ", paste(valid_params, collapse = ", "),
+         call. = FALSE)
+  }
+
+  # ---------------------------------------------------------------------------
+  # Step 2: Compute predictive deviance via cross-validated predictions
+  # ---------------------------------------------------------------------------
   pd <- predictive_deviance(seminr_model, focal_construct,
                             technique = technique,
                             noFolds = noFolds, reps = reps,
                             cores = cores, seed = seed,
                             predict_model = predict_model)
 
+  # ---------------------------------------------------------------------------
+  # Step 3: Build deviance tree and identify deviant case groups
+  # ---------------------------------------------------------------------------
   dt <- deviance_tree(pd, deviance_bounds = deviance_bounds)
 
+  # ---------------------------------------------------------------------------
+  # Step 4: Assess parameter instability by removing deviant groups
+  # ---------------------------------------------------------------------------
   unstable <- unstable_params(seminr_model,
                               deviant_groups = dt$deviant_groups,
                               params = params)
@@ -226,6 +255,9 @@ predictive_deviance <- function(seminr_model,
 #' @export
 deviance_tree <- function(pd_result, deviance_bounds = c(0.025, 0.975)) {
 
+  # Grow a full (unpruned) regression tree on PD scores:
+  # cp = 0 disables complexity pruning to capture all splits
+  # minsplit = 2 prevents trivial single-case leaf nodes
   tree <- rpart(PD ~ ., data = pd_result$pd_data, minsplit = 2, cp = 0)
 
   dev_interval <- stats::quantile(pd_result$PD, probs = deviance_bounds)
@@ -240,6 +272,11 @@ deviance_tree <- function(pd_result, deviance_bounds = c(0.025, 0.975)) {
                            function(group) cases(tree, nodes$names %in% group))
 
   if (length(deviant_groups) > 0) {
+    if (length(deviant_groups) > 26) {
+      warning("More than 26 deviant groups found (", length(deviant_groups),
+              "); only the first 26 are labeled A-Z.", call. = FALSE)
+      deviant_groups <- deviant_groups[1:26]
+    }
     group_roots <- as.integer(names(deviant_groups))
     names(group_roots) <- names(deviant_groups) <- LETTERS[seq_along(deviant_groups)]
   } else {
@@ -306,6 +343,11 @@ unstable_params <- function(seminr_model,
 # TREE EXTRACTION HELPERS
 # =============================================================================
 
+#' Trace the path from root (node 1) to a given node in an rpart binary tree.
+#'
+#' In rpart's node numbering, a node's parent is node_id %/% 2:
+#' even nodes (2k) are left children, odd nodes (2k+1) are right children.
+#' This function recursively walks up to the root and returns the full path.
 #' @noRd
 path_to <- function(node_id) {
   if (node_id[1] != 1)
@@ -327,8 +369,18 @@ main_ancestors <- function(parent_ids) {
   as.character(ancestor_ids)
 }
 
+#' Extract deviant node information from an rpart tree frame.
+#'
+#' Classifies each node as leaf vs internal, deviant vs non-deviant (based on
+#' whether its mean PD falls outside dev_interval), then:
+#' 1. Identifies deviant leaves (individual terminal nodes with extreme PD)
+#' 2. Identifies deviant parents (internal nodes whose subtrees are deviant)
+#' 3. Finds the highest ancestor of each deviant parent to form groups
+#' 4. Maps each group ancestor to its descendant leaf nodes
 #' @noRd
 extract_nodes <- function(frame, dev_interval) {
+  # Classify every node in the tree
+
   is_leaf <- frame$var == "<leaf>"
   is_deviant <- frame$yval < dev_interval[1] | frame$yval > dev_interval[2]
   is_deviant_leaf <- is_deviant & is_leaf
@@ -341,6 +393,8 @@ extract_nodes <- function(frame, dev_interval) {
   leaf_ids <- row.names(leaves)
   dev_parent_ids <- row.names(frame[is_deviant_parent, ])
 
+  # Find the highest (most ancestral) deviant parent for each group,
+  # then collect all leaves under each ancestor to form deviant groups
   if (length(dev_parent_ids) == 0) {
     dev_ancestor_ids <- character(0)
     dev_parent_leaves <- list()
@@ -360,11 +414,17 @@ extract_nodes <- function(frame, dev_interval) {
   )
 }
 
+#' Find all leaf nodes that descend from each parent node.
+#'
+#' For each parent, traces root-to-leaf paths for every leaf and checks
+#' whether the parent appears on that path (i.e., the leaf is a descendant).
 #' @noRd
 leaves_from_nodes <- function(parent_ids, leaf_ids) {
+  # Pre-compute root-to-leaf paths for all leaves
   node_paths <- lapply(as.integer(leaf_ids), path_to)
   names(node_paths) <- leaf_ids
 
+  # For each parent, find leaves whose path passes through it
   paths_list <- lapply(parent_ids, function(node_id) {
     nid <- as.integer(node_id)
     matching <- which(vapply(node_paths, function(p) nid %in% p, logical(1)))
@@ -374,9 +434,11 @@ leaves_from_nodes <- function(parent_ids, leaf_ids) {
   paths_list
 }
 
+#' Re-estimate model without specified cases and compute parameter differences.
 #' @noRd
 param_diffs <- function(remove_cases, pls_model, params = "path_coef") {
   reduced_data <- pls_model$data[-remove_cases, ]
+  # suppressMessages hides the "Generating the seminr model" console output
   reduced_model <- suppressMessages(
     estimate_pls(
       data = reduced_data,
