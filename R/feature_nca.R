@@ -43,6 +43,43 @@ get_direct_predictors <- function(model, target) {
 }
 
 # =============================================================================
+# INPUT VALIDATION
+# =============================================================================
+
+#' Shared input validation for assess_nca() and assess_nca_esse().
+#' Validates test.rep, target, and predictors. Returns the predictor vector
+#' (auto-detected or validated). Stops on invalid input.
+#' @noRd
+validate_nca_inputs <- function(seminr_model, target, predictors, test.rep) {
+  if (!is.numeric(test.rep) || length(test.rep) != 1 || test.rep < 0 ||
+      test.rep != as.integer(test.rep)) {
+    stop("test.rep must be a non-negative integer.", call. = FALSE)
+  }
+
+  construct_names <- colnames(seminr_model$construct_scores)
+  if (!(target %in% construct_names)) {
+    stop("target '", target, "' not found in model constructs: ",
+         paste(construct_names, collapse = ", "), call. = FALSE)
+  }
+
+  if (is.null(predictors)) {
+    predictors <- get_direct_predictors(seminr_model, target)
+    if (length(predictors) == 0) {
+      stop("No direct predictors found for target '", target,
+           "' in the structural model.", call. = FALSE)
+    }
+  } else {
+    invalid <- setdiff(predictors, construct_names)
+    if (length(invalid) > 0) {
+      stop("Predictor(s) not found in model constructs: ",
+           paste(invalid, collapse = ", "), call. = FALSE)
+    }
+  }
+
+  predictors
+}
+
+# =============================================================================
 # MAIN ENTRY POINT
 # =============================================================================
 
@@ -145,36 +182,7 @@ assess_nca <- function(seminr_model,
   if (!validate_seminr_model(seminr_model, "assess_nca")) {
     return(NULL)
   }
-
-  if (!is.numeric(test.rep) || length(test.rep) != 1 || test.rep < 0 ||
-      test.rep != as.integer(test.rep)) {
-    stop("test.rep must be a non-negative integer.", call. = FALSE)
-  }
-
-  # Validate target
-  construct_names <- colnames(seminr_model$construct_scores)
-  if (!(target %in% construct_names)) {
-    stop("target '", target, "' not found in model constructs: ",
-         paste(construct_names, collapse = ", "),
-         call. = FALSE)
-  }
-
-  # Auto-detect or validate predictors
-  if (is.null(predictors)) {
-    predictors <- get_direct_predictors(seminr_model, target)
-    if (length(predictors) == 0) {
-      stop("No direct predictors found for target '", target,
-           "' in the structural model.",
-           call. = FALSE)
-    }
-  } else {
-    invalid <- setdiff(predictors, construct_names)
-    if (length(invalid) > 0) {
-      stop("Predictor(s) not found in model constructs: ",
-           paste(invalid, collapse = ", "),
-           call. = FALSE)
-    }
-  }
+  predictors <- validate_nca_inputs(seminr_model, target, predictors, test.rep)
 
   # ---------------------------------------------------------------------------
   # Step 2: Run NCA analysis on construct scores
@@ -441,7 +449,7 @@ plot_nca_effects <- function(nca_result, ...) {
   cols <- if (n_ceil <= 2) {
     c("steelblue", "coral")[seq_len(n_ceil)]
   } else {
-    grDevices::palette.colors(n = n_ceil, palette = "Set1")
+    palette.colors(n = n_ceil, palette = "Set1")
   }
 
   ylim_max <- max(0.5, max(es, na.rm = TRUE) * 1.2)
@@ -624,28 +632,7 @@ assess_nca_esse <- function(seminr_model,
   if (any(thresholds < 0) || any(thresholds > 1)) {
     stop("thresholds must be between 0 and 1.", call. = FALSE)
   }
-  if (!is.numeric(test.rep) || length(test.rep) != 1 || test.rep < 0 ||
-      test.rep != as.integer(test.rep)) {
-    stop("test.rep must be a non-negative integer.", call. = FALSE)
-  }
-
-  construct_names <- colnames(seminr_model$construct_scores)
-  if (!(target %in% construct_names)) {
-    stop("target '", target, "' not found in model constructs: ",
-         paste(construct_names, collapse = ", "), call. = FALSE)
-  }
-
-  if (is.null(predictors)) {
-    predictors <- get_direct_predictors(seminr_model, target)
-    if (length(predictors) == 0) {
-      stop("No direct predictors found for target '", target, "'.", call. = FALSE)
-    }
-  } else {
-    invalid <- setdiff(predictors, construct_names)
-    if (length(invalid) > 0) {
-      stop("Predictor(s) not found: ", paste(invalid, collapse = ", "), call. = FALSE)
-    }
-  }
+  predictors <- validate_nca_inputs(seminr_model, target, predictors, test.rep)
 
   if (ceiling != "ce_fdh") {
     warning("NCA-ESSE benchmark is derived for CE-FDH (Becker et al., 2026). ",

@@ -756,7 +756,7 @@ plot_pd <- function(coa, ...) {
   if (any(!non_dev)) {
     n_group_colors <- max(0, max(pd_df$group) - 1)
     cols <- if (n_group_colors > 0) {
-      c("black", grDevices::palette.colors(n = n_group_colors, palette = "Set1"))
+      c("black", palette.colors(n = n_group_colors, palette = "Set1"))
     } else {
       "black"
     }
@@ -823,7 +823,7 @@ plot_group_scores <- function(coa, remove = NULL, ...) {
   old_par <- par(no.readonly = TRUE)
   on.exit(par(old_par))
 
-  cols <- grDevices::palette.colors(n = ncol(group_scores), palette = "Set1")
+  cols <- palette.colors(n = ncol(group_scores), palette = "Set1")
 
   matplot(group_scores, type = "b", pch = colnames(group_scores),
           ylim = c(-ylim_range, ylim_range),
@@ -835,10 +835,10 @@ plot_group_scores <- function(coa, remove = NULL, ...) {
   # 50% zone shading
   polygon(x = c(0, num_constructs + 1, num_constructs + 1, 0),
           y = c(1.15, 1.15, -1.15, -1.15),
-          col = grDevices::adjustcolor("gray", alpha.f = 0.1), border = NA)
+          col = adjustcolor("gray", alpha.f = 0.1), border = NA)
   polygon(x = c(0, num_constructs + 1, num_constructs + 1, 0),
           y = c(0.67, 0.67, -0.67, -0.67),
-          col = grDevices::adjustcolor("gray", alpha.f = 0.15), border = NA)
+          col = adjustcolor("gray", alpha.f = 0.15), border = NA)
 
   # Separator before outcome
   if (length(outcome_idx) == 1) {

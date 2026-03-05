@@ -49,3 +49,30 @@ nca_loy <- assess_nca(mobi_pls,
 
 print(nca_loy)
 summary(nca_loy)
+
+# ============================================================================
+# NCA-ESSE: Effect Size Sensitivity Extension (Becker et al., 2026)
+# ============================================================================
+# NCA-ESSE assesses how robust NCA results are to extreme response patterns.
+# It varies the ECDF threshold, removing upper-left observations, and
+# compares empirical effect size changes against a uniform benchmark.
+
+# Run NCA-ESSE on Satisfaction ----
+esse_sat <- assess_nca_esse(mobi_pls,
+                             target = "Satisfaction",
+                             thresholds = seq(0, 0.05, by = 0.005),
+                             seed = 123)
+
+# Print: shows empirical effect sizes, benchmark, and sensitivity (delta)
+print(esse_sat)
+
+# Summary: Table A2-style output per predictor
+summary(esse_sat)
+
+# Sensitivity plot (Fig. 4 in Becker et al., 2026):
+# Empirical vs benchmark effect sizes across ECDF thresholds
+plot(esse_sat, type = "sensitivity")
+
+# Difference plot (Fig. 6 in Becker et al., 2026):
+# Incremental empirical-benchmark difference at each step
+plot(esse_sat, type = "difference")

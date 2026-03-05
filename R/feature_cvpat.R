@@ -117,10 +117,10 @@ assess_cvpat_compare <- function(established_model,
   # ---------------------------------------------------------------------------
   # Step 1: Validate inputs
   # ---------------------------------------------------------------------------
-  # Higher-order constructs cannot be used with PLSpredict (no published method)
-  if (has_higher_order(established_model) || has_higher_order(alternative_model)) {
-    warning("There is no published solution for applying PLSpredict to higher-order models.",
-            call. = FALSE)
+  if (!validate_for_prediction(established_model, "assess_cvpat_compare")) {
+    return(NULL)
+  }
+  if (!validate_for_prediction(alternative_model, "assess_cvpat_compare")) {
     return(NULL)
   }
 
@@ -250,7 +250,7 @@ assess_cvpat_compare <- function(established_model,
   Both models under comparison have identical endogenous constructs with identical measurement models.
   Purely exogenous constructs can differ in regards to their relationships with both nomological
   partners and measurement indicators."
-  class(mat_out) <- append(class(mat_out), "table_output")
+  class(mat_out) <- c("table_output", class(mat_out))
 
   return(mat_out)
 }
@@ -467,7 +467,7 @@ assess_cvpat <- function(seminr_model,
   # Step 10: Add metadata and return
   # ---------------------------------------------------------------------------
   comment(mat_lm) <- comment(mat_ia) <- "CVPAT as per Sharma et al. (2023)."
-  class(mat_lm) <- class(mat_ia) <- append(class(mat_lm), "table_output")
+  class(mat_lm) <- class(mat_ia) <- c("table_output", class(mat_lm))
 
   return(list(CVPAT_compare_LM = mat_lm,
               CVPAT_compare_IA = mat_ia))

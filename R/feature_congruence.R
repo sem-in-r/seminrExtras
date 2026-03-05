@@ -97,7 +97,6 @@ congruence_test <- function(seminr_model,
   # Step 2: Define the congruence coefficient calculation
   # ---------------------------------------------------------------------------
   # The congruence coefficient (rc) measures pattern similarity between two
-
   # vectors. Formula: rc = sum(X*Y) / sqrt(sum(X^2) * sum(Y^2))
   # This is essentially a cosine similarity applied to correlation patterns.
   calc_congruence <- function(mat, X, Y) {

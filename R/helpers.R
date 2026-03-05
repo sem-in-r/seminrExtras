@@ -21,7 +21,7 @@
 #' @importFrom rpart rpart
 #' @importFrom graphics abline axis legend lines matlines matplot
 #'   par plot points polygon rect text
-#' @importFrom grDevices palette
+#' @importFrom grDevices adjustcolor palette palette.colors
 #'
 NULL
 
@@ -31,7 +31,7 @@ NULL
 
 #' @noRd
 validate_seminr_model <- function(model, func_name = "This function") {
-  if (!any(class(model) == "seminr_model")) {
+  if (!inherits(model, "seminr_model")) {
     warning(func_name, " only works with SEMinR models.", call. = FALSE)
     return(FALSE)
   }
