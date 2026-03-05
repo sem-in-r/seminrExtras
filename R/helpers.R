@@ -20,10 +20,14 @@
 #' @importFrom seminr predict_pls
 #' @importFrom rpart rpart
 #' @importFrom graphics abline axis legend matlines matplot
-#'   par plot points polygon text
+#'   par plot points polygon rect text
 #' @importFrom grDevices palette
 #'
 NULL
+
+# =============================================================================
+# VALIDATION HELPERS
+# =============================================================================
 
 #' @noRd
 validate_seminr_model <- function(model, func_name = "This function") {
@@ -50,4 +54,152 @@ validate_for_prediction <- function(model, func_name = "This function") {
     return(FALSE)
   }
   return(TRUE)
+}
+
+# =============================================================================
+# ENDOGENOUS CONSTRUCT HELPERS
+# =============================================================================
+
+#' @noRd
+get_endogenous_constructs <- function(model) {
+  seminr:::all_endogenous(model$smMatrix)
+}
+
+#' @noRd
+get_endogenous_items <- function(model, constructs = NULL) {
+  if (is.null(constructs)) {
+    constructs <- get_endogenous_constructs(model)
+  }
+  unlist(lapply(constructs, function(x) {
+    seminr:::items_of_construct(construct = x, model = model)
+  }))
+}
+
+# =============================================================================
+# LOSS CALCULATION HELPERS
+# =============================================================================
+
+#' @noRd
+lv_loss <- function(construct, model, error) {
+  items <- seminr:::items_of_construct(construct = construct, model = model)
+  if (length(dim(error)) > 1) {
+    loss <- rowMeans(error[, items, drop = FALSE]^2)
+  } else {
+    loss <- error[, items, drop = FALSE]^2
+  }
+  return(loss)
+}
+
+#' @noRd
+overall_loss <- function(error) {
+  if (length(dim(error)) > 1) {
+    return(rowMeans(error))
+  }
+  return(error)
+}
+
+#' @noRd
+calculate_lv_losses <- function(constructs, model, error_matrix) {
+  losses <- do.call("cbind", lapply(constructs, function(x) {
+    lv_loss(construct = x, model = model, error = error_matrix)
+  }))
+  colnames(losses) <- constructs
+  return(losses)
+}
+
+# =============================================================================
+# BOOTSTRAP CVPAT HELPERS
+# =============================================================================
+
+#' @noRd
+bootstrap_cvpat <- function(loss_m1, loss_m2, testtype = "two.sided", nboot = 2000) {
+
+  n <- length(loss_m1)
+
+  org_t_test <- t.test(loss_m2, loss_m1,
+                       alternative = testtype,
+                       paired = TRUE)$statistic
+
+  org_d_bar <- mean(loss_m2 - loss_m1)
+
+  d_null <- loss_m2 - loss_m1 - org_d_bar
+  d <- loss_m2 - loss_m1
+
+  boot_d_bar <- rep(0, nboot)
+  m_losses <- cbind(loss_m1, loss_m2)
+  t_stat <- rep(0, nboot)
+
+  for (b in 1:nboot) {
+    boot_sample <- m_losses[sample(1:length(d), length(d), replace = TRUE), ]
+
+    t_stat[b] <- t.test(boot_sample[, 2], boot_sample[, 1],
+                        mu = mean(d),
+                        alternative = testtype,
+                        paired = TRUE)$statistic
+
+    boot_d_bar[b] <- mean(sample(d_null, length(d_null), replace = TRUE))
+  }
+
+  sorted_t_stat <- sort(t_stat, decreasing = FALSE)
+  sorted_boot_d_bar <- sort(boot_d_bar, decreasing = FALSE)
+
+  std <- sqrt(var(boot_d_bar))
+
+  if (std < .Machine$double.eps || is.na(std)) {
+    t_stat_boot_var <- NA
+    warning("Bootstrap variance near zero; t-statistic set to NA", call. = FALSE)
+  } else {
+    t_stat_boot_var <- org_d_bar / std
+  }
+
+  if (testtype == "two.sided") {
+    p_value_perc_t <- (sum(sorted_t_stat > abs(org_t_test)) +
+                       sum(sorted_t_stat <= -abs(org_t_test))) / nboot
+    p_value_perc_d <- (sum(sorted_boot_d_bar > abs(org_d_bar)) +
+                       sum(sorted_boot_d_bar <= -abs(org_d_bar))) / nboot
+    p_value_var_t <- 2 * pt(-abs(t_stat_boot_var), (n - 1), lower.tail = TRUE)
+  }
+
+  if (testtype == "greater") {
+    idx_t <- which(sorted_t_stat > org_t_test)
+    idx_d <- which(sorted_boot_d_bar > org_d_bar)
+
+    if (length(idx_t) == 0) {
+      p_value_perc_t <- 0
+      p_value_perc_d <- 0
+    } else {
+      p_value_perc_t <- 1 - (head(idx_t, 1) - 1) / (nboot + 1)
+      p_value_perc_d <- 1 - (head(idx_d, 1) - 1) / (nboot + 1)
+    }
+    p_value_var_t <- pt(t_stat_boot_var, (n - 1), lower.tail = FALSE)
+  }
+
+  results <- data.frame(
+    "Std. T value" = org_t_test,
+    "Std. P value" = p_value_perc_t,
+    "Boot T value" = as.numeric(t_stat_boot_var),
+    "Boot P Value" = as.numeric(p_value_var_t),
+    "Perc. P Value" = as.numeric(p_value_perc_d),
+    check.names = FALSE
+  )
+
+  return(results)
+}
+
+#' @noRd
+cvpat_per_construct <- function(loss_one, loss_two, testtype = "two.sided", nboot = 2000) {
+  constructs <- colnames(loss_one)
+  results <- as.data.frame(matrix(nrow = 0, ncol = 6))
+
+  for (construct in constructs) {
+    boot_result <- bootstrap_cvpat(loss_one[, construct],
+                                   loss_two[, construct],
+                                   testtype = testtype,
+                                   nboot = nboot)
+    results <- rbind(results, c(construct, unlist(boot_result)))
+  }
+
+  colnames(results) <- c("Construct", "Std. T value", "Std. P value",
+                         "Boot T value", "Boot P Value", "Perc. P Value")
+  return(results)
 }

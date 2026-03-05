@@ -2,7 +2,7 @@
 % Please edit documentation in R/feature_congruence.R
 \name{congruence_test}
 \alias{congruence_test}
-\title{SEMinR function to bootstrap calculate the congruence coefficient}
+\title{Bootstrap congruence coefficient test}
 \usage{
 congruence_test(
   seminr_model,
@@ -13,24 +13,30 @@ congruence_test(
 )
 }
 \arguments{
-\item{seminr_model}{The SEMinR model for CVPAT analysis}
+\item{seminr_model}{The SEMinR model for congruence analysis}
 
 \item{nboot}{The number of bootstrap subsamples to execute (defaults to 2000).}
 
 \item{seed}{The seed for reproducibility (defaults to 123).}
 
 \item{alpha}{The required level of alpha for statistical testing (defaults
-to 0.05).}
+to 0.05). Used to compute confidence intervals.}
 
-\item{threshold}{The threshold with which to compare significance testing
-H0: rc < 1 (defaults to 1).}
+\item{threshold}{The threshold with which to compare significance testing.
+H0: rc < threshold (defaults to 1).}
 }
 \value{
-A matrix of the estimated congruence coefficient and results of
-significance testing.
+A list containing a matrix of congruence coefficients and
+  significance test results for all construct pairs.
 }
 \description{
-`congruence_test` conducts a single bootstrapped congruence test.
+`congruence_test` conducts a bootstrapped significance test of congruence
+coefficients between all pairs of constructs in a PLS-SEM model.
+}
+\details{
+The congruence coefficient (rc) measures how similarly two constructs
+relate to other constructs in the model. Values close to 1 indicate high
+congruence. The test evaluates H0: rc < threshold (default = 1).
 }
 \examples{
 # Load libraries
@@ -72,4 +78,7 @@ congruence_test(seminr_model = corp_rep_pls_model,
 Franke, G. R., Sarstedt, M., & Danks, N. P. (2021). Assessing
 measure congruence in nomological networks. Journal of Business Research,
 130, 318-334.
+}
+\seealso{
+[assess_cvpat()] and [assess_cvpat_compare()] for predictive validity testing
 }

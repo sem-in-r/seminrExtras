@@ -83,8 +83,11 @@ SEMinRExtras also serves to host the example models used in the PLS-SEM in R wor
 
 ### New features implemented with this package
 
-- assess_cvpat_compare
-- assess_cvpat
+- `assess_cvpat` - Single model CVPAT against LM and IA benchmarks
+- `assess_cvpat_compare` - Compare predictive loss of two PLS models
+- `assess_coa` - Composite Overfit Analysis (COA) framework
+- `assess_nca` - Necessary Condition Analysis (NCA) for PLS-SEM
+- `congruence_test` - Bootstrap congruence coefficient testing
 
 ## The demo files for Hair et al. (2026)  
 
@@ -92,6 +95,7 @@ In order to access the demo files for the textbook, you can run the ```demo()```
 
 - seminr-help-debugging
 - seminr-pls-cvpat
+- seminr-pls-nca
 - seminr-primer-v2-chap2
 - seminr-primer-v2-chap3
 - seminr-primer-v2-chap4
@@ -227,8 +231,54 @@ print(compare_results,
 
 The established model has significantly lower predictive loss compared to the competing model. Thus, we can say that the established model has superior predictive performance compared to the competing model.
 
+## Necessary Condition Analysis (NCA)
 
-# References 
+NCA (Dul, 2016) tests whether a predictor is a *necessary condition* for an outcome -- i.e., whether a certain level of X is required (but not sufficient) for a certain level of Y. This complements the sufficiency-based logic of PLS-SEM regression.
+
+`assess_nca()` wraps the NCA R package for seamless use with seminr models. It auto-detects direct predictors from the structural model and runs ceiling-based NCA analysis.
+
+```{r, eval=FALSE, echo=TRUE}
+library(seminr)
+library(seminrExtras)
+
+# Estimate a simple model
+mobi_mm <- constructs(
+  composite("Image",        multi_items("IMAG", 1:5)),
+  composite("Value",        multi_items("PERV", 1:2)),
+  composite("Satisfaction", multi_items("CUSA", 1:3)),
+  composite("Loyalty",      multi_items("CUSL", 1:3))
+)
+
+mobi_sm <- relationships(
+  paths(from = c("Image", "Value"), to = "Satisfaction"),
+  paths(from = "Satisfaction", to = "Loyalty")
+)
+
+mobi_pls <- estimate_pls(data = mobi,
+                          measurement_model = mobi_mm,
+                          structural_model  = mobi_sm)
+
+# Run NCA -- predictors auto-detected from structural model
+nca_result <- assess_nca(mobi_pls,
+                          target = "Satisfaction",
+                          test.rep = 1000,
+                          seed = 123)
+
+# Effect sizes and significance
+print(nca_result)
+
+# Full summary with bottleneck tables
+summary(nca_result)
+
+# Visualize
+plot(nca_result, type = "effects")   # Effect size bar chart
+plot(nca_result, type = "scatter")   # Ceiling line scatter plots
+```
+
+A predictor is identified as a necessary condition when it has an effect size d >= 0.1 and a significant permutation test (p < 0.05), following guidelines from Richter et al. (2020).
+
+# References
+- Dul, J. (2016). Necessary Condition Analysis (NCA): Logic and Methodology of 'Necessary but Not Sufficient' Causality. Organizational Research Methods, 19(1), 10-52.
 - Hair, J.F. (Jr), Hult, T.M., Ringle, C.M., Sarstedt, M., Danks, N.P., and Adler, S. (2026). Partial Least Squares Structural Equation Modeling (PLS-SEM) Using R (Second Edition) - A Workbook. Springer.
 - Liengaard, B. D., Sharma, P. N., Hult, G. T. M., Jensen, M. B., Sarstedt, M., Hair, J. F., & Ringle, C. M. (2021). Prediction: coveted,yet forsaken? Introducing a cross‐validated predictive ability test in partial least squares path modeling. Decision Sciences, 52(2), 362-392.
 - Ray, S., Danks, N.P., Calero Valdez, A. (2026) SEMinR: Domain-specific language for building, estimating, and visualizing structural equation models in R.

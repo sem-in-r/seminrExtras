@@ -16,7 +16,8 @@ LazyData: true
 Suggests:
     testthat (>= 3.0.0),
     knitr,
-    rmarkdown
+    rmarkdown,
+    NCA (>= 4.0.0)
 Config/testthat/edition: 3
 URL: https://github.com/sem-in-r/seminr
 BugReports: https://github.com/sem-in-r/seminr/issues
