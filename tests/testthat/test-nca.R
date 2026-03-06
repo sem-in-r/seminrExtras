@@ -410,29 +410,3 @@ test_that("assess_nca works with corp_rep_data model", {
   expect_equal(sort(result$predictors), sort(c("COMP", "LIKE")))
 })
 
-# ============================================================================
-# NCA package comparison (only when NCA is installed)
-# ============================================================================
-
-test_that("internal CE-FDH matches NCA package results", {
-  skip_if_not_installed("NCA")
-
-  # Run with NCA package using a non-standard ceiling to force NCA path,
-  # combined with ce_fdh
-  scores <- as.data.frame(pls_model$construct_scores)
-
-  set.seed(123)
-  nca_pkg <- suppressMessages(
-    NCA::nca_analysis(
-      data = scores, x = c("Image", "Value"), y = "Satisfaction",
-      ceilings = c("ce_fdh", "cr_fdh"), test.rep = 0, steps = 10
-    )
-  )
-
-  for (pred in c("Image", "Value")) {
-    pkg_d <- nca_pkg$summaries[[pred]]$params["Effect size", "ce_fdh"]
-    internal_d <- nca_result$effect_sizes[pred, "ce_fdh"]
-    expect_equal(internal_d, pkg_d, tolerance = 0.02,
-                 label = paste("CE-FDH effect size for", pred))
-  }
-})

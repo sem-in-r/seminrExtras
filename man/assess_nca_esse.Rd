@@ -38,8 +38,7 @@ computation time by the number of thresholds.}
 
 \item{seed}{Random seed for reproducibility (default 123).}
 
-\item{...}{Additional arguments passed to \code{NCA::nca_analysis()} when
-using ceiling techniques not supported internally.}
+\item{...}{Additional arguments (currently unused).}
 }
 \value{
 An object of class \code{nca_esse} containing:
@@ -77,9 +76,6 @@ At each threshold \code{t}, observations whose joint ECDF_NCA value
 (P(X <= x, Y >= y)) is at most \code{t} are treated as extreme and
 excluded before computing the CE-FDH ceiling. The uniform benchmark
 d = t(1 - ln(t)) gives the expected effect size if no necessity exists.
-
-CE-FDH and CR-FDH ceilings are computed internally. For other ceiling
-techniques, the \pkg{NCA} package must be installed.
 }
 \examples{
 library(seminr)

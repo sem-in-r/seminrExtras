@@ -25,8 +25,7 @@ If \code{NULL} (default), auto-detected from the structural model as
 direct predictors of \code{target}.}
 
 \item{ceilings}{Character vector of ceiling techniques to use
-(default \code{c("ce_fdh", "cr_fdh")}). CE-FDH and CR-FDH are computed
-internally; other techniques require the \pkg{NCA} package.}
+(default \code{c("ce_fdh", "cr_fdh")}).}
 
 \item{test.rep}{Number of permutation test repetitions for significance
 testing (default 1000). Set to 0 to skip significance testing.}
@@ -35,13 +34,11 @@ testing (default 1000). Set to 0 to skip significance testing.}
 
 \item{seed}{Random seed for reproducibility (default 123).}
 
-\item{...}{Additional arguments passed to \code{NCA::nca_analysis()} when
-using ceiling techniques not supported internally.}
+\item{...}{Additional arguments (currently unused).}
 }
 \value{
 An object of class \code{nca_analysis} containing:
-  \item{nca_raw}{The raw result from \code{NCA::nca_analysis()} (NULL when
-    using internal ceilings)}
+  \item{nca_raw}{Reserved (always NULL)}
   \item{effect_sizes}{Matrix of effect sizes (d) per predictor and ceiling}
   \item{significance}{Matrix of p-values per predictor and ceiling (NULL if test.rep = 0)}
   \item{bottleneck}{List of bottleneck tables, one per ceiling technique}
@@ -65,9 +62,6 @@ condition when it has an effect size (d) >= 0.1 and a significant p-value
 The function extracts construct scores from the seminr model, auto-detects
 direct predictors of the target from the structural model, and computes
 ceiling envelopes using the specified techniques.
-
-CE-FDH and CR-FDH ceilings are computed internally. For other ceiling
-techniques, the \pkg{NCA} package must be installed.
 }
 \examples{
 library(seminr)

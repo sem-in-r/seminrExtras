@@ -139,8 +139,6 @@ test_that("assess_coa works with predict_EA on mediated moderation", {
 # ============================================================================
 
 test_that("NCA reproducibility with significance testing", {
-  skip_if_not_installed("NCA")
-
   mobi_mm <- constructs(
     composite("Image",        multi_items("IMAG", 1:5)),
     composite("Value",        multi_items("PERV", 1:2)),

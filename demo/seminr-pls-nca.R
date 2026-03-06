@@ -38,7 +38,7 @@ summary(nca_sat)
 # Effect size bar plot
 plot(nca_sat, type = "effects")
 
-# Scatter plots with ceiling lines (uses NCA package if installed)
+# Scatter plots with ceiling lines
 plot(nca_sat, type = "scatter")
 
 # Run NCA on Loyalty ----

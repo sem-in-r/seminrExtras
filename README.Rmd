@@ -265,7 +265,7 @@ The established model has significantly lower predictive loss compared to the co
 
 ## Necessary Condition Analysis (NCA)
 
-NCA (Dul, 2016) tests whether a predictor is a *necessary condition* for an outcome. `assess_nca()` wraps the NCA R package for use with seminr models:
+NCA (Dul, 2016) tests whether a predictor is a *necessary condition* for an outcome. `assess_nca()` computes ceiling-based NCA analysis on seminr models:
 
 ```{r, eval=FALSE, echo=TRUE}
 # Run NCA -- predictors auto-detected from structural model

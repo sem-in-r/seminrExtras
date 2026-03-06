@@ -1,9 +1,7 @@
 # =============================================================================
 # feature_nca.R - Necessary Condition Analysis (NCA) for PLS-SEM
 # =============================================================================
-# Implements CE-FDH and CR-FDH ceiling analysis internally. The NCA package
-# (Dul, 2016, 2020) is optional -- only required for ceiling techniques
-# beyond CE-FDH and CR-FDH, or for NCA's native scatter plots.
+# Implements CE-FDH and CR-FDH ceiling analysis internally.
 #
 # References:
 # - Dul, J. (2016). "Necessary Condition Analysis (NCA): Logic and
@@ -132,8 +130,8 @@ nca_effect_size <- function(x, y, ceiling_type) {
   switch(ceiling_type,
     ce_fdh = ce_fdh_effect_size(x, y),
     cr_fdh = cr_fdh_effect_size(x, y),
-    stop("Internal NCA supports: ", paste(INTERNAL_CEILINGS, collapse = ", "),
-         ". Install the NCA package for '", ceiling_type, "'.", call. = FALSE)
+    stop("Supported ceiling techniques: ", paste(INTERNAL_CEILINGS, collapse = ", "),
+         ". Got '", ceiling_type, "'.", call. = FALSE)
   )
 }
 
@@ -227,72 +225,6 @@ run_nca_internal <- function(data, x_names, y_name, ceilings, test.rep, steps) {
 }
 
 # =============================================================================
-# NCA PACKAGE FALLBACK
-# =============================================================================
-# Used only when ceiling techniques beyond CE-FDH/CR-FDH are requested.
-
-#' @noRd
-check_nca_installed <- function() {
-  if (!requireNamespace("NCA", quietly = TRUE)) {
-    stop("Package 'NCA' is required for ceiling techniques beyond CE-FDH and CR-FDH. ",
-         "Install it with: install.packages('NCA')",
-         call. = FALSE)
-  }
-}
-
-#' @noRd
-format_nca_effects <- function(nca_raw, predictors, ceilings) {
-  mat <- matrix(NA_real_, nrow = length(predictors), ncol = length(ceilings),
-                dimnames = list(predictors, ceilings))
-  for (pred in predictors) {
-    params <- nca_raw$summaries[[pred]]$params
-    if (!is.null(params)) {
-      for (ceil in ceilings) {
-        if (ceil %in% colnames(params) && "Effect size" %in% rownames(params)) {
-          mat[pred, ceil] <- params["Effect size", ceil]
-        }
-      }
-    }
-  }
-  mat
-}
-
-#' @noRd
-format_nca_significance <- function(nca_raw, predictors, ceilings) {
-  has_pvals <- any(vapply(predictors, function(pred) {
-    params <- nca_raw$summaries[[pred]]$params
-    !is.null(params) && "p-value" %in% rownames(params) &&
-      any(!is.na(params["p-value", ]))
-  }, logical(1)))
-  if (!has_pvals) return(NULL)
-
-  mat <- matrix(NA_real_, nrow = length(predictors), ncol = length(ceilings),
-                dimnames = list(predictors, ceilings))
-  for (pred in predictors) {
-    params <- nca_raw$summaries[[pred]]$params
-    if (!is.null(params)) {
-      for (ceil in ceilings) {
-        if (ceil %in% colnames(params) && "p-value" %in% rownames(params)) {
-          mat[pred, ceil] <- params["p-value", ceil]
-        }
-      }
-    }
-  }
-  mat
-}
-
-#' @noRd
-format_nca_bottleneck <- function(nca_raw, ceilings) {
-  bn <- list()
-  for (ceil in ceilings) {
-    if (!is.null(nca_raw$bottlenecks[[ceil]])) {
-      bn[[ceil]] <- nca_raw$bottlenecks[[ceil]]
-    }
-  }
-  bn
-}
-
-# =============================================================================
 # PREDICTOR EXTRACTION
 # =============================================================================
 
@@ -362,27 +294,21 @@ validate_nca_inputs <- function(seminr_model, target, predictors, test.rep) {
 #' direct predictors of the target from the structural model, and computes
 #' ceiling envelopes using the specified techniques.
 #'
-#' CE-FDH and CR-FDH ceilings are computed internally. For other ceiling
-#' techniques, the \pkg{NCA} package must be installed.
-#'
 #' @param seminr_model An estimated SEMinR model from \code{estimate_pls()}.
 #' @param target Name of the endogenous (outcome) construct (character).
 #' @param predictors Optional character vector of predictor construct names.
 #'   If \code{NULL} (default), auto-detected from the structural model as
 #'   direct predictors of \code{target}.
 #' @param ceilings Character vector of ceiling techniques to use
-#'   (default \code{c("ce_fdh", "cr_fdh")}). CE-FDH and CR-FDH are computed
-#'   internally; other techniques require the \pkg{NCA} package.
+#'   (default \code{c("ce_fdh", "cr_fdh")}).
 #' @param test.rep Number of permutation test repetitions for significance
 #'   testing (default 1000). Set to 0 to skip significance testing.
 #' @param steps Number of steps in the bottleneck table (default 10).
 #' @param seed Random seed for reproducibility (default 123).
-#' @param ... Additional arguments passed to \code{NCA::nca_analysis()} when
-#'   using ceiling techniques not supported internally.
+#' @param ... Additional arguments (currently unused).
 #'
 #' @return An object of class \code{nca_analysis} containing:
-#'   \item{nca_raw}{The raw result from \code{NCA::nca_analysis()} (NULL when
-#'     using internal ceilings)}
+#'   \item{nca_raw}{Reserved (always NULL)}
 #'   \item{effect_sizes}{Matrix of effect sizes (d) per predictor and ceiling}
 #'   \item{significance}{Matrix of p-values per predictor and ceiling (NULL if test.rep = 0)}
 #'   \item{bottleneck}{List of bottleneck tables, one per ceiling technique}
@@ -452,31 +378,15 @@ assess_nca <- function(seminr_model,
   # Step 2: Run NCA analysis on construct scores
   # ---------------------------------------------------------------------------
   scores <- as.data.frame(seminr_model$construct_scores)
-  use_internal <- all(ceilings %in% INTERNAL_CEILINGS)
 
   set.seed(seed)
 
-  if (use_internal) {
-    nca_result <- run_nca_internal(scores, predictors, target, ceilings,
-                                    test.rep, steps)
-    effect_sizes <- nca_result$effect_sizes
-    significance <- nca_result$p_values
-    bottleneck   <- nca_result$bottlenecks
-    nca_raw      <- NULL
-  } else {
-    # Ceiling techniques beyond CE-FDH/CR-FDH require the NCA package
-    check_nca_installed()
-    nca_raw <- suppressMessages(
-      NCA::nca_analysis(
-        data = scores, x = predictors, y = target,
-        ceilings = ceilings, test.rep = test.rep,
-        steps = steps, ...
-      )
-    )
-    effect_sizes <- format_nca_effects(nca_raw, predictors, ceilings)
-    significance <- format_nca_significance(nca_raw, predictors, ceilings)
-    bottleneck   <- format_nca_bottleneck(nca_raw, ceilings)
-  }
+  nca_result <- run_nca_internal(scores, predictors, target, ceilings,
+                                  test.rep, steps)
+  effect_sizes <- nca_result$effect_sizes
+  significance <- nca_result$p_values
+  bottleneck   <- nca_result$bottlenecks
+  nca_raw      <- NULL
 
   # ---------------------------------------------------------------------------
   # Step 3: Format and identify necessary conditions
@@ -627,15 +537,9 @@ plot.nca_analysis <- function(x, type = c("scatter", "effects"), ...) {
   )
 }
 
-#' Scatter plot with ceiling lines. Uses NCA package if available and
-#' nca_raw exists, otherwise draws scatter with internal ceiling lines.
+#' Scatter plot with ceiling lines.
 #' @noRd
 plot_nca_scatter <- function(nca_result, ...) {
-  if (!is.null(nca_result$nca_raw) && requireNamespace("NCA", quietly = TRUE)) {
-    plot(nca_result$nca_raw, ...)
-    return(invisible(NULL))
-  }
-
   scores <- nca_result$pls_model$construct_scores
   n_pred <- length(nca_result$predictors)
 
@@ -808,9 +712,6 @@ benchmark_effect_size <- function(t) {
 #' excluded before computing the CE-FDH ceiling. The uniform benchmark
 #' d = t(1 - ln(t)) gives the expected effect size if no necessity exists.
 #'
-#' CE-FDH and CR-FDH ceilings are computed internally. For other ceiling
-#' techniques, the \pkg{NCA} package must be installed.
-#'
 #' @param seminr_model An estimated SEMinR model from \code{estimate_pls()}.
 #' @param target Name of the endogenous (outcome) construct.
 #' @param predictors Optional character vector of predictor construct names.
@@ -824,8 +725,7 @@ benchmark_effect_size <- function(t) {
 #'   computation time by the number of thresholds.
 #' @param steps Number of steps in the bottleneck table (default 10).
 #' @param seed Random seed for reproducibility (default 123).
-#' @param ... Additional arguments passed to \code{NCA::nca_analysis()} when
-#'   using ceiling techniques not supported internally.
+#' @param ... Additional arguments (currently unused).
 #'
 #' @return An object of class \code{nca_esse} containing:
 #'   \item{effect_sizes}{Matrix of empirical effect sizes (thresholds x predictors)}
@@ -899,9 +799,9 @@ assess_nca_esse <- function(seminr_model,
             call. = FALSE)
   }
 
-  use_internal <- ceiling %in% INTERNAL_CEILINGS
-  if (!use_internal) {
-    check_nca_installed()
+  if (!(ceiling %in% INTERNAL_CEILINGS)) {
+    stop("Supported ceiling techniques: ", paste(INTERNAL_CEILINGS, collapse = ", "),
+         ". Got '", ceiling, "'.", call. = FALSE)
   }
 
   scores <- as.data.frame(seminr_model$construct_scores)
@@ -950,32 +850,13 @@ assess_nca_esse <- function(seminr_model,
       filtered_x <- filtered_scores[[pred]]
       filtered_y <- filtered_scores[[target]]
 
-      if (use_internal) {
-        d <- nca_effect_size(filtered_x, filtered_y, ceiling)
-        empirical[t_idx, p_idx] <- d
+      d <- nca_effect_size(filtered_x, filtered_y, ceiling)
+      empirical[t_idx, p_idx] <- d
 
-        if (test.rep > 0) {
-          significance[t_idx, p_idx] <- nca_permutation_test(
-            filtered_x, filtered_y, ceiling, d, test.rep
-          )
-        }
-      } else {
-        nca_res <- suppressMessages(
-          NCA::nca_analysis(
-            data = filtered_scores, x = pred, y = target,
-            ceilings = ceiling, test.rep = test.rep,
-            steps = steps, ...
-          )
+      if (test.rep > 0) {
+        significance[t_idx, p_idx] <- nca_permutation_test(
+          filtered_x, filtered_y, ceiling, d, test.rep
         )
-        params <- nca_res$summaries[[pred]]$params
-        if (!is.null(params) && "Effect size" %in% rownames(params) &&
-            ceiling %in% colnames(params)) {
-          empirical[t_idx, p_idx] <- params["Effect size", ceiling]
-        }
-        if (!is.null(significance) && !is.null(params) &&
-            "p-value" %in% rownames(params) && ceiling %in% colnames(params)) {
-          significance[t_idx, p_idx] <- params["p-value", ceiling]
-        }
       }
     }
   }

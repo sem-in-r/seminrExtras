@@ -241,7 +241,7 @@ The established model has significantly lower predictive loss compared to the co
 
 NCA (Dul, 2016) tests whether a predictor is a *necessary condition* for an outcome -- i.e., whether a certain level of X is required (but not sufficient) for a certain level of Y. This complements the sufficiency-based logic of PLS-SEM regression.
 
-`assess_nca()` wraps the NCA R package for seamless use with seminr models. It auto-detects direct predictors from the structural model and runs ceiling-based NCA analysis.
+`assess_nca()` auto-detects direct predictors from the structural model and runs ceiling-based NCA analysis using internal CE-FDH and CR-FDH algorithms.
 
 ```{r, eval=FALSE, echo=TRUE}
 library(seminr)
