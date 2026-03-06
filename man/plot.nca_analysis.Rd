@@ -9,8 +9,8 @@
 \arguments{
 \item{x}{An \code{nca_analysis} object from \code{assess_nca()}.}
 
-\item{type}{One of \code{"scatter"} (ceiling line scatter plots via NCA
-package) or \code{"effects"} (bar plot of effect sizes).}
+\item{type}{One of \code{"scatter"} (ceiling line scatter plots) or
+\code{"effects"} (bar plot of effect sizes).}
 
 \item{...}{Additional arguments passed to the underlying plot function.}
 }

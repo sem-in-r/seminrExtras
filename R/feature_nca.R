@@ -1,9 +1,9 @@
 # =============================================================================
 # feature_nca.R - Necessary Condition Analysis (NCA) for PLS-SEM
 # =============================================================================
-# This file wraps the NCA R package (Dul, 2016, 2020) for seamless use with
-# seminr estimated models. NCA tests whether predictors are necessary
-# conditions for an outcome, complementing PLS-SEM's sufficiency logic.
+# Implements CE-FDH and CR-FDH ceiling analysis internally. The NCA package
+# (Dul, 2016, 2020) is optional -- only required for ceiling techniques
+# beyond CE-FDH and CR-FDH, or for NCA's native scatter plots.
 #
 # References:
 # - Dul, J. (2016). "Necessary Condition Analysis (NCA): Logic and
@@ -16,16 +16,280 @@
 # =============================================================================
 
 # =============================================================================
-# DEPENDENCY CHECK
+# INTERNAL NCA ALGORITHMS
 # =============================================================================
+# Self-contained CE-FDH and CR-FDH implementations. These cover the two
+# most commonly used ceiling techniques in PLS-SEM NCA applications.
+
+INTERNAL_CEILINGS <- c("ce_fdh", "cr_fdh")
+
+#' Compute CE-FDH (Ceiling Envelopment - Free Disposal Hull) ceiling.
+#' Returns sorted unique x values and their non-decreasing ceiling y values.
+#' The ceiling at any x is the maximum y among all observations with x_obs <= x.
+#' @noRd
+compute_ce_fdh <- function(x, y) {
+  ux <- sort(unique(x))
+  max_y_at_x <- vapply(ux, function(xi) max(y[x == xi]), numeric(1))
+  list(x = ux, ceiling_y = cummax(max_y_at_x))
+}
+
+#' Get CE-FDH peer coordinates (points defining the ceiling envelope).
+#' A peer is a unique-x level whose max y equals the running cummax,
+#' meaning it actually pushes the ceiling upward.
+#' @noRd
+get_ce_fdh_peers <- function(x, y) {
+  ux <- sort(unique(x))
+  max_y_at_x <- vapply(ux, function(xi) max(y[x == xi]), numeric(1))
+  cy <- cummax(max_y_at_x)
+  is_peer <- max_y_at_x == cy
+  data.frame(x = ux[is_peer], y = cy[is_peer])
+}
+
+#' Compute CE-FDH effect size d = ceiling_zone / scope.
+#' The ceiling zone is the empty area above the step-function ceiling
+#' within the scope rectangle [min(x),max(x)] x [min(y),max(y)].
+#' @noRd
+ce_fdh_effect_size <- function(x, y) {
+  x_range <- range(x)
+  y_range <- range(y)
+  scope <- diff(x_range) * diff(y_range)
+  if (scope < .Machine$double.eps) return(0)
+
+  ceil <- compute_ce_fdh(x, y)
+  ux <- ceil$x
+  cy <- ceil$ceiling_y
+  k <- length(ux)
+  if (k < 2) return(0)
+
+  # For each interval [ux[i], ux[i+1]), the ceiling is at cy[i].
+  # Area above = width * (max_y - cy[i]).
+  ceiling_zone <- sum(diff(ux) * (y_range[2] - cy[-k]))
+  ceiling_zone / scope
+}
+
+#' Compute area above a line y = a + b*x within a rectangle.
+#' Handles all cases: positive/negative/zero slope, line partially
+#' or fully outside the scope.
+#' @noRd
+line_ceiling_zone <- function(a, b, x_min, x_max, y_min, y_max) {
+  scope_height <- y_max - y_min
+
+  if (abs(b) < .Machine$double.eps) {
+    if (a >= y_max) return(0)
+    if (a <= y_min) return((x_max - x_min) * scope_height)
+    return((x_max - x_min) * (y_max - a))
+  }
+
+  # Break points where the line crosses y_min or y_max
+  x_cross <- c((y_min - a) / b, (y_max - a) / b)
+  inner <- x_cross[x_cross > x_min & x_cross < x_max]
+  breaks <- sort(unique(c(x_min, inner, x_max)))
+
+  total <- 0
+  for (i in seq_len(length(breaks) - 1)) {
+    xl <- breaks[i]
+    xr <- breaks[i + 1]
+    line_at_mid <- a + b * (xl + xr) / 2
+
+    if (line_at_mid >= y_max) {
+      # Line above scope top: no ceiling zone
+    } else if (line_at_mid <= y_min) {
+      # Line below scope bottom: full ceiling zone
+      total <- total + (xr - xl) * scope_height
+    } else {
+      # Line within scope: integrate y_max - (a + bx)
+      total <- total + (y_max - a) * (xr - xl) - b / 2 * (xr^2 - xl^2)
+    }
+  }
+
+  total
+}
+
+#' Compute CR-FDH (Ceiling Regression - Free Disposal Hull) effect size.
+#' Fits OLS through CE-FDH peers; falls back to CE-FDH if < 2 peers.
+#' @noRd
+cr_fdh_effect_size <- function(x, y) {
+  x_range <- range(x)
+  y_range <- range(y)
+  scope <- diff(x_range) * diff(y_range)
+  if (scope < .Machine$double.eps) return(0)
+
+  peers <- get_ce_fdh_peers(x, y)
+  if (nrow(peers) < 2) return(ce_fdh_effect_size(x, y))
+
+  cf <- coef(lm(y ~ x, data = peers))
+  a <- unname(cf[1])
+  b <- unname(cf[2])
+
+  ceiling_zone <- line_ceiling_zone(a, b, x_range[1], x_range[2],
+                                     y_range[1], y_range[2])
+  max(0, min(ceiling_zone / scope, 1))
+}
+
+#' Dispatch to the correct effect size function.
+#' @noRd
+nca_effect_size <- function(x, y, ceiling_type) {
+  switch(ceiling_type,
+    ce_fdh = ce_fdh_effect_size(x, y),
+    cr_fdh = cr_fdh_effect_size(x, y),
+    stop("Internal NCA supports: ", paste(INTERNAL_CEILINGS, collapse = ", "),
+         ". Install the NCA package for '", ceiling_type, "'.", call. = FALSE)
+  )
+}
+
+#' Permutation test for NCA effect size significance.
+#' Returns p-value as proportion of permuted d >= observed d.
+#' @noRd
+nca_permutation_test <- function(x, y, ceiling_type, observed_d, n_perm) {
+  d_perm <- vapply(seq_len(n_perm), function(i) {
+    nca_effect_size(x, sample(y), ceiling_type)
+  }, numeric(1))
+  mean(d_perm >= observed_d)
+}
+
+#' Compute bottleneck column for one predictor: required X percentage
+#' at each Y level. NA indicates the condition is not necessary.
+#' @noRd
+compute_bottleneck_column <- function(x, y, ceiling_type, steps) {
+  x_range <- range(x)
+  y_range <- range(y)
+  y_levels <- seq(0, 100, length.out = steps + 1)
+  y_targets <- y_range[1] + y_levels / 100 * diff(y_range)
+
+  if (diff(x_range) < .Machine$double.eps) {
+    return(rep(NA_real_, length(y_levels)))
+  }
+
+  if (ceiling_type == "ce_fdh") {
+    ceil <- compute_ce_fdh(x, y)
+    x_needed <- vapply(y_targets, function(yt) {
+      idx <- which(ceil$ceiling_y >= yt)
+      if (length(idx) == 0) return(NA_real_)
+      ceil$x[idx[1]]
+    }, numeric(1))
+  } else if (ceiling_type == "cr_fdh") {
+    peers <- get_ce_fdh_peers(x, y)
+    if (nrow(peers) < 2) {
+      return(compute_bottleneck_column(x, y, "ce_fdh", steps))
+    }
+    cf <- coef(lm(y ~ x, data = peers))
+    a <- unname(cf[1])
+    b <- unname(cf[2])
+    if (abs(b) < .Machine$double.eps) {
+      return(rep(NA_real_, length(y_levels)))
+    }
+    x_needed <- (y_targets - a) / b
+  } else {
+    return(rep(NA_real_, length(y_levels)))
+  }
+
+  x_pct <- (x_needed - x_range[1]) / diff(x_range) * 100
+  x_pct[x_pct < 0] <- NA_real_
+  x_pct[x_pct > 100] <- NA_real_
+  round(x_pct, 1)
+}
+
+#' Run complete internal NCA analysis for all predictors and ceilings.
+#' @noRd
+run_nca_internal <- function(data, x_names, y_name, ceilings, test.rep, steps) {
+  y <- data[[y_name]]
+
+  effect_sizes <- matrix(NA_real_, nrow = length(x_names), ncol = length(ceilings),
+                          dimnames = list(x_names, ceilings))
+  p_values <- if (test.rep > 0) {
+    matrix(NA_real_, nrow = length(x_names), ncol = length(ceilings),
+           dimnames = list(x_names, ceilings))
+  } else NULL
+
+  bottlenecks <- list()
+
+  for (ceil in ceilings) {
+    y_levels <- seq(0, 100, length.out = steps + 1)
+    bn <- data.frame(Y = y_levels)
+    colnames(bn)[1] <- y_name
+
+    for (pred in x_names) {
+      x_vec <- data[[pred]]
+      d <- nca_effect_size(x_vec, y, ceil)
+      effect_sizes[pred, ceil] <- d
+
+      if (test.rep > 0) {
+        p_values[pred, ceil] <- nca_permutation_test(x_vec, y, ceil, d, test.rep)
+      }
+
+      bn[[pred]] <- compute_bottleneck_column(x_vec, y, ceil, steps)
+    }
+
+    bottlenecks[[ceil]] <- bn
+  }
+
+  list(effect_sizes = effect_sizes, p_values = p_values, bottlenecks = bottlenecks)
+}
+
+# =============================================================================
+# NCA PACKAGE FALLBACK
+# =============================================================================
+# Used only when ceiling techniques beyond CE-FDH/CR-FDH are requested.
 
 #' @noRd
 check_nca_installed <- function() {
   if (!requireNamespace("NCA", quietly = TRUE)) {
-    stop("Package 'NCA' is required for assess_nca(). ",
+    stop("Package 'NCA' is required for ceiling techniques beyond CE-FDH and CR-FDH. ",
          "Install it with: install.packages('NCA')",
          call. = FALSE)
   }
+}
+
+#' @noRd
+format_nca_effects <- function(nca_raw, predictors, ceilings) {
+  mat <- matrix(NA_real_, nrow = length(predictors), ncol = length(ceilings),
+                dimnames = list(predictors, ceilings))
+  for (pred in predictors) {
+    params <- nca_raw$summaries[[pred]]$params
+    if (!is.null(params)) {
+      for (ceil in ceilings) {
+        if (ceil %in% colnames(params) && "Effect size" %in% rownames(params)) {
+          mat[pred, ceil] <- params["Effect size", ceil]
+        }
+      }
+    }
+  }
+  mat
+}
+
+#' @noRd
+format_nca_significance <- function(nca_raw, predictors, ceilings) {
+  has_pvals <- any(vapply(predictors, function(pred) {
+    params <- nca_raw$summaries[[pred]]$params
+    !is.null(params) && "p-value" %in% rownames(params) &&
+      any(!is.na(params["p-value", ]))
+  }, logical(1)))
+  if (!has_pvals) return(NULL)
+
+  mat <- matrix(NA_real_, nrow = length(predictors), ncol = length(ceilings),
+                dimnames = list(predictors, ceilings))
+  for (pred in predictors) {
+    params <- nca_raw$summaries[[pred]]$params
+    if (!is.null(params)) {
+      for (ceil in ceilings) {
+        if (ceil %in% colnames(params) && "p-value" %in% rownames(params)) {
+          mat[pred, ceil] <- params["p-value", ceil]
+        }
+      }
+    }
+  }
+  mat
+}
+
+#' @noRd
+format_nca_bottleneck <- function(nca_raw, ceilings) {
+  bn <- list()
+  for (ceil in ceilings) {
+    if (!is.null(nca_raw$bottlenecks[[ceil]])) {
+      bn[[ceil]] <- nca_raw$bottlenecks[[ceil]]
+    }
+  }
+  bn
 }
 
 # =============================================================================
@@ -33,9 +297,8 @@ check_nca_installed <- function() {
 # =============================================================================
 
 #' Extract direct predictor construct names for a given target from the
-#' structural model matrix. unname() is required because subsetting smMatrix
-#' retains row names, which would cause NCA::nca_analysis() to fail on
-#' predictor name matching.
+#' structural model matrix. unname() strips matrix row names that would
+#' cause matching issues downstream.
 #' @noRd
 get_direct_predictors <- function(model, target) {
   sm <- model$smMatrix
@@ -96,8 +359,11 @@ validate_nca_inputs <- function(seminr_model, target, predictors, test.rep) {
 #' (p < 0.05).
 #'
 #' The function extracts construct scores from the seminr model, auto-detects
-#' direct predictors of the target from the structural model, and delegates
-#' to \code{NCA::nca_analysis()}.
+#' direct predictors of the target from the structural model, and computes
+#' ceiling envelopes using the specified techniques.
+#'
+#' CE-FDH and CR-FDH ceilings are computed internally. For other ceiling
+#' techniques, the \pkg{NCA} package must be installed.
 #'
 #' @param seminr_model An estimated SEMinR model from \code{estimate_pls()}.
 #' @param target Name of the endogenous (outcome) construct (character).
@@ -105,16 +371,18 @@ validate_nca_inputs <- function(seminr_model, target, predictors, test.rep) {
 #'   If \code{NULL} (default), auto-detected from the structural model as
 #'   direct predictors of \code{target}.
 #' @param ceilings Character vector of ceiling techniques to use
-#'   (default \code{c("ce_fdh", "cr_fdh")}). See \code{NCA::nca_analysis()}
-#'   for all available techniques.
+#'   (default \code{c("ce_fdh", "cr_fdh")}). CE-FDH and CR-FDH are computed
+#'   internally; other techniques require the \pkg{NCA} package.
 #' @param test.rep Number of permutation test repetitions for significance
 #'   testing (default 1000). Set to 0 to skip significance testing.
 #' @param steps Number of steps in the bottleneck table (default 10).
 #' @param seed Random seed for reproducibility (default 123).
-#' @param ... Additional arguments passed to \code{NCA::nca_analysis()}.
+#' @param ... Additional arguments passed to \code{NCA::nca_analysis()} when
+#'   using ceiling techniques not supported internally.
 #'
 #' @return An object of class \code{nca_analysis} containing:
-#'   \item{nca_raw}{The raw result from \code{NCA::nca_analysis()}}
+#'   \item{nca_raw}{The raw result from \code{NCA::nca_analysis()} (NULL when
+#'     using internal ceilings)}
 #'   \item{effect_sizes}{Matrix of effect sizes (d) per predictor and ceiling}
 #'   \item{significance}{Matrix of p-values per predictor and ceiling (NULL if test.rep = 0)}
 #'   \item{bottleneck}{List of bottleneck tables, one per ceiling technique}
@@ -122,8 +390,6 @@ validate_nca_inputs <- function(seminr_model, target, predictors, test.rep) {
 #'   \item{target}{Name of the target construct}
 #'   \item{predictors}{Character vector of predictor names used}
 #'   \item{ceilings}{Character vector of ceiling techniques used}
-#'
-#' @seealso \code{\link[NCA]{nca_analysis}} for the underlying NCA implementation
 #'
 #' @references
 #' Dul, J. (2016). Necessary Condition Analysis (NCA): Logic and Methodology
@@ -174,8 +440,6 @@ assess_nca <- function(seminr_model,
                         seed = 123,
                         ...) {
 
-  check_nca_installed()
-
   # ---------------------------------------------------------------------------
   # Step 1: Validate inputs
   # ---------------------------------------------------------------------------
@@ -188,27 +452,42 @@ assess_nca <- function(seminr_model,
   # Step 2: Run NCA analysis on construct scores
   # ---------------------------------------------------------------------------
   scores <- as.data.frame(seminr_model$construct_scores)
+  use_internal <- all(ceilings %in% INTERNAL_CEILINGS)
 
-  # Delegate to NCA package for ceiling envelope fitting and permutation tests
   set.seed(seed)
-  nca_raw <- suppressMessages(
-    NCA::nca_analysis(
-      data = scores,
-      x = predictors,
-      y = target,
-      ceilings = ceilings,
-      test.rep = test.rep,
-      steps = steps,
-      ...
+
+  if (use_internal) {
+    nca_result <- run_nca_internal(scores, predictors, target, ceilings,
+                                    test.rep, steps)
+    effect_sizes <- nca_result$effect_sizes
+    significance <- nca_result$p_values
+    bottleneck   <- nca_result$bottlenecks
+    nca_raw      <- NULL
+  } else {
+    # Ceiling techniques beyond CE-FDH/CR-FDH require the NCA package
+    check_nca_installed()
+    nca_raw <- suppressMessages(
+      NCA::nca_analysis(
+        data = scores, x = predictors, y = target,
+        ceilings = ceilings, test.rep = test.rep,
+        steps = steps, ...
+      )
     )
-  )
+    effect_sizes <- format_nca_effects(nca_raw, predictors, ceilings)
+    significance <- format_nca_significance(nca_raw, predictors, ceilings)
+    bottleneck   <- format_nca_bottleneck(nca_raw, ceilings)
+  }
 
   # ---------------------------------------------------------------------------
-  # Step 3: Extract and format results
+  # Step 3: Format and identify necessary conditions
   # ---------------------------------------------------------------------------
-  effect_sizes <- format_nca_effects(nca_raw, predictors, ceilings)
-  significance <- format_nca_significance(nca_raw, predictors, ceilings)
-  bottleneck <- format_nca_bottleneck(nca_raw, ceilings)
+  comment(effect_sizes) <- "NCA Effect Sizes (d >= 0.1 indicates a necessary condition)"
+  class(effect_sizes) <- c("table_output", class(effect_sizes))
+
+  if (!is.null(significance)) {
+    comment(significance) <- "NCA Significance (permutation test p-values)"
+    class(significance) <- c("table_output", class(significance))
+  }
 
   # Identify necessary conditions: d >= 0.1 AND p < 0.05 (Dul, 2016)
   necessary <- identify_necessary(effect_sizes, significance)
@@ -231,82 +510,8 @@ assess_nca <- function(seminr_model,
 }
 
 # =============================================================================
-# EXTRACTION HELPERS
+# NECESSARY CONDITION IDENTIFICATION
 # =============================================================================
-
-#' Extract effect sizes from NCA result into a predictor x ceiling matrix.
-#'
-#' NCA stores results per-predictor in nca_raw$summaries[[pred]]$params,
-#' a matrix with rows like "Scope", "Effect size", "p-value" and columns
-#' for each ceiling technique. We extract the "Effect size" row.
-#' @noRd
-format_nca_effects <- function(nca_raw, predictors, ceilings) {
-  mat <- matrix(NA_real_,
-                nrow = length(predictors),
-                ncol = length(ceilings),
-                dimnames = list(predictors, ceilings))
-
-  for (pred in predictors) {
-    if (!is.null(nca_raw$summaries[[pred]]$params)) {
-      params <- nca_raw$summaries[[pred]]$params
-      for (ceil in ceilings) {
-        if (ceil %in% colnames(params) && "Effect size" %in% rownames(params)) {
-          mat[pred, ceil] <- params["Effect size", ceil]
-        }
-      }
-    }
-  }
-
-  comment(mat) <- "NCA Effect Sizes (d >= 0.1 indicates a necessary condition)"
-  class(mat) <- c("table_output", class(mat))
-  mat
-}
-
-#' Extract p-values from NCA result, same structure as format_nca_effects().
-#' Returns NULL if no significance testing was performed (test.rep = 0).
-#' @noRd
-format_nca_significance <- function(nca_raw, predictors, ceilings) {
-  # Check if significance testing was performed
-  has_pvals <- any(vapply(predictors, function(pred) {
-    params <- nca_raw$summaries[[pred]]$params
-    !is.null(params) && "p-value" %in% rownames(params) &&
-      any(!is.na(params["p-value", ]))
-  }, logical(1)))
-
-  if (!has_pvals) return(NULL)
-
-  mat <- matrix(NA_real_,
-                nrow = length(predictors),
-                ncol = length(ceilings),
-                dimnames = list(predictors, ceilings))
-
-  for (pred in predictors) {
-    if (!is.null(nca_raw$summaries[[pred]]$params)) {
-      params <- nca_raw$summaries[[pred]]$params
-      for (ceil in ceilings) {
-        if (ceil %in% colnames(params) && "p-value" %in% rownames(params)) {
-          mat[pred, ceil] <- params["p-value", ceil]
-        }
-      }
-    }
-  }
-
-  comment(mat) <- "NCA Significance (permutation test p-values)"
-  class(mat) <- c("table_output", class(mat))
-  mat
-}
-
-#' Extract bottleneck tables (one per ceiling) from NCA result.
-#' @noRd
-format_nca_bottleneck <- function(nca_raw, ceilings) {
-  bn <- list()
-  for (ceil in ceilings) {
-    if (!is.null(nca_raw$bottlenecks[[ceil]])) {
-      bn[[ceil]] <- nca_raw$bottlenecks[[ceil]]
-    }
-  }
-  bn
-}
 
 #' Identify necessary conditions per Dul (2016): a predictor is necessary
 #' when effect size d >= 0.1 AND permutation p-value < 0.05.
@@ -408,8 +613,8 @@ print.summary.nca_analysis <- function(x, ...) {
 #' Plot NCA Results
 #'
 #' @param x An \code{nca_analysis} object from \code{assess_nca()}.
-#' @param type One of \code{"scatter"} (ceiling line scatter plots via NCA
-#'   package) or \code{"effects"} (bar plot of effect sizes).
+#' @param type One of \code{"scatter"} (ceiling line scatter plots) or
+#'   \code{"effects"} (bar plot of effect sizes).
 #' @param ... Additional arguments passed to the underlying plot function.
 #'
 #' @export
@@ -422,10 +627,64 @@ plot.nca_analysis <- function(x, type = c("scatter", "effects"), ...) {
   )
 }
 
+#' Scatter plot with ceiling lines. Uses NCA package if available and
+#' nca_raw exists, otherwise draws scatter with internal ceiling lines.
 #' @noRd
 plot_nca_scatter <- function(nca_result, ...) {
-  check_nca_installed()
-  plot(nca_result$nca_raw, ...)
+  if (!is.null(nca_result$nca_raw) && requireNamespace("NCA", quietly = TRUE)) {
+    plot(nca_result$nca_raw, ...)
+    return(invisible(NULL))
+  }
+
+  scores <- nca_result$pls_model$construct_scores
+  n_pred <- length(nca_result$predictors)
+
+  old_par <- par(no.readonly = TRUE)
+  on.exit(par(old_par))
+
+  if (n_pred > 1) {
+    ncol_plot <- min(n_pred, 3)
+    nrow_plot <- ceiling(n_pred / ncol_plot)
+    par(mfrow = c(nrow_plot, ncol_plot))
+  }
+
+  for (pred in nca_result$predictors) {
+    x <- scores[, pred]
+    y <- scores[, nca_result$target]
+
+    plot(x, y, pch = 19, col = adjustcolor("black", 0.4),
+         xlab = pred, ylab = nca_result$target,
+         main = paste("NCA:", pred, "->", nca_result$target),
+         bty = "n")
+
+    # CE-FDH ceiling: step function
+    if ("ce_fdh" %in% nca_result$ceilings) {
+      ceil <- compute_ce_fdh(x, y)
+      lines(ceil$x, ceil$ceiling_y, type = "s", col = "red", lwd = 2)
+    }
+
+    # CR-FDH ceiling: regression line through peers
+    if ("cr_fdh" %in% nca_result$ceilings) {
+      peers <- get_ce_fdh_peers(x, y)
+      if (nrow(peers) >= 2) {
+        fit <- lm(y ~ x, data = peers)
+        x_seq <- seq(min(x), max(x), length.out = 100)
+        y_hat <- coef(fit)[1] + coef(fit)[2] * x_seq
+        # Clip to scope
+        y_hat <- pmin(pmax(y_hat, min(y)), max(y))
+        lines(x_seq, y_hat, col = "blue", lwd = 2, lty = 2)
+      }
+    }
+
+    # Legend
+    ceil_names <- intersect(nca_result$ceilings, INTERNAL_CEILINGS)
+    if (length(ceil_names) > 0) {
+      cols <- c(ce_fdh = "red", cr_fdh = "blue")[ceil_names]
+      ltys <- c(ce_fdh = 1, cr_fdh = 2)[ceil_names]
+      legend("bottomright", legend = ceil_names, col = cols, lty = ltys,
+             lwd = 2, cex = 0.7, bty = "n")
+    }
+  }
 }
 
 #' @noRd
@@ -439,7 +698,6 @@ plot_nca_effects <- function(nca_result, ...) {
     return(invisible(NULL))
   }
 
-  # Bar positions
   bar_width <- 0.8 / n_ceil
   positions <- seq_len(n_pred)
 
@@ -463,7 +721,6 @@ plot_nca_effects <- function(nca_result, ...) {
        main = paste("NCA Effect Sizes:", nca_result$target),
        ...)
 
-  # Threshold line
   abline(h = 0.1, col = "darkgray", lty = 2)
   text(n_pred + 0.4, 0.1, "d = 0.1", cex = 0.7, col = "darkgray", pos = 3)
 
@@ -551,6 +808,9 @@ benchmark_effect_size <- function(t) {
 #' excluded before computing the CE-FDH ceiling. The uniform benchmark
 #' d = t(1 - ln(t)) gives the expected effect size if no necessity exists.
 #'
+#' CE-FDH and CR-FDH ceilings are computed internally. For other ceiling
+#' techniques, the \pkg{NCA} package must be installed.
+#'
 #' @param seminr_model An estimated SEMinR model from \code{estimate_pls()}.
 #' @param target Name of the endogenous (outcome) construct.
 #' @param predictors Optional character vector of predictor construct names.
@@ -564,7 +824,8 @@ benchmark_effect_size <- function(t) {
 #'   computation time by the number of thresholds.
 #' @param steps Number of steps in the bottleneck table (default 10).
 #' @param seed Random seed for reproducibility (default 123).
-#' @param ... Additional arguments passed to \code{NCA::nca_analysis()}.
+#' @param ... Additional arguments passed to \code{NCA::nca_analysis()} when
+#'   using ceiling techniques not supported internally.
 #'
 #' @return An object of class \code{nca_esse} containing:
 #'   \item{effect_sizes}{Matrix of empirical effect sizes (thresholds x predictors)}
@@ -622,8 +883,6 @@ assess_nca_esse <- function(seminr_model,
                              seed = 123,
                              ...) {
 
-  check_nca_installed()
-
   # ---------------------------------------------------------------------------
   # Step 1: Validate inputs
   # ---------------------------------------------------------------------------
@@ -638,6 +897,11 @@ assess_nca_esse <- function(seminr_model,
     warning("NCA-ESSE benchmark is derived for CE-FDH (Becker et al., 2026). ",
             "Benchmark may not be directly comparable with '", ceiling, "'.",
             call. = FALSE)
+  }
+
+  use_internal <- ceiling %in% INTERNAL_CEILINGS
+  if (!use_internal) {
+    check_nca_installed()
   }
 
   scores <- as.data.frame(seminr_model$construct_scores)
@@ -659,9 +923,6 @@ assess_nca_esse <- function(seminr_model,
   # ---------------------------------------------------------------------------
   # Step 3: Compute empirical effect sizes at each ECDF threshold
   # ---------------------------------------------------------------------------
-  # For each predictor, compute ECDF_NCA(x_i, y_i) = P(X <= x_i, Y >= y_i),
-  # then at each threshold t, remove observations with ECDF_NCA <= t (extreme
-  # upper-left cases) and run standard NCA on the remaining data.
   for (p_idx in seq_along(predictors)) {
     pred <- predictors[p_idx]
     x <- scores[[pred]]
@@ -686,27 +947,35 @@ assess_nca_esse <- function(seminr_model,
         next
       }
 
-      nca_res <- suppressMessages(
-        NCA::nca_analysis(
-          data = filtered_scores,
-          x = pred,
-          y = target,
-          ceilings = ceiling,
-          test.rep = test.rep,
-          steps = steps,
-          ...
+      filtered_x <- filtered_scores[[pred]]
+      filtered_y <- filtered_scores[[target]]
+
+      if (use_internal) {
+        d <- nca_effect_size(filtered_x, filtered_y, ceiling)
+        empirical[t_idx, p_idx] <- d
+
+        if (test.rep > 0) {
+          significance[t_idx, p_idx] <- nca_permutation_test(
+            filtered_x, filtered_y, ceiling, d, test.rep
+          )
+        }
+      } else {
+        nca_res <- suppressMessages(
+          NCA::nca_analysis(
+            data = filtered_scores, x = pred, y = target,
+            ceilings = ceiling, test.rep = test.rep,
+            steps = steps, ...
+          )
         )
-      )
-
-      params <- nca_res$summaries[[pred]]$params
-      if (!is.null(params) && "Effect size" %in% rownames(params) &&
-          ceiling %in% colnames(params)) {
-        empirical[t_idx, p_idx] <- params["Effect size", ceiling]
-      }
-
-      if (!is.null(significance) && !is.null(params) &&
-          "p-value" %in% rownames(params) && ceiling %in% colnames(params)) {
-        significance[t_idx, p_idx] <- params["p-value", ceiling]
+        params <- nca_res$summaries[[pred]]$params
+        if (!is.null(params) && "Effect size" %in% rownames(params) &&
+            ceiling %in% colnames(params)) {
+          empirical[t_idx, p_idx] <- params["Effect size", ceiling]
+        }
+        if (!is.null(significance) && !is.null(params) &&
+            "p-value" %in% rownames(params) && ceiling %in% colnames(params)) {
+          significance[t_idx, p_idx] <- params["p-value", ceiling]
+        }
       }
     }
   }
@@ -714,7 +983,6 @@ assess_nca_esse <- function(seminr_model,
   # ---------------------------------------------------------------------------
   # Step 4: Compute theoretical benchmark (joint uniform distribution)
   # ---------------------------------------------------------------------------
-  # Under joint uniform, CE-FDH effect size at threshold t is d = t(1 - ln(t))
   benchmark <- matrix(benchmark_effect_size(thresholds),
                        nrow = length(thresholds), ncol = length(predictors),
                        dimnames = list(threshold_labels, predictors))
@@ -779,7 +1047,6 @@ print.nca_esse <- function(x, ...) {
 
 #' @export
 summary.nca_esse <- function(object, ...) {
-  # Build Table A2-style output per predictor
   tables <- lapply(object$predictors, function(pred) {
     emp <- object$effect_sizes[, pred]
     bench <- object$benchmark[, pred]
@@ -882,7 +1149,6 @@ plot_esse_sensitivity <- function(esse, ...) {
 #' @noRd
 plot_esse_difference <- function(esse, ...) {
   n_pred <- length(esse$predictors)
-  # Skip the first threshold (0%) since diff requires pairs
   thresholds <- esse$thresholds[-1]
 
   old_par <- par(no.readonly = TRUE)
@@ -898,7 +1164,6 @@ plot_esse_difference <- function(esse, ...) {
     emp <- esse$effect_sizes[, pred]
     bench <- esse$benchmark[, pred]
 
-    # Incremental changes between consecutive thresholds
     delta_emp <- diff(emp)
     delta_bench <- diff(bench)
     delta_diff <- delta_emp - delta_bench

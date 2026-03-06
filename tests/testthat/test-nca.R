@@ -1,7 +1,5 @@
 library(seminr)
 
-skip_if_not_installed("NCA")
-
 # ============================================================================
 # Setup: Estimate model once, reuse across all tests
 # ============================================================================
@@ -45,6 +43,10 @@ test_that("assess_nca returns correct S3 class and elements", {
   expect_true(all(expected_names %in% names(nca_result)))
 })
 
+test_that("nca_raw is NULL when using internal ceilings", {
+  expect_null(nca_result$nca_raw)
+})
+
 test_that("effect_sizes matrix has correct dimensions and names", {
   expect_equal(dim(nca_result$effect_sizes), c(2, 2))
   expect_equal(rownames(nca_result$effect_sizes), c("Image", "Value"))
@@ -81,6 +83,14 @@ test_that("effect sizes are non-negative and bounded by 1", {
   expect_true(all(nca_result$effect_sizes <= 1, na.rm = TRUE))
 })
 
+test_that("CE-FDH effect size >= CR-FDH for same predictor", {
+  # CE-FDH (step function) always has ceiling zone >= CR-FDH (regression line)
+  for (pred in nca_result$predictors) {
+    expect_true(nca_result$effect_sizes[pred, "ce_fdh"] >=
+                nca_result$effect_sizes[pred, "cr_fdh"] - 1e-10)
+  }
+})
+
 # ============================================================================
 # Significance and bottleneck tests
 # ============================================================================
@@ -93,6 +103,16 @@ test_that("bottleneck is a list keyed by ceiling technique", {
   expect_type(nca_result$bottleneck, "list")
   expect_equal(sort(names(nca_result$bottleneck)),
                sort(c("ce_fdh", "cr_fdh")))
+})
+
+test_that("bottleneck tables have correct structure", {
+  for (ceil in names(nca_result$bottleneck)) {
+    bn <- nca_result$bottleneck[[ceil]]
+    expect_s3_class(bn, "data.frame")
+    expect_true("Satisfaction" %in% colnames(bn))
+    expect_true(all(nca_result$predictors %in% colnames(bn)))
+    expect_equal(nrow(bn), 11)  # 0, 10, 20, ..., 100
+  }
 })
 
 # ============================================================================
@@ -152,6 +172,10 @@ test_that("plot.nca_analysis type='effects' runs without error", {
   expect_no_error(plot(nca_result, type = "effects"))
 })
 
+test_that("plot.nca_analysis type='scatter' runs without error (internal)", {
+  expect_no_error(plot(nca_result, type = "scatter"))
+})
+
 # ============================================================================
 # Significance testing (only when test.rep > 0)
 # ============================================================================
@@ -166,7 +190,7 @@ test_that("significance matrix is correct when test.rep > 0", {
 })
 
 # ============================================================================
-# Edge case: different dataset
+# Edge case: test.rep validation
 # ============================================================================
 
 test_that("assess_nca errors on negative test.rep", {
@@ -184,7 +208,7 @@ test_that("assess_nca errors on non-integer test.rep", {
 })
 
 # ============================================================================
-# Edge case: HOC model (should work — NCA uses construct scores directly)
+# Edge case: HOC model (should work -- NCA uses construct scores directly)
 # ============================================================================
 
 test_that("assess_nca works with higher-order construct model", {
@@ -209,8 +233,63 @@ test_that("assess_nca works with higher-order construct model", {
 })
 
 # ============================================================================
-# Edge case: different dataset
+# Internal NCA algorithm tests
 # ============================================================================
+
+test_that("CE-FDH effect size is correct for known case", {
+  # Perfect diagonal: (0,0), (1,1) -- full ceiling zone
+  # Scope = 1, ceiling zone = (1-0)*(1-0) = 1 (step at x=0 has ceiling_y=0)
+  x <- c(0, 1)
+  y <- c(0, 1)
+  d <- seminrExtras:::ce_fdh_effect_size(x, y)
+  expect_equal(d, 1.0)
+})
+
+test_that("CE-FDH effect size is zero when no empty space exists", {
+  # Upper-left point present: (0, 1), (1, 0)
+  # ceiling at x=0 is 1, ceiling at x=1 is 1 (cummax) -> no empty space
+  x <- c(0, 1)
+  y <- c(1, 0)
+  d <- seminrExtras:::ce_fdh_effect_size(x, y)
+  expect_equal(d, 0.0)
+})
+
+test_that("CE-FDH effect size is bounded [0, 1]", {
+  set.seed(42)
+  x <- rnorm(100)
+  y <- rnorm(100)
+  d <- seminrExtras:::ce_fdh_effect_size(x, y)
+  expect_true(d >= 0 && d <= 1)
+})
+
+test_that("CR-FDH effect size is bounded [0, 1]", {
+  set.seed(42)
+  x <- rnorm(100)
+  y <- rnorm(100)
+  d <- seminrExtras:::cr_fdh_effect_size(x, y)
+  expect_true(d >= 0 && d <= 1)
+})
+
+test_that("CE-FDH handles constant x (zero scope) gracefully", {
+  d <- seminrExtras:::ce_fdh_effect_size(rep(1, 10), 1:10)
+  expect_equal(d, 0)
+})
+
+test_that("CE-FDH handles constant y (zero scope) gracefully", {
+  d <- seminrExtras:::ce_fdh_effect_size(1:10, rep(5, 10))
+  expect_equal(d, 0)
+})
+
+test_that("bottleneck at 0% is 0 or NA, at 100% is defined", {
+  x <- pls_model$construct_scores[, "Image"]
+  y <- pls_model$construct_scores[, "Satisfaction"]
+  bn <- seminrExtras:::compute_bottleneck_column(x, y, "ce_fdh", 10)
+  expect_equal(length(bn), 11)
+  # First value (0% of Y) should be 0 (or NA if NN)
+  expect_true(is.na(bn[1]) || bn[1] == 0)
+  # Last value (100% of Y) should be defined
+  expect_false(is.na(bn[11]))
+})
 
 # ============================================================================
 # NCA-ESSE tests
@@ -255,7 +334,7 @@ test_that("ESSE standard NCA (threshold 0%) matches assess_nca()", {
   # Effect sizes at threshold 0% should match standard NCA
   standard_d <- nca_result$effect_sizes[, "ce_fdh"]
   esse_d <- esse_result$effect_sizes["0%", ]
-  expect_equal(esse_d, standard_d, tolerance = 1e-4)
+  expect_equal(esse_d, standard_d, tolerance = 1e-10)
 })
 
 test_that("ESSE significance is NULL when test.rep = 0", {
@@ -263,11 +342,8 @@ test_that("ESSE significance is NULL when test.rep = 0", {
 })
 
 test_that("ESSE effect sizes increase with higher thresholds", {
-  # Effect sizes should generally be non-decreasing (allowing for
-  # small variations due to discrete data)
   for (pred in esse_result$predictors) {
     d <- esse_result$effect_sizes[, pred]
-    # At least the last threshold should be >= the first
     expect_true(d[length(d)] >= d[1])
   }
 })
@@ -307,7 +383,7 @@ test_that("ESSE warns for non-CE-FDH ceiling", {
 })
 
 # ============================================================================
-# Edge case: different dataset
+# Different dataset
 # ============================================================================
 
 test_that("assess_nca works with corp_rep_data model", {
@@ -332,4 +408,31 @@ test_that("assess_nca works with corp_rep_data model", {
   expect_s3_class(result, "nca_analysis")
   expect_equal(result$target, "CUSA")
   expect_equal(sort(result$predictors), sort(c("COMP", "LIKE")))
+})
+
+# ============================================================================
+# NCA package comparison (only when NCA is installed)
+# ============================================================================
+
+test_that("internal CE-FDH matches NCA package results", {
+  skip_if_not_installed("NCA")
+
+  # Run with NCA package using a non-standard ceiling to force NCA path,
+  # combined with ce_fdh
+  scores <- as.data.frame(pls_model$construct_scores)
+
+  set.seed(123)
+  nca_pkg <- suppressMessages(
+    NCA::nca_analysis(
+      data = scores, x = c("Image", "Value"), y = "Satisfaction",
+      ceilings = c("ce_fdh", "cr_fdh"), test.rep = 0, steps = 10
+    )
+  )
+
+  for (pred in c("Image", "Value")) {
+    pkg_d <- nca_pkg$summaries[[pred]]$params["Effect size", "ce_fdh"]
+    internal_d <- nca_result$effect_sizes[pred, "ce_fdh"]
+    expect_equal(internal_d, pkg_d, tolerance = 0.02,
+                 label = paste("CE-FDH effect size for", pred))
+  }
 })
