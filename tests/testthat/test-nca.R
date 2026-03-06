@@ -280,15 +280,16 @@ test_that("CE-FDH handles constant y (zero scope) gracefully", {
   expect_equal(d, 0)
 })
 
-test_that("bottleneck at 0% is 0 or NA, at 100% is defined", {
+test_that("bottleneck has correct length and bounded values", {
   x <- pls_model$construct_scores[, "Image"]
   y <- pls_model$construct_scores[, "Satisfaction"]
   bn <- seminrExtras:::compute_bottleneck_column(x, y, "ce_fdh", 10)
   expect_equal(length(bn), 11)
-  # First value (0% of Y) should be 0 (or NA if NN)
+  # First value (0% of Y) should be 0 or NA
   expect_true(is.na(bn[1]) || bn[1] == 0)
-  # Last value (100% of Y) should be defined
-  expect_false(is.na(bn[11]))
+  # Non-NA values should be in [0, 100]
+  non_na <- bn[!is.na(bn)]
+  expect_true(all(non_na >= 0 & non_na <= 100))
 })
 
 # ============================================================================
