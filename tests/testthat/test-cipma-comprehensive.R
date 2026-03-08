@@ -382,3 +382,359 @@ test_that("assess_ipma print shows IPMA header, not cIPMA", {
   expect_true(grepl("Importance-Performance Map Analysis \\(IPMA\\)", out_text))
   expect_false(grepl("cIPMA", out_text))
 })
+
+# =============================================================================
+# MEDIATION MODEL TESTS
+# =============================================================================
+
+test_that("IPMA works with mediation model", {
+  mm_med <- constructs(
+    composite("Image",        multi_items("IMAG", 1:5)),
+    composite("Expectation",  multi_items("CUEX", 1:3)),
+    composite("Satisfaction", multi_items("CUSA", 1:3)),
+    composite("Loyalty",      multi_items("CUSL", 1:3))
+  )
+  sm_med <- relationships(
+    paths(from = "Image", to = c("Expectation", "Loyalty")),
+    paths(from = "Expectation", to = "Satisfaction"),
+    paths(from = "Satisfaction", to = "Loyalty")
+  )
+  pls_med <- estimate_pls(data = mobi, measurement_model = mm_med,
+                            structural_model = sm_med)
+
+  result <- assess_ipma(pls_med, target = "Loyalty",
+                          scale_min = 1, scale_max = 10)
+
+  expect_s3_class(result, "cipma_analysis")
+  # Image has direct + indirect (via Expectation -> Satisfaction) effect
+  expect_true("Image" %in% result$constructs)
+  expect_true("Satisfaction" %in% result$constructs)
+  # Expectation has indirect effect (Expectation -> Satisfaction -> Loyalty)
+  expect_true("Expectation" %in% result$constructs)
+
+  # Total effect of Image > direct path coefficient (due to indirect paths)
+  direct_coef <- pls_med$path_coef["Image", "Loyalty"]
+  expect_true(result$importance_std[["Image"]] > direct_coef)
+
+  # Performance in valid range
+  expect_true(all(result$performance >= 0 & result$performance <= 100))
+})
+
+test_that("cIPMA works with mediation model", {
+  mm_med <- constructs(
+    composite("Image",        multi_items("IMAG", 1:5)),
+    composite("Expectation",  multi_items("CUEX", 1:3)),
+    composite("Satisfaction", multi_items("CUSA", 1:3)),
+    composite("Loyalty",      multi_items("CUSL", 1:3))
+  )
+  sm_med <- relationships(
+    paths(from = "Image", to = c("Expectation", "Loyalty")),
+    paths(from = "Expectation", to = "Satisfaction"),
+    paths(from = "Satisfaction", to = "Loyalty")
+  )
+  pls_med <- estimate_pls(data = mobi, measurement_model = mm_med,
+                            structural_model = sm_med)
+
+  result <- assess_cipma(pls_med, target = "Loyalty",
+                           scale_min = 1, scale_max = 10,
+                           nca_test.rep = 0, seed = 123)
+
+  expect_s3_class(result, "cipma_analysis")
+  expect_s3_class(result$nca, "nca_analysis")
+  expect_true(all(c("Image", "Satisfaction") %in% result$nca$predictors))
+})
+
+# =============================================================================
+# MODERATION MODEL TESTS
+# =============================================================================
+
+test_that("IPMA works with moderation model (two-stage)", {
+  mm_mod <- constructs(
+    composite("Image",        multi_items("IMAG", 1:5)),
+    composite("Value",        multi_items("PERV", 1:2)),
+    composite("Satisfaction", multi_items("CUSA", 1:3)),
+    composite("Loyalty",      multi_items("CUSL", 1:3)),
+    interaction_term(iv = "Image", moderator = "Value", method = two_stage)
+  )
+  sm_mod <- relationships(
+    paths(from = c("Image", "Value", "Image*Value"), to = "Satisfaction"),
+    paths(from = "Satisfaction", to = "Loyalty")
+  )
+  pls_mod <- estimate_pls(data = mobi, measurement_model = mm_mod,
+                            structural_model = sm_mod)
+
+  expect_message(
+    result <- assess_ipma(pls_mod, target = "Loyalty",
+                            scale_min = 1, scale_max = 10),
+    "Excluding interaction"
+  )
+
+  # Interaction excluded, constituents included
+  expect_false("Image*Value" %in% result$constructs)
+  expect_true("Image" %in% result$constructs)
+  expect_true("Value" %in% result$constructs)
+  expect_true("Image*Value" %in% result$excluded_interactions)
+
+  # Performance of non-interaction constructs in valid range
+  expect_true(all(result$performance >= 0 & result$performance <= 100))
+})
+
+test_that("cIPMA works with moderation model", {
+  mm_mod <- constructs(
+    composite("Image",        multi_items("IMAG", 1:5)),
+    composite("Value",        multi_items("PERV", 1:2)),
+    composite("Satisfaction", multi_items("CUSA", 1:3)),
+    composite("Loyalty",      multi_items("CUSL", 1:3)),
+    interaction_term(iv = "Image", moderator = "Value", method = two_stage)
+  )
+  sm_mod <- relationships(
+    paths(from = c("Image", "Value", "Image*Value"), to = "Satisfaction"),
+    paths(from = "Satisfaction", to = "Loyalty")
+  )
+  pls_mod <- estimate_pls(data = mobi, measurement_model = mm_mod,
+                            structural_model = sm_mod)
+
+  expect_message(
+    result <- assess_cipma(pls_mod, target = "Loyalty",
+                             scale_min = 1, scale_max = 10,
+                             nca_test.rep = 0, seed = 123),
+    "Excluding interaction"
+  )
+
+  expect_s3_class(result$nca, "nca_analysis")
+  # NCA predictors should not include the interaction term
+  expect_false("Image*Value" %in% result$nca$predictors)
+})
+
+# =============================================================================
+# HIGHER-ORDER CONSTRUCT (HOC) TESTS — TWO-STAGE
+# =============================================================================
+
+test_that("IPMA works with HOC two-stage model", {
+  mm_hoc <- constructs(
+    composite("Image",        multi_items("IMAG", 1:5)),
+    composite("Expectation",  multi_items("CUEX", 1:3)),
+    higher_composite("Quality", c("Image", "Expectation"), method = two_stage),
+    composite("Satisfaction", multi_items("CUSA", 1:3)),
+    composite("Loyalty",      multi_items("CUSL", 1:3))
+  )
+  sm_hoc <- relationships(
+    paths(from = "Quality", to = c("Satisfaction", "Loyalty")),
+    paths(from = "Satisfaction", to = "Loyalty")
+  )
+  pls_hoc <- estimate_pls(data = mobi, measurement_model = mm_hoc,
+                            structural_model = sm_hoc)
+
+  result <- assess_ipma(pls_hoc, target = "Loyalty",
+                          scale_min = 1, scale_max = 10)
+
+  expect_s3_class(result, "cipma_analysis")
+  expect_true("Quality" %in% result$constructs)
+  expect_true("Satisfaction" %in% result$constructs)
+  # LOCs should NOT be in constructs (they're inside the HOC)
+  expect_false("Image" %in% result$constructs)
+  expect_false("Expectation" %in% result$constructs)
+
+  # Performance in valid range (HOC chained through LOCs)
+  expect_true(all(result$performance >= 0 & result$performance <= 100))
+})
+
+test_that("HOC two-stage performance chains through LOC indicators", {
+  mm_hoc <- constructs(
+    composite("Image",        multi_items("IMAG", 1:5)),
+    composite("Expectation",  multi_items("CUEX", 1:3)),
+    higher_composite("Quality", c("Image", "Expectation"), method = two_stage),
+    composite("Satisfaction", multi_items("CUSA", 1:3)),
+    composite("Loyalty",      multi_items("CUSL", 1:3))
+  )
+  sm_hoc <- relationships(
+    paths(from = "Quality", to = c("Satisfaction", "Loyalty")),
+    paths(from = "Satisfaction", to = "Loyalty")
+  )
+  pls_hoc <- estimate_pls(data = mobi, measurement_model = mm_hoc,
+                            structural_model = sm_hoc)
+
+  result <- assess_ipma(pls_hoc, target = "Loyalty",
+                          scale_min = 1, scale_max = 10)
+
+  # Manual computation of HOC Quality performance via LOC chain
+  img_items <- seminr:::items_of_construct("Image", pls_hoc)
+  img_w <- pls_hoc$outer_weights[img_items, "Image"]
+  img_means <- colMeans(pls_hoc$data[, img_items])
+  img_perf <- sum(img_w * (img_means - 1) / 9 * 100) / sum(img_w)
+
+  exp_items <- seminr:::items_of_construct("Expectation", pls_hoc)
+  exp_w <- pls_hoc$outer_weights[exp_items, "Expectation"]
+  exp_means <- colMeans(pls_hoc$data[, exp_items])
+  exp_perf <- sum(exp_w * (exp_means - 1) / 9 * 100) / sum(exp_w)
+
+  hoc_w <- pls_hoc$outer_weights[c("Image", "Expectation"), "Quality"]
+  expected_quality_perf <- sum(hoc_w * c(img_perf, exp_perf)) / sum(hoc_w)
+
+  expect_equal(result$performance[["Quality"]], expected_quality_perf,
+               tolerance = 1e-10)
+})
+
+test_that("cIPMA works with HOC two-stage model", {
+  mm_hoc <- constructs(
+    composite("Image",        multi_items("IMAG", 1:5)),
+    composite("Expectation",  multi_items("CUEX", 1:3)),
+    higher_composite("Quality", c("Image", "Expectation"), method = two_stage),
+    composite("Satisfaction", multi_items("CUSA", 1:3)),
+    composite("Loyalty",      multi_items("CUSL", 1:3))
+  )
+  sm_hoc <- relationships(
+    paths(from = "Quality", to = c("Satisfaction", "Loyalty")),
+    paths(from = "Satisfaction", to = "Loyalty")
+  )
+  pls_hoc <- estimate_pls(data = mobi, measurement_model = mm_hoc,
+                            structural_model = sm_hoc)
+
+  result <- assess_cipma(pls_hoc, target = "Loyalty",
+                           scale_min = 1, scale_max = 10,
+                           nca_test.rep = 0, seed = 123)
+
+  expect_s3_class(result, "cipma_analysis")
+  expect_s3_class(result$nca, "nca_analysis")
+  expect_true("Quality" %in% result$nca$predictors)
+  expect_true("Satisfaction" %in% result$nca$predictors)
+})
+
+# =============================================================================
+# HIGHER-ORDER CONSTRUCT (HOC) TESTS — REPEATED INDICATORS
+# =============================================================================
+
+test_that("IPMA works with HOC repeated indicators model", {
+  mm_ri <- constructs(
+    composite("Image",        multi_items("IMAG", 1:5)),
+    composite("Expectation",  multi_items("CUEX", 1:3)),
+    higher_composite("Quality", c("Image", "Expectation"),
+                      method = repeated_indicators),
+    composite("Satisfaction", multi_items("CUSA", 1:3)),
+    composite("Loyalty",      multi_items("CUSL", 1:3))
+  )
+  sm_ri <- relationships(
+    paths(from = "Quality", to = c("Satisfaction", "Loyalty")),
+    paths(from = "Satisfaction", to = "Loyalty")
+  )
+  pls_ri <- estimate_pls(data = mobi, measurement_model = mm_ri,
+                           structural_model = sm_ri)
+
+  result <- assess_ipma(pls_ri, target = "Loyalty",
+                          scale_min = 1, scale_max = 10)
+
+  expect_s3_class(result, "cipma_analysis")
+  expect_true("Quality" %in% result$constructs)
+  expect_true(all(result$performance >= 0 & result$performance <= 100))
+})
+
+test_that("HOC two-stage and repeated indicators give same performance", {
+  mm_ts <- constructs(
+    composite("Image",        multi_items("IMAG", 1:5)),
+    composite("Expectation",  multi_items("CUEX", 1:3)),
+    higher_composite("Quality", c("Image", "Expectation"), method = two_stage),
+    composite("Satisfaction", multi_items("CUSA", 1:3)),
+    composite("Loyalty",      multi_items("CUSL", 1:3))
+  )
+  mm_ri <- constructs(
+    composite("Image",        multi_items("IMAG", 1:5)),
+    composite("Expectation",  multi_items("CUEX", 1:3)),
+    higher_composite("Quality", c("Image", "Expectation"),
+                      method = repeated_indicators),
+    composite("Satisfaction", multi_items("CUSA", 1:3)),
+    composite("Loyalty",      multi_items("CUSL", 1:3))
+  )
+  sm <- relationships(
+    paths(from = "Quality", to = c("Satisfaction", "Loyalty")),
+    paths(from = "Satisfaction", to = "Loyalty")
+  )
+  pls_ts <- estimate_pls(data = mobi, measurement_model = mm_ts,
+                           structural_model = sm)
+  pls_ri <- estimate_pls(data = mobi, measurement_model = mm_ri,
+                           structural_model = sm)
+
+  r_ts <- assess_ipma(pls_ts, target = "Loyalty",
+                        scale_min = 1, scale_max = 10)
+  r_ri <- assess_ipma(pls_ri, target = "Loyalty",
+                        scale_min = 1, scale_max = 10)
+
+  # Both approaches should produce the same HOC performance
+  # (chaining LOC → indicator performances via LOC weights)
+  expect_equal(r_ts$performance[["Quality"]], r_ri$performance[["Quality"]],
+               tolerance = 1e-10)
+})
+
+# =============================================================================
+# NCA ON DIFFERENT MODEL TYPES
+# =============================================================================
+
+test_that("NCA works with mediation model", {
+  mm_med <- constructs(
+    composite("Image",        multi_items("IMAG", 1:5)),
+    composite("Expectation",  multi_items("CUEX", 1:3)),
+    composite("Satisfaction", multi_items("CUSA", 1:3)),
+    composite("Loyalty",      multi_items("CUSL", 1:3))
+  )
+  sm_med <- relationships(
+    paths(from = "Image", to = c("Expectation", "Loyalty")),
+    paths(from = "Expectation", to = "Satisfaction"),
+    paths(from = "Satisfaction", to = "Loyalty")
+  )
+  pls_med <- estimate_pls(data = mobi, measurement_model = mm_med,
+                            structural_model = sm_med)
+
+  result <- assess_nca(pls_med, target = "Loyalty", test.rep = 0, seed = 123)
+
+  expect_s3_class(result, "nca_analysis")
+  # Direct predictors of Loyalty: Image, Satisfaction
+  expect_true(all(c("Image", "Satisfaction") %in% result$predictors))
+  # Expectation has no direct path to Loyalty
+  expect_false("Expectation" %in% result$predictors)
+})
+
+test_that("NCA works with moderation model", {
+  mm_mod <- constructs(
+    composite("Image",        multi_items("IMAG", 1:5)),
+    composite("Value",        multi_items("PERV", 1:2)),
+    composite("Satisfaction", multi_items("CUSA", 1:3)),
+    composite("Loyalty",      multi_items("CUSL", 1:3)),
+    interaction_term(iv = "Image", moderator = "Value", method = two_stage)
+  )
+  sm_mod <- relationships(
+    paths(from = c("Image", "Value", "Image*Value"), to = "Satisfaction"),
+    paths(from = "Satisfaction", to = "Loyalty")
+  )
+  pls_mod <- estimate_pls(data = mobi, measurement_model = mm_mod,
+                            structural_model = sm_mod)
+
+  # NCA on Satisfaction (includes interaction as predictor)
+  result <- assess_nca(pls_mod, target = "Satisfaction",
+                         test.rep = 0, seed = 123)
+
+  expect_s3_class(result, "nca_analysis")
+  expect_true("Image*Value" %in% result$predictors)
+  expect_true(all(c("Image", "Value") %in% result$predictors))
+})
+
+test_that("NCA works with HOC two-stage model", {
+  mm_hoc <- constructs(
+    composite("Image",        multi_items("IMAG", 1:5)),
+    composite("Expectation",  multi_items("CUEX", 1:3)),
+    higher_composite("Quality", c("Image", "Expectation"), method = two_stage),
+    composite("Satisfaction", multi_items("CUSA", 1:3)),
+    composite("Loyalty",      multi_items("CUSL", 1:3))
+  )
+  sm_hoc <- relationships(
+    paths(from = "Quality", to = c("Satisfaction", "Loyalty")),
+    paths(from = "Satisfaction", to = "Loyalty")
+  )
+  pls_hoc <- estimate_pls(data = mobi, measurement_model = mm_hoc,
+                            structural_model = sm_hoc)
+
+  result <- assess_nca(pls_hoc, target = "Loyalty",
+                         test.rep = 0, seed = 123)
+
+  expect_s3_class(result, "nca_analysis")
+  expect_true("Quality" %in% result$predictors)
+  expect_true("Satisfaction" %in% result$predictors)
+})

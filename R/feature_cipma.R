@@ -26,15 +26,28 @@ is_interaction_construct <- function(name) {
 }
 
 #' Check that all outer weights are positive for IPMA constructs.
+#' For HOC constructs, also checks LOC-to-indicator weights.
 #' Returns character vector of constructs with negative weights.
 #' @noRd
 check_positive_weights <- function(model, constructs) {
   neg <- character(0)
+  construct_cols <- colnames(model$outer_weights)
+
   for (construct in constructs) {
     items <- seminr:::items_of_construct(construct, model)
     weights <- model$outer_weights[items, construct]
     if (any(weights < 0)) {
       neg <- c(neg, construct)
+      next
+    }
+
+    # For HOC: also check LOC-to-indicator weights
+    loc_names <- items[items %in% construct_cols]
+    if (length(loc_names) > 0) {
+      loc_neg <- check_positive_weights(model, loc_names)
+      if (length(loc_neg) > 0) {
+        neg <- c(neg, construct)
+      }
     }
   }
   neg
@@ -46,6 +59,11 @@ check_positive_weights <- function(model, constructs) {
 #' using normalized outer weights. Indicator performance:
 #' (mean_observed - scale_min) / (scale_max - scale_min) * 100.
 #'
+#' For higher-order constructs (HOC), performance is computed by chaining
+#' through the lower-order constructs (LOCs): first compute each LOC's
+#' performance from its actual indicators, then aggregate using HOC-to-LOC
+#' weights. This applies to both two-stage and repeated-indicators HOCs.
+#'
 #' @return Named numeric vector of construct performances (0-100).
 #' @noRd
 compute_ipma_performance <- function(model, constructs, scale_min, scale_max) {
@@ -53,24 +71,36 @@ compute_ipma_performance <- function(model, constructs, scale_min, scale_max) {
   performance <- numeric(length(constructs))
   names(performance) <- constructs
 
+  construct_cols <- colnames(model$outer_weights)
+
   for (construct in constructs) {
     items <- seminr:::items_of_construct(construct, model)
 
-    # Guard: items must exist in raw data
-    available <- items %in% colnames(model$data)
-    if (!all(available)) {
-      warning("Construct '", construct, "': some items not found in raw data. ",
-              "Performance set to NA.", call. = FALSE)
-      performance[construct] <- NA_real_
-      next
+    # Detect HOC: items that are themselves construct names in outer_weights
+    loc_names <- items[items %in% construct_cols]
+
+    if (length(loc_names) > 0) {
+      # HOC: recursively compute LOC performances, then aggregate
+      loc_perf <- compute_ipma_performance(model, loc_names, scale_min, scale_max)
+      hoc_weights <- model$outer_weights[loc_names, construct]
+      performance[construct] <- sum(hoc_weights * loc_perf) / sum(hoc_weights)
+    } else {
+      # Regular construct: compute from indicators
+      available <- items %in% colnames(model$data)
+      if (!all(available)) {
+        warning("Construct '", construct, "': some items not found in data. ",
+                "Performance set to NA.", call. = FALSE)
+        performance[construct] <- NA_real_
+        next
+      }
+
+      weights <- model$outer_weights[items, construct]
+      indicator_means <- colMeans(model$data[, items, drop = FALSE])
+      indicator_perf <- (indicator_means - scale_min) / scale_range * 100
+
+      # Weighted average using normalized positive weights
+      performance[construct] <- sum(weights * indicator_perf) / sum(weights)
     }
-
-    weights <- model$outer_weights[items, construct]
-    indicator_means <- colMeans(model$data[, items, drop = FALSE])
-    indicator_perf <- (indicator_means - scale_min) / scale_range * 100
-
-    # Weighted average using normalized positive weights
-    performance[construct] <- sum(weights * indicator_perf) / sum(weights)
   }
 
   performance
@@ -80,6 +110,9 @@ compute_ipma_performance <- function(model, constructs, scale_min, scale_max) {
 #'
 #' Used to obtain SD of rescaled construct scores for unstandardized
 #' total effect computation. Returns an N x length(constructs) matrix.
+#'
+#' For HOC constructs, chains through LOC observation performances
+#' and aggregates using HOC-to-LOC weights.
 #' @noRd
 compute_observation_performance <- function(model, constructs, scale_min, scale_max) {
   scale_range <- scale_max - scale_min
@@ -87,14 +120,28 @@ compute_observation_performance <- function(model, constructs, scale_min, scale_
   perf_scores <- matrix(NA_real_, nrow = n, ncol = length(constructs),
                          dimnames = list(NULL, constructs))
 
+  construct_cols <- colnames(model$outer_weights)
+
   for (construct in constructs) {
     items <- seminr:::items_of_construct(construct, model)
-    available <- items %in% colnames(model$data)
-    if (!all(available)) next
 
-    weights <- model$outer_weights[items, construct]
-    indicator_perf <- (model$data[, items, drop = FALSE] - scale_min) / scale_range * 100
-    perf_scores[, construct] <- as.matrix(indicator_perf) %*% weights / sum(weights)
+    # Detect HOC: items that are themselves construct names
+    loc_names <- items[items %in% construct_cols]
+
+    if (length(loc_names) > 0) {
+      # HOC: recursively compute LOC observation performances, then aggregate
+      loc_obs_perf <- compute_observation_performance(model, loc_names, scale_min, scale_max)
+      hoc_weights <- model$outer_weights[loc_names, construct]
+      perf_scores[, construct] <- loc_obs_perf %*% hoc_weights / sum(hoc_weights)
+    } else {
+      # Regular construct: compute from indicators
+      available <- items %in% colnames(model$data)
+      if (!all(available)) next
+
+      weights <- model$outer_weights[items, construct]
+      indicator_perf <- (model$data[, items, drop = FALSE] - scale_min) / scale_range * 100
+      perf_scores[, construct] <- as.matrix(indicator_perf) %*% weights / sum(weights)
+    }
   }
 
   perf_scores
