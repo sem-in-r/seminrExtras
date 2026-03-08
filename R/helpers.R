@@ -16,7 +16,8 @@
 #' @importFrom stats lm
 #' @importFrom stats coef
 #' @importFrom stats dnorm
-#' @importFrom utils head
+#' @importFrom stats cov quantile p.adjust
+#' @importFrom utils head combn
 #' @importFrom seminr predict_DA
 #' @importFrom seminr predict_EA
 #' @importFrom seminr mean_replacement

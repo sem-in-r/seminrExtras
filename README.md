@@ -18,7 +18,8 @@ package serves to provide additional extra methods and functions that
 can be used to analyze PLS-SEM models.
 
 SEMinRExtras provides advanced SEM tools which are compatible with
-SEMinR. It implements several methods for evaluating PLS-SEM models:
+SEMinR. It implements several methods for evaluating and validating
+PLS-SEM models:
 
 - **Cross-Validated Predictive Ability Test (CVPAT)** — Compare model
   predictive performance against benchmarks or alternative models
@@ -36,6 +37,10 @@ SEMinR. It implements several methods for evaluating PLS-SEM models:
 - **NCA-ESSE** — Effect Size Sensitivity Extension that assesses how
   robust NCA results are to extreme response patterns (Becker et al.,
   2026).
+- **Confirmatory Tetrad Analysis (CTA-PLS)** — Empirically test whether
+  a construct's measurement model is reflective or formative, with
+  indicator borrowing for constructs with fewer than 4 indicators
+  (Gudergan et al., 2008).
 - **Congruence Testing** — Bootstrapped congruence coefficient testing
   for construct validity (Franke, Sarstedt, & Danks, 2021).
 
@@ -58,6 +63,7 @@ in R workbook (Hair et al., 2026).
 | `competes()` | Show competing splits at tree nodes |
 | `assess_nca()` | Necessary Condition Analysis for PLS-SEM |
 | `assess_nca_esse()` | NCA with Effect Size Sensitivity Extension |
+| `assess_cta()` | Confirmatory Tetrad Analysis (CTA-PLS) with indicator borrowing (Gudergan et al., 2008) |
 | `congruence_test()` | Bootstrapped congruence coefficient testing |
 
 ## The demo files for Hair et al. (2026)
@@ -239,6 +245,57 @@ The established model has significantly lower predictive loss compared
 to the competing model. Thus, we can say that the established model has
 superior predictive performance compared to the competing model.
 
+## Confirmatory Tetrad Analysis (CTA-PLS)
+
+CTA-PLS (Gudergan et al., 2008) empirically tests whether a
+construct's measurement model is consistent with a reflective (common
+factor) specification. Under a reflective model, all model-implied
+vanishing tetrads equal zero. If any tetrad is significantly non-zero,
+the reflective specification is rejected in favour of a formative one.
+
+CTA-PLS requires at least 4 indicators per construct. When `borrow =
+TRUE` (the default), constructs with only 2 or 3 indicators can still
+be tested by borrowing indicators from structurally connected
+constructs. The borrowing rules follow Gudergan et al. (2008, Table 1):
+a reflective construct with 3 own indicators borrows 1 from an adjacent
+reflective construct (all tetrads vanish under H0), while a construct
+with 2 own indicators borrows 2 from any adjacent construct (only the
+cross-tetrad tau\_1342 vanishes).
+
+``` r
+library(seminr)
+library(seminrExtras)
+
+mobi_mm <- constructs(
+  composite("Image",        multi_items("IMAG", 1:5)),
+  composite("Expectation",  multi_items("CUEX", 1:3)),
+  composite("Value",        multi_items("PERV", 1:2)),
+  composite("Satisfaction", multi_items("CUSA", 1:3)),
+  composite("Loyalty",      multi_items("CUSL", 1:3))
+)
+
+mobi_sm <- relationships(
+  paths(from = "Image",       to = c("Expectation", "Satisfaction", "Loyalty")),
+  paths(from = "Expectation", to = c("Value", "Satisfaction")),
+  paths(from = "Value",       to = "Satisfaction"),
+  paths(from = "Satisfaction", to = "Loyalty")
+)
+
+mobi_pls <- estimate_pls(data = mobi,
+                          measurement_model = mobi_mm,
+                          structural_model  = mobi_sm)
+
+# CTA-PLS with borrowing (default) — constructs with 2-3 indicators
+# borrow from adjacent constructs to form testable 4-tuples
+cta_result <- assess_cta(mobi_pls, nboot = 5000, seed = 123)
+print(cta_result)
+summary(cta_result)
+
+# Without borrowing — only constructs with >= 4 indicators are tested
+cta_no_borrow <- assess_cta(mobi_pls, nboot = 5000, borrow = FALSE)
+print(cta_no_borrow)
+```
+
 # References
 
 - Becker, J.-M., Richter, N. F., Ringle, C. M., & Sarstedt, M. (2026).
@@ -250,6 +307,9 @@ superior predictive performance compared to the competing model.
 - Franke, G. R., Sarstedt, M., & Danks, N. P. (2021). An empirical
   comparison of factor score estimation methods. Journal of Business
   Research, 130, 318-334.
+- Gudergan, S. P., Ringle, C. M., Wende, S. & Will, A. (2008).
+  Confirmatory Tetrad Analysis in PLS Path Modeling. Journal of Business
+  Research, 61(12), 1238-1249.
 - Hair, J.F. (Jr), Hult, T.M., Ringle, C.M., Sarstedt, M., Danks, N.P.,
   and Adler, S. (2026). Partial Least Squares Structural Equation
   Modeling (PLS-SEM) Using R (Second Edition) - A Workbook. Springer.
