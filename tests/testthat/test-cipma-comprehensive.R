@@ -350,3 +350,35 @@ test_that("IPMA works with a different target (Satisfaction)", {
   constructs_with_effect <- setdiff(constructs_with_effect, "Satisfaction")
   expect_true(all(result_sat$constructs %in% constructs_with_effect))
 })
+
+# =============================================================================
+# assess_ipma() WRAPPER TESTS
+# =============================================================================
+
+test_that("assess_ipma returns cipma_analysis object without NCA", {
+  result <- assess_ipma(pls_model, target = "Loyalty",
+                          scale_min = 1, scale_max = 10)
+  expect_s3_class(result, "cipma_analysis")
+  expect_null(result$nca)
+})
+
+test_that("assess_ipma gives identical results to assess_cipma with nca=FALSE", {
+  ipma <- assess_ipma(pls_model, target = "Loyalty",
+                        scale_min = 1, scale_max = 10, seed = 42)
+  cipma_no_nca <- assess_cipma(pls_model, target = "Loyalty",
+                                 scale_min = 1, scale_max = 10,
+                                 nca = FALSE, seed = 42)
+  expect_equal(ipma$importance_unstd, cipma_no_nca$importance_unstd)
+  expect_equal(ipma$importance_std, cipma_no_nca$importance_std)
+  expect_equal(ipma$performance, cipma_no_nca$performance)
+  expect_equal(ipma$classification, cipma_no_nca$classification)
+})
+
+test_that("assess_ipma print shows IPMA header, not cIPMA", {
+  result <- assess_ipma(pls_model, target = "Loyalty",
+                          scale_min = 1, scale_max = 10)
+  out <- capture.output(print(result))
+  out_text <- paste(out, collapse = "\n")
+  expect_true(grepl("Importance-Performance Map Analysis \\(IPMA\\)", out_text))
+  expect_false(grepl("cIPMA", out_text))
+})

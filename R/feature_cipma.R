@@ -183,8 +183,79 @@ classify_cipma_constructs <- function(importance, performance, nca_result) {
 }
 
 # =============================================================================
-# MAIN ENTRY POINT
+# MAIN ENTRY POINTS
 # =============================================================================
+
+#' Importance-Performance Map Analysis (IPMA) for PLS-SEM
+#'
+#' \code{assess_ipma} conducts an Importance-Performance Map Analysis (IPMA)
+#' for a given target construct. It computes each predecessor's importance
+#' (unstandardized total effect on the target) and performance (rescaled
+#' 0--100 mean construct score), identifying constructs with high importance
+#' but low performance as priority areas for improvement.
+#'
+#' This is a convenience wrapper around \code{\link{assess_cipma}} with
+#' \code{nca = FALSE}. Use \code{\link{assess_cipma}} instead if you also
+#' want Necessary Condition Analysis (NCA) to produce a combined IPMA.
+#'
+#' @inheritParams assess_cipma
+#'
+#' @return An object of class \code{cipma_analysis} (see
+#'   \code{\link{assess_cipma}} for details). The \code{nca} element will
+#'   be \code{NULL}.
+#'
+#' @references
+#' Ringle, C. M. & Sarstedt, M. (2016). Gain More Insight from Your PLS-SEM
+#' Results: The Importance-Performance Map Analysis. Industrial Management &
+#' Data Systems, 119(9), 1865-1886.
+#'
+#' @examples
+#' library(seminr)
+#' library(seminrExtras)
+#'
+#' mobi_mm <- constructs(
+#'   composite("Image",        multi_items("IMAG", 1:5)),
+#'   composite("Expectation",  multi_items("CUEX", 1:3)),
+#'   composite("Value",        multi_items("PERV", 1:2)),
+#'   composite("Satisfaction", multi_items("CUSA", 1:3)),
+#'   composite("Loyalty",      multi_items("CUSL", 1:3))
+#' )
+#'
+#' mobi_sm <- relationships(
+#'   paths(from = "Image",       to = c("Expectation", "Satisfaction", "Loyalty")),
+#'   paths(from = "Expectation", to = c("Value", "Satisfaction")),
+#'   paths(from = "Value",       to = "Satisfaction"),
+#'   paths(from = "Satisfaction",to = "Loyalty")
+#' )
+#'
+#' mobi_pls <- estimate_pls(data = mobi,
+#'                           measurement_model = mobi_mm,
+#'                           structural_model  = mobi_sm)
+#'
+#' \donttest{
+#' ipma_result <- assess_ipma(mobi_pls,
+#'                             target = "Loyalty",
+#'                             scale_min = 1,
+#'                             scale_max = 10)
+#' print(ipma_result)
+#' plot(ipma_result)
+#' }
+#'
+#' @seealso \code{\link{assess_cipma}} for cIPMA (IPMA + NCA)
+#'
+#' @export
+assess_ipma <- function(seminr_model,
+                         target,
+                         scale_min = 1,
+                         scale_max = 7,
+                         seed = 123) {
+  assess_cipma(seminr_model = seminr_model,
+               target = target,
+               scale_min = scale_min,
+               scale_max = scale_max,
+               nca = FALSE,
+               seed = seed)
+}
 
 #' Combined Importance-Performance Map Analysis (cIPMA) for PLS-SEM
 #'
@@ -285,7 +356,8 @@ classify_cipma_constructs <- function(importance, performance, nca_result) {
 #' plot(cipma_result)
 #' }
 #'
-#' @seealso \code{\link{assess_nca}} for standalone NCA analysis
+#' @seealso \code{\link{assess_ipma}} for IPMA without NCA,
+#'   \code{\link{assess_nca}} for standalone NCA analysis
 #'
 #' @export
 assess_cipma <- function(seminr_model,
@@ -478,7 +550,11 @@ print.cipma_analysis <- function(x, ...) {
     print(nca_tbl, row.names = FALSE, ...)
   }
 
-  cat("\ncIPMA Classification:\n")
+  if (has_nca) {
+    cat("\ncIPMA Classification:\n")
+  } else {
+    cat("\nIPMA Classification:\n")
+  }
   class_tbl <- x$classification[, c("Construct", "Priority")]
   print(class_tbl, row.names = FALSE, ...)
 

@@ -48,7 +48,8 @@ in R workbook (Hair et al., 2026).
 |---|---|
 | `assess_cvpat()` | CVPAT against LM and IA benchmarks |
 | `assess_cvpat_compare()` | Compare predictive loss of two PLS models |
-| `assess_cipma()` | Combined Importance-Performance Map Analysis (cIPMA) |
+| `assess_ipma()` | Importance-Performance Map Analysis (IPMA) |
+| `assess_cipma()` | Combined IPMA with Necessary Condition Analysis (cIPMA) |
 | `assess_coa()` | Composite Overfit Analysis (full pipeline) |
 | `predictive_deviance()` | Compute predictive deviance scores |
 | `deviance_tree()` | Identify deviant case groups via decision tree |

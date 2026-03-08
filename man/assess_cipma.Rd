@@ -127,5 +127,6 @@ Introducing the cIPMA. Journal of Retailing and Consumer Services, 78,
 103723.
 }
 \seealso{
-\code{\link{assess_nca}} for standalone NCA analysis
+\code{\link{assess_ipma}} for IPMA without NCA,
+  \code{\link{assess_nca}} for standalone NCA analysis
 }
