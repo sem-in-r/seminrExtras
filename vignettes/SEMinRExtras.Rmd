@@ -74,10 +74,10 @@ competing_model <- estimate_pls(
 
 ```
 
-SEMinR (Ray, Danks, & calero-Valdez, 2026) is a domain specific language for modeling and estimating structural equation models. This is a supplementary package for SEMinR and not a standalone package. 
-This package serves to provide additional extra methods and functions that can be used to analyze PLS-SEM models. 
+SEMinR (Ray, Danks, & Calero Valdez, 2026) is a domain specific language for modeling and estimating structural equation models. This is a supplementary package for SEMinR and not a standalone package.
+This package serves to provide additional extra methods and functions that can be used to analyze PLS-SEM models.
 
-SEMinRExtras provides advanced SEM tools which are compatible with SEMinR. It implements several methods for evaluating PLS-SEM models, including CVPAT (Liengaard et al., 2021; Sharma et al., 2022), Composite Overfit Analysis (COA), Necessary Condition Analysis (NCA; Dul, 2016; Richter et al., 2020), NCA-ESSE (Becker et al., 2026), and congruence testing.
+SEMinRExtras provides advanced SEM tools which are compatible with SEMinR. It implements several methods for evaluating PLS-SEM models, including CVPAT (Liengaard et al., 2021; Sharma et al., 2022), Combined Importance-Performance Map Analysis (cIPMA; Sarstedt et al., 2024; Hauff et al., 2024), Composite Overfit Analysis (COA), Necessary Condition Analysis (NCA; Dul, 2016; Richter et al., 2020), NCA-ESSE (Becker et al., 2026), and congruence testing (Franke, Sarstedt, & Danks, 2021).
 
 SEMinRExtras also serves to host the example models used in the PLS-SEM in R workbook (Hair et al., 2026).
 
@@ -87,10 +87,13 @@ SEMinRExtras also serves to host the example models used in the PLS-SEM in R wor
 |---|---|
 | `assess_cvpat()` | CVPAT against LM and IA benchmarks |
 | `assess_cvpat_compare()` | Compare predictive loss of two PLS models |
+| `assess_cipma()` | Combined Importance-Performance Map Analysis (cIPMA) |
 | `assess_coa()` | Composite Overfit Analysis (full pipeline) |
 | `predictive_deviance()` | Compute predictive deviance scores |
 | `deviance_tree()` | Identify deviant case groups via decision tree |
 | `unstable_params()` | Parameter instability analysis |
+| `group_rules()` | Extract decision rules for deviant groups |
+| `competes()` | Show competing splits at tree nodes |
 | `assess_nca()` | Necessary Condition Analysis for PLS-SEM |
 | `assess_nca_esse()` | NCA with Effect Size Sensitivity Extension |
 | `congruence_test()` | Bootstrapped congruence coefficient testing |
@@ -230,12 +233,65 @@ compare_results <- assess_cvpat_compare(established_model = established_model,
                                         reps = 10,
                                         cores = 1)
 
-print(compare_results, 
-      cores = 1,
+print(compare_results,
       digits = 3)
 ```
 
 The established model has significantly lower predictive loss compared to the competing model. Thus, we can say that the established model has superior predictive performance compared to the competing model.
+
+## Combined Importance-Performance Map Analysis (cIPMA)
+
+IPMA (Ringle & Sarstedt, 2016) extends PLS-SEM results by jointly considering the **importance** (unstandardized total effect) and **performance** (rescaled 0--100 mean score) of each construct in predicting a target outcome. cIPMA (Sarstedt et al., 2024; Hauff et al., 2024) further integrates NCA to distinguish which constructs are **necessary conditions** vs. merely sufficient predictors.
+
+`assess_cipma()` computes both IPMA and NCA in one call, classifying constructs into four categories: Top priority (high importance + necessary), Important driver (high importance, not necessary), Bottleneck risk (low importance but necessary), and Low priority.
+
+```{r, eval=FALSE, echo=TRUE}
+library(seminr)
+library(seminrExtras)
+
+# Estimate a model
+mobi_mm <- constructs(
+  composite("Image",        multi_items("IMAG", 1:5)),
+  composite("Expectation",  multi_items("CUEX", 1:3)),
+  composite("Value",        multi_items("PERV", 1:2)),
+  composite("Satisfaction", multi_items("CUSA", 1:3)),
+  composite("Loyalty",      multi_items("CUSL", 1:3))
+)
+
+mobi_sm <- relationships(
+  paths(from = "Image",        to = c("Expectation", "Satisfaction", "Loyalty")),
+  paths(from = "Expectation",  to = c("Value", "Satisfaction")),
+  paths(from = "Value",        to = "Satisfaction"),
+  paths(from = "Satisfaction", to = "Loyalty")
+)
+
+mobi_pls <- estimate_pls(data = mobi,
+                          measurement_model = mobi_mm,
+                          structural_model  = mobi_sm)
+
+# Run cIPMA (IPMA + NCA)
+cipma_result <- assess_cipma(mobi_pls,
+                              target = "Loyalty",
+                              scale_min = 1,
+                              scale_max = 10,
+                              nca_test.rep = 1000,
+                              seed = 123)
+
+# View results
+print(cipma_result)
+summary(cipma_result)
+
+# cIPMA map (importance vs. performance, with NCA overlay)
+plot(cipma_result, type = "cipma")
+
+# Standard IPMA map (without NCA distinction)
+plot(cipma_result, type = "ipma")
+
+# Use standardized total effects for importance axis
+plot(cipma_result, importance_metric = "standardized")
+```
+
+All outer weights must be positive for valid performance rescaling. Interaction constructs are automatically excluded. The function warns if negative weights are detected and recommends reverse-coding indicators (Ringle & Sarstedt, 2016).
 
 ## Necessary Condition Analysis (NCA)
 
@@ -358,8 +414,12 @@ COA proceeds in four steps: (1) compute predictive deviance via cross-validated 
 # References
 - Becker, J.-M., Richter, N. F., Ringle, C. M., & Sarstedt, M. (2026). Must-have, or maybe not? A sensitivity-based extension to necessary condition analysis. Journal of Business Research, 206, 115920.
 - Dul, J. (2016). Necessary Condition Analysis (NCA): Logic and Methodology of 'Necessary but Not Sufficient' Causality. Organizational Research Methods, 19(1), 10-52.
+- Franke, G. R., Sarstedt, M., & Danks, N. P. (2021). An empirical comparison of factor score estimation methods. Journal of Business Research, 130, 318-334.
 - Hair, J.F. (Jr), Hult, T.M., Ringle, C.M., Sarstedt, M., Danks, N.P., and Adler, S. (2026). Partial Least Squares Structural Equation Modeling (PLS-SEM) Using R (Second Edition) - A Workbook. Springer.
-- Liengaard, B. D., Sharma, P. N., Hult, G. T. M., Jensen, M. B., Sarstedt, M., Hair, J. F., & Ringle, C. M. (2021). Prediction: coveted,yet forsaken? Introducing a cross‐validated predictive ability test in partial least squares path modeling. Decision Sciences, 52(2), 362-392.
+- Hauff, S., Richter, N. F., Sarstedt, M., & Ringle, C. M. (2024). Importance and Performance in PLS-SEM and NCA: Introducing the Combined Importance-Performance Map Analysis (cIPMA). Journal of Retailing and Consumer Services, 78, 103723.
+- Liengaard, B. D., Sharma, P. N., Hult, G. T. M., Jensen, M. B., Sarstedt, M., Hair, J. F., & Ringle, C. M. (2021). Prediction: coveted, yet forsaken? Introducing a cross-validated predictive ability test in partial least squares path modeling. Decision Sciences, 52(2), 362-392.
 - Ray, S., Danks, N.P., Calero Valdez, A. (2026) SEMinR: Domain-specific language for building, estimating, and visualizing structural equation models in R.
 - Richter, N. F., Schubring, S., Hauff, S., Ringle, C. M., & Sarstedt, M. (2020). When predictors of outcomes are necessary: guidelines for the combined use of PLS-SEM and NCA. Industrial Management & Data Systems, 120(12), 2243-2267.
-- Sharma, P. N., Liengaard, B. D., Hair, J. F., Sarstedt, M., & Ringle, C. M. (2022). Predictive model assessment and selection in composite-based modeling using PLS-SEM: extensions and guidelines for using CVPAT. European journal of marketing, 57(6), 1662-1677.
+- Ringle, C. M. & Sarstedt, M. (2016). Gain More Insight from Your PLS-SEM Results: The Importance-Performance Map Analysis. Industrial Management & Data Systems, 119(9), 1865-1886.
+- Sarstedt, M., Richter, N. F., Hauff, S. & Ringle, C. M. (2024). Combined Importance-Performance Map Analysis (cIPMA): A SmartPLS 4 Tutorial. Journal of Marketing Analytics, 12, 746-760.
+- Sharma, P. N., Liengaard, B. D., Hair, J. F., Sarstedt, M., & Ringle, C. M. (2022). Predictive model assessment and selection in composite-based modeling using PLS-SEM: extensions and guidelines for using CVPAT. European Journal of Marketing, 57(6), 1662-1677.

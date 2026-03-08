@@ -174,13 +174,13 @@ congruence_test <- function(seminr_model,
   # Calculate alpha/2 for confidence interval labels
   alpha_text <- alpha / 2 * 100
 
-  # Replace any NA values with 0 for iteration
-  original_matrix[is.na(original_matrix)] <- 0
+  # Use upper.tri mask to iterate over construct pairs
+  ut_mask <- upper.tri(original_matrix)
 
   # Loop through upper triangle to extract results for each pair
-  for (i in 1:nrow(original_matrix)) {
-    for (j in 1:ncol(original_matrix)) {
-      if (original_matrix[i, j] != 0) {
+  for (i in seq_len(nrow(original_matrix))) {
+    for (j in seq_len(ncol(original_matrix))) {
+      if (ut_mask[i, j]) {
         # Store construct pair label
         Path <- append(Path, paste(rownames(original_matrix)[i], " -> ",
                                    colnames(original_matrix)[j]))
@@ -197,7 +197,7 @@ congruence_test <- function(seminr_model,
 
         # Compute t-statistic: (threshold - |rc|) / SE
         # Guard against division by near-zero SD (indicates perfect stability)
-        if (original_matrix[i, j] / stats::sd(boot_array[i, j, ]) > 999999999) {
+        if (stats::sd(boot_array[i, j, ]) < .Machine$double.eps) {
           t_stat <- append(t_stat, NA)
         } else {
           t_stat <- append(t_stat, (threshold - abs(original_matrix[i, j])) /

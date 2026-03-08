@@ -23,6 +23,10 @@ SEMinR. It implements several methods for evaluating PLS-SEM models:
 - **Cross-Validated Predictive Ability Test (CVPAT)** — Compare model
   predictive performance against benchmarks or alternative models
   (Liengaard et al., 2021; Sharma et al., 2022).
+- **Combined Importance-Performance Map Analysis (cIPMA)** — IPMA with
+  NCA integration to identify constructs that are both important and
+  necessary (Ringle & Sarstedt, 2016; Sarstedt et al., 2024; Hauff
+  et al., 2024).
 - **Composite Overfit Analysis (COA)** — Detect observation-level
   overfitting in PLS composite models via predictive deviance trees
   and parameter instability analysis.
@@ -33,7 +37,7 @@ SEMinR. It implements several methods for evaluating PLS-SEM models:
   robust NCA results are to extreme response patterns (Becker et al.,
   2026).
 - **Congruence Testing** — Bootstrapped congruence coefficient testing
-  for construct validity.
+  for construct validity (Franke, Sarstedt, & Danks, 2021).
 
 SEMinRExtras also serves to host the example models used in the PLS-SEM
 in R workbook (Hair et al., 2026).
@@ -44,10 +48,13 @@ in R workbook (Hair et al., 2026).
 |---|---|
 | `assess_cvpat()` | CVPAT against LM and IA benchmarks |
 | `assess_cvpat_compare()` | Compare predictive loss of two PLS models |
+| `assess_cipma()` | Combined Importance-Performance Map Analysis (cIPMA) |
 | `assess_coa()` | Composite Overfit Analysis (full pipeline) |
 | `predictive_deviance()` | Compute predictive deviance scores |
 | `deviance_tree()` | Identify deviant case groups via decision tree |
 | `unstable_params()` | Parameter instability analysis |
+| `group_rules()` | Extract decision rules for deviant groups |
+| `competes()` | Show competing splits at tree nodes |
 | `assess_nca()` | Necessary Condition Analysis for PLS-SEM |
 | `assess_nca_esse()` | NCA with Effect Size Sensitivity Extension |
 | `congruence_test()` | Bootstrapped congruence coefficient testing |
@@ -213,7 +220,6 @@ compare_results <- assess_cvpat_compare(established_model = established_model,
                                         cores = 1)
 
 print(compare_results,
-      cores = 1,
       digits = 3)
 #>         Base Model Loss Alt Model Loss   Diff Boot T value Boot P Value
 #> COMP              1.198          1.195  0.003       -0.460        0.645
@@ -223,7 +229,7 @@ print(compare_results,
 #> Overall           1.418          1.459 -0.041        3.293        0.001
 #>
 #> CVPAT as per Sharma, Liengaard, Hair, Sarstedt, & Ringle, (2023).
-#>   Both models under comparison have identical endoogenous constructs with identical measurement models.
+#>   Both models under comparison have identical endogenous constructs with identical measurement models.
 #>   Purely exogenous constructs can differ in regards to their relationships with both nomological
 #>   partners and measurement indicators.
 ```
@@ -240,9 +246,16 @@ superior predictive performance compared to the competing model.
 - Dul, J. (2016). Necessary Condition Analysis (NCA): Logic and
   methodology of "necessary but not sufficient" causality.
   Organizational Research Methods, 19(1), 10-52.
+- Franke, G. R., Sarstedt, M., & Danks, N. P. (2021). An empirical
+  comparison of factor score estimation methods. Journal of Business
+  Research, 130, 318-334.
 - Hair, J.F. (Jr), Hult, T.M., Ringle, C.M., Sarstedt, M., Danks, N.P.,
   and Adler, S. (2026). Partial Least Squares Structural Equation
   Modeling (PLS-SEM) Using R (Second Edition) - A Workbook. Springer.
+- Hauff, S., Richter, N. F., Sarstedt, M., & Ringle, C. M. (2024).
+  Importance and Performance in PLS-SEM and NCA: Introducing the
+  Combined Importance-Performance Map Analysis (cIPMA). Journal of
+  Retailing and Consumer Services, 78, 103723.
 - Liengaard, B. D., Sharma, P. N., Hult, G. T. M., Jensen, M. B.,
   Sarstedt, M., Hair, J. F., & Ringle, C. M. (2021). Prediction:
   coveted, yet forsaken? Introducing a cross-validated predictive ability
@@ -255,7 +268,13 @@ superior predictive performance compared to the competing model.
   Sarstedt, M. (2020). When predictors of outcomes are necessary:
   guidelines for the combined use of PLS-SEM and NCA. Industrial
   Management & Data Systems, 120(12), 2243-2267.
+- Ringle, C. M. & Sarstedt, M. (2016). Gain More Insight from Your
+  PLS-SEM Results: The Importance-Performance Map Analysis. Industrial
+  Management & Data Systems, 119(9), 1865-1886.
+- Sarstedt, M., Richter, N. F., Hauff, S. & Ringle, C. M. (2024).
+  Combined Importance-Performance Map Analysis (cIPMA): A SmartPLS 4
+  Tutorial. Journal of Marketing Analytics, 12, 746-760.
 - Sharma, P. N., Liengaard, B. D., Hair, J. F., Sarstedt, M., &
   Ringle, C. M. (2022). Predictive model assessment and selection in
   composite-based modeling using PLS-SEM: extensions and guidelines for
-  using CVPAT. European journal of marketing, 57(6), 1662-1677.
+  using CVPAT. European Journal of Marketing, 57(6), 1662-1677.

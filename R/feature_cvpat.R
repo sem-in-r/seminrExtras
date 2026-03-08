@@ -246,7 +246,7 @@ assess_cvpat_compare <- function(established_model,
                          "Boot T value", "Boot P Value")
 
   # Add metadata for print method
-  comment(mat_out) <- "CVPAT as per Sharma, Liengaard, Hair, Sarstedt, & Ringle, (2023).
+  comment(mat_out) <- "CVPAT as per Sharma, Liengaard, Hair, Sarstedt, & Ringle, (2022).
   Both models under comparison have identical endogenous constructs with identical measurement models.
   Purely exogenous constructs can differ in regards to their relationships with both nomological
   partners and measurement indicators."
@@ -466,7 +466,7 @@ assess_cvpat <- function(seminr_model,
   # ---------------------------------------------------------------------------
   # Step 10: Add metadata and return
   # ---------------------------------------------------------------------------
-  comment(mat_lm) <- comment(mat_ia) <- "CVPAT as per Sharma et al. (2023)."
+  comment(mat_lm) <- comment(mat_ia) <- "CVPAT as per Sharma et al. (2022)."
   class(mat_lm) <- class(mat_ia) <- c("table_output", class(mat_lm))
 
   return(list(CVPAT_compare_LM = mat_lm,

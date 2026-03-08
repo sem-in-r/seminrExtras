@@ -7,12 +7,17 @@ Authors@R: c(person("Soumya", "Ray", email = "soumya.ray@gmail.com", role = c("a
             )
 Description: Supplemental functions for estimating and analysing structural equation models.
     Methods include Cross Validated Predictive Ability Testing (CVPAT, Liengaard et al., 2021 <doi:10.1111/deci.12445>),
+    Combined Importance-Performance Map Analysis (cIPMA, Sarstedt et al., 2024
+    <doi:10.1057/s41270-023-00281-5>; Hauff et al., 2024 <doi:10.1016/j.jretconser.2024.103723>),
     Composite Overfit Analysis (COA), Necessary Condition Analysis (NCA, Dul, 2016 <doi:10.1177/1094428116689707>)
     with the Effect Size Sensitivity Extension (NCA-ESSE, Becker et al., 2026
     <doi:10.1016/j.jbusres.2025.115920>), and congruence coefficient testing.
 Imports:
     seminr (>= 2.3.0),
     stats,
+    graphics,
+    grDevices,
+    utils,
     rpart
 License: GPL-3
 Encoding: UTF-8

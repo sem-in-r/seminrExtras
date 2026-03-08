@@ -12,6 +12,7 @@
 #' @importFrom stats t.test
 #' @importFrom stats var
 #' @importFrom stats sd
+#' @importFrom stats median
 #' @importFrom stats lm
 #' @importFrom stats coef
 #' @importFrom utils head
@@ -87,7 +88,7 @@ lv_loss <- function(construct, model, error) {
   if (length(dim(error)) > 1) {
     loss <- rowMeans(error[, items, drop = FALSE]^2)
   } else {
-    loss <- error[, items, drop = FALSE]^2
+    loss <- as.vector(error[, items, drop = FALSE]^2)
   }
   return(loss)
 }
@@ -131,8 +132,8 @@ bootstrap_cvpat <- function(loss_m1, loss_m2, testtype = "two.sided", nboot = 20
   m_losses <- cbind(loss_m1, loss_m2)
   t_stat <- rep(0, nboot)
 
-  for (b in 1:nboot) {
-    boot_sample <- m_losses[sample(1:length(d), length(d), replace = TRUE), ]
+  for (b in seq_len(nboot)) {
+    boot_sample <- m_losses[sample(seq_along(d), length(d), replace = TRUE), ]
 
     t_stat[b] <- t.test(boot_sample[, 2], boot_sample[, 1],
                         mu = mean(d),
@@ -168,9 +169,13 @@ bootstrap_cvpat <- function(loss_m1, loss_m2, testtype = "two.sided", nboot = 20
 
     if (length(idx_t) == 0) {
       p_value_perc_t <- 0
-      p_value_perc_d <- 0
     } else {
       p_value_perc_t <- 1 - (head(idx_t, 1) - 1) / (nboot + 1)
+    }
+
+    if (length(idx_d) == 0) {
+      p_value_perc_d <- 0
+    } else {
       p_value_perc_d <- 1 - (head(idx_d, 1) - 1) / (nboot + 1)
     }
     p_value_var_t <- pt(t_stat_boot_var, (n - 1), lower.tail = FALSE)
