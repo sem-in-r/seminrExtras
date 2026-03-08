@@ -15,6 +15,7 @@
 #' @importFrom stats median
 #' @importFrom stats lm
 #' @importFrom stats coef
+#' @importFrom stats dnorm
 #' @importFrom utils head
 #' @importFrom seminr predict_DA
 #' @importFrom seminr predict_EA

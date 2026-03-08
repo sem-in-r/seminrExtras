@@ -32,14 +32,16 @@ compute_ce_fdh <- function(x, y) {
 }
 
 #' Get CE-FDH peer coordinates (points defining the ceiling envelope).
-#' A peer is a unique-x level whose max y equals the running cummax,
-#' meaning it actually pushes the ceiling upward.
+#' A peer is a unique-x level whose max y actually pushes the ceiling
+#' upward (exceeds the previous cummax). Points on flat parts of the
+#' step function are excluded.
 #' @noRd
 get_ce_fdh_peers <- function(x, y) {
   ux <- sort(unique(x))
   max_y_at_x <- vapply(ux, function(xi) max(y[x == xi]), numeric(1))
   cy <- cummax(max_y_at_x)
-  is_peer <- max_y_at_x == cy
+  # A peer must set a NEW cummax: either first point, or exceeds previous cummax
+  is_peer <- c(TRUE, max_y_at_x[-1] > cy[-length(cy)])
   data.frame(x = ux[is_peer], y = cy[is_peer])
 }
 
