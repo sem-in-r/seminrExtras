@@ -4,6 +4,7 @@ seminr-pls-coa        A demonstration of Composite Overfit Analysis using SEMinR
 seminr-pls-nca        A demonstration of NCA (Necessary Condition Analysis) with SEMinR
 seminr-pls-fimix      A demonstration of FIMIX-PLS using SEMinR syntax
 seminr-pls-cta        A demonstration of CTA-PLS (Confirmatory Tetrad Analysis) with SEMinR
+seminr-pls-pos        A demonstration of PLS-POS (Prediction-Oriented Segmentation) with SEMinR
 seminr-pls-congruence A demonstration of congruence coefficient testing with SEMinR
 seminr-primer-v2-chap2 A demonstration of the code used in Chapter 2 of the PLS Workbook for R V2
 seminr-primer-v2-chap3 A demonstration of the code used in Chapter 3 of the PLS Workbook for R V2

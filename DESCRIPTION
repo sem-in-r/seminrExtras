@@ -12,8 +12,9 @@ Description: Supplemental functions for estimating and analysing structural equa
     Composite Overfit Analysis (COA), Necessary Condition Analysis (NCA, Dul, 2016 <doi:10.1177/1094428116689707>)
     with the Effect Size Sensitivity Extension (NCA-ESSE, Becker et al., 2026
     <doi:10.1016/j.jbusres.2025.115920>), Confirmatory Tetrad Analysis (CTA-PLS,
-    Gudergan et al., 2008 <doi:10.1016/j.jbusres.2008.01.012>), and congruence
-    coefficient testing.
+    Gudergan et al., 2008 <doi:10.1016/j.jbusres.2008.01.012>), Prediction-Oriented
+    Segmentation (PLS-POS, Becker et al., 2013 <doi:10.25300/MISQ/2013/37.3.02>),
+    and congruence coefficient testing.
 Imports:
     seminr (>= 2.3.0),
     stats,

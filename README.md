@@ -41,6 +41,14 @@ PLS-SEM models:
   a construct's measurement model is reflective or formative, with
   indicator borrowing for constructs with fewer than 4 indicators
   (Gudergan et al., 2008).
+- **Unobserved Heterogeneity** — Two complementary segmentation
+  approaches for detecting latent classes in PLS-SEM:
+  - **FIMIX-PLS** — EM-based probabilistic segmentation assuming
+    normally distributed residuals (Hahn et al., 2002; Sarstedt et al.,
+    2011).
+  - **PLS-POS** — Deterministic hill-climbing segmentation that
+    maximizes the sum of R-squared across segments, making no
+    distributional assumptions (Becker et al., 2013).
 - **Congruence Testing** — Bootstrapped congruence coefficient testing
   for construct validity (Franke, Sarstedt, & Danks, 2021).
 
@@ -63,9 +71,12 @@ in R workbook (Hair et al., 2026).
 | `competes()` | Show competing splits at tree nodes |
 | `assess_nca()` | Necessary Condition Analysis for PLS-SEM |
 | `assess_nca_esse()` | NCA with Effect Size Sensitivity Extension |
+| `assess_cta()` | Confirmatory Tetrad Analysis (CTA-PLS) with indicator borrowing (Gudergan et al., 2008) |
 | `assess_fimix()` | FIMIX-PLS latent class segmentation |
 | `assess_fimix_compare()` | Compare FIMIX solutions across K values |
-| `assess_cta()` | Confirmatory Tetrad Analysis (CTA-PLS) with indicator borrowing (Gudergan et al., 2008) |
+| `assess_pos()` | PLS-POS prediction-oriented segmentation (Becker et al., 2013) |
+| `assess_pos_compare()` | Compare PLS-POS solutions across K values |
+| `pos_segments()` | Extract segment-specific re-estimated PLS models |
 | `congruence_test()` | Bootstrapped congruence coefficient testing |
 
 ## The demo files for Hair et al. (2026)
@@ -80,6 +91,7 @@ In order to access the demo files for the textbook, you can run the
 - seminr-pls-nca
 - seminr-pls-fimix
 - seminr-pls-cta
+- seminr-pls-pos
 - seminr-pls-congruence
 - seminr-primer-v2-chap2
 - seminr-primer-v2-chap3
@@ -303,18 +315,25 @@ cta_no_borrow <- assess_cta(mobi_pls, nboot = 5000, borrow = FALSE)
 print(cta_no_borrow)
 ```
 
-## FIMIX-PLS (Finite Mixture PLS)
+## Unobserved Heterogeneity (FIMIX-PLS and PLS-POS)
 
-FIMIX-PLS (Hahn et al., 2002; Sarstedt et al., 2011) uses an
-EM-based latent class segmentation approach to uncover unobserved
-heterogeneity in PLS-SEM. Observations are probabilistically
-assigned to K segments, each with segment-specific structural path
-coefficients.
+FIMIX-PLS and PLS-POS are complementary approaches for detecting
+unobserved heterogeneity in PLS-SEM. FIMIX-PLS uses probabilistic
+(EM-based) assignment and assumes normally distributed residuals,
+while PLS-POS uses deterministic (hill-climbing) assignment with no
+distributional assumptions. Both methods partition the sample into K
+segments with segment-specific path coefficients.
+
+### FIMIX-PLS (Finite Mixture PLS)
+
+FIMIX-PLS (Hahn et al., 2002; Sarstedt et al., 2011) probabilistically
+assigns observations to K segments, each with segment-specific structural
+path coefficients.
 
 `assess_fimix()` estimates a single K-segment solution, while
-`assess_fimix_compare()` estimates solutions for a range of K values
-and compares them using information criteria (AIC, BIC, CAIC, etc.)
-to help select the optimal number of segments.
+`assess_fimix_compare()` compares solutions across K values using
+information criteria (AIC, BIC, CAIC, etc.) to help select the
+optimal number of segments.
 
 ``` r
 library(seminr)
@@ -343,6 +362,34 @@ print(fimix_compare)
 plot(fimix_compare)
 ```
 
+### PLS-POS (Prediction-Oriented Segmentation)
+
+PLS-POS (Becker et al., 2013) maximizes the sum of R-squared across
+all endogenous constructs across K segments using deterministic
+hill-climbing. Unlike FIMIX-PLS, it makes no distributional
+assumptions and can detect heterogeneity in both structural and
+formative measurement models.
+
+`assess_pos()` estimates a single K-segment solution, while
+`assess_pos_compare()` compares solutions across multiple K values
+using the objective criterion (sum of R-squared).
+
+``` r
+# PLS-POS with K=2 segments (using corp_pls from above)
+pos_k2 <- assess_pos(corp_pls, K = 2, nstart = 10, seed = 123)
+print(pos_k2)
+summary(pos_k2)
+plot(pos_k2, type = "rsquared")
+
+# Compare across K=2..4
+pos_compare <- assess_pos_compare(corp_pls,
+                                   K_range = 2:4,
+                                   nstart = 10,
+                                   seed = 123)
+print(pos_compare)
+plot(pos_compare)
+```
+
 ## Congruence Testing
 
 Congruence testing (Franke, Sarstedt, & Danks, 2021) evaluates
@@ -360,6 +407,9 @@ summary(cong_result)
 
 # References
 
+- Becker, J.-M., Rai, A., Ringle, C. M., & Voelckner, F. (2013).
+  Discovering Unobserved Heterogeneity in Structural Equation Models to
+  Avert Validity Threats. MIS Quarterly, 37(3), 665-694.
 - Becker, J.-M., Richter, N. F., Ringle, C. M., & Sarstedt, M. (2026).
   Must-have, or maybe not? A sensitivity-based extension to necessary
   condition analysis. Journal of Business Research, 206, 115920.
