@@ -129,7 +129,7 @@ resolve_indicators <- function(construct, model) {
   loc_names <- items[items %in% construct_cols]
 
   if (length(loc_names) > 0 && length(loc_names) == length(items)) {
-    # This is a HOC — use LOC construct scores as "indicators"
+    # This is a HOC -- use LOC construct scores as "indicators"
     # LOC scores are in model$data (NOT model$construct_scores)
     list(
       indicators = loc_names,
@@ -138,7 +138,7 @@ resolve_indicators <- function(construct, model) {
       needs_reestimation = TRUE
     )
   } else {
-    # Standard construct — use raw indicator data
+    # Standard construct -- use raw indicator data
     list(
       indicators = items,
       data = model$data[, items, drop = FALSE],
@@ -381,7 +381,7 @@ enumerate_borrowed_tetrads <- function(own_indicators, borrowed_indicators,
 #' print(cta)
 #' summary(cta)
 #'
-#' # Without borrowing — only constructs with >= 4 indicators are tested
+#' # Without borrowing -- only constructs with >= 4 indicators are tested
 #' cta_no_borrow <- assess_cta(pls_model, nboot = 50, borrow = FALSE)
 #'
 #' @export
@@ -815,7 +815,7 @@ summary.cta_analysis <- function(object, ...) {
 
 #' @export
 print.summary.cta_analysis <- function(x, digits = 4, ...) {
-  cat("Confirmatory Tetrad Analysis (CTA-PLS) — Detailed Results\n")
+  cat("Confirmatory Tetrad Analysis (CTA-PLS) \u2014 Detailed Results\n")
   cat("==========================================================\n")
   cat("Bootstrap samples:", x$nboot, "| Alpha:", x$alpha,
       "| Correction:", x$correction, "\n\n")
@@ -862,7 +862,7 @@ print.summary.cta_analysis <- function(x, digits = 4, ...) {
 #' @export
 plot.cta_analysis <- function(x, ...) {
   if (nrow(x$construct_results) == 0) {
-    message("No constructs were tested — nothing to plot.")
+    message("No constructs were tested \u2014 nothing to plot.")
     return(invisible(x))
   }
 

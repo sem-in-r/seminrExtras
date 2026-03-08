@@ -24,7 +24,7 @@
 #' @importFrom seminr estimate_pls
 #' @importFrom seminr predict_pls
 #' @importFrom rpart rpart
-#' @importFrom graphics abline axis legend lines matlines matplot
+#' @importFrom graphics abline axis barplot legend lines matlines matplot
 #'   par plot points polygon rect text
 #' @importFrom grDevices adjustcolor palette palette.colors
 #'

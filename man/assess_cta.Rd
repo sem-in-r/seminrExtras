@@ -114,7 +114,7 @@ cta <- assess_cta(pls_model, nboot = 50, seed = 123)
 print(cta)
 summary(cta)
 
-# Without borrowing — only constructs with >= 4 indicators are tested
+# Without borrowing -- only constructs with >= 4 indicators are tested
 cta_no_borrow <- assess_cta(pls_model, nboot = 50, borrow = FALSE)
 
 }

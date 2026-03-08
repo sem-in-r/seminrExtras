@@ -117,7 +117,7 @@ congruence_test <- function(seminr_model,
                      dim = list(length(construct_names), length(construct_names), nboot),
                      dimnames = list(construct_names, construct_names, 1:nboot))
 
-  for (iter in 1:nboot) {
+  for (iter in seq_len(nboot)) {
     # Resample data with replacement and re-estimate the model
     resampled_data <- seminr_model$rawdata[
       sample(nrow(seminr_model$rawdata), nrow(seminr_model$rawdata), replace = TRUE),

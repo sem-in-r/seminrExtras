@@ -440,11 +440,7 @@ param_diffs <- function(remove_cases, pls_model, params = "path_coef") {
   reduced_data <- pls_model$data[-remove_cases, ]
   # suppressMessages hides the "Generating the seminr model" console output
   reduced_model <- suppressMessages(
-    estimate_pls(
-      data = reduced_data,
-      measurement_model = pls_model$measurement_model,
-      structural_model = pls_model$smMatrix
-    )
+    seminr::rerun(pls_model, data = reduced_data)
   )
 
   diffs <- lapply(params, function(param) {
@@ -516,7 +512,7 @@ competes <- function(node_id, dtree) {
   search_node <- if (is_odd) node_id - 1 else node_id
   frame_row <- match(search_node / 2, tree_info$node_ids)
 
-  start <- tree_info$split_index[frame_row - 1]
+  start <- tree_info$split_index[frame_row]
   end <- start + tree$frame$ncompete[frame_row]
   splits <- as.data.frame(tree$splits[start:end, ])
 

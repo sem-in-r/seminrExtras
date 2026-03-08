@@ -736,7 +736,7 @@ plot.fimix_analysis <- function(x,
     cols <- if (x$K <= 8) {
       palette.colors(x$K, palette = "Set2")
     } else {
-      palette(x$K)
+      palette.colors(n = x$K)
     }
 
     barplot(x$segment_proportions * 100,
@@ -772,7 +772,7 @@ plot.fimix_analysis <- function(x,
     cols <- if (x$K <= 8) {
       palette.colors(x$K, palette = "Set2")
     } else {
-      palette(x$K)
+      palette.colors(n = x$K)
     }
 
     barplot(t(coef_matrix), beside = TRUE, col = cols,

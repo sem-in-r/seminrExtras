@@ -63,6 +63,8 @@ in R workbook (Hair et al., 2026).
 | `competes()` | Show competing splits at tree nodes |
 | `assess_nca()` | Necessary Condition Analysis for PLS-SEM |
 | `assess_nca_esse()` | NCA with Effect Size Sensitivity Extension |
+| `assess_fimix()` | FIMIX-PLS latent class segmentation |
+| `assess_fimix_compare()` | Compare FIMIX solutions across K values |
 | `assess_cta()` | Confirmatory Tetrad Analysis (CTA-PLS) with indicator borrowing (Gudergan et al., 2008) |
 | `congruence_test()` | Bootstrapped congruence coefficient testing |
 
@@ -73,7 +75,12 @@ In order to access the demo files for the textbook, you can run the
 
 - seminr-help-debugging
 - seminr-pls-cvpat
+- seminr-pls-cipma
+- seminr-pls-coa
 - seminr-pls-nca
+- seminr-pls-fimix
+- seminr-pls-cta
+- seminr-pls-congruence
 - seminr-primer-v2-chap2
 - seminr-primer-v2-chap3
 - seminr-primer-v2-chap4
@@ -296,6 +303,61 @@ cta_no_borrow <- assess_cta(mobi_pls, nboot = 5000, borrow = FALSE)
 print(cta_no_borrow)
 ```
 
+## FIMIX-PLS (Finite Mixture PLS)
+
+FIMIX-PLS (Hahn et al., 2002; Sarstedt et al., 2011) uses an
+EM-based latent class segmentation approach to uncover unobserved
+heterogeneity in PLS-SEM. Observations are probabilistically
+assigned to K segments, each with segment-specific structural path
+coefficients.
+
+`assess_fimix()` estimates a single K-segment solution, while
+`assess_fimix_compare()` estimates solutions for a range of K values
+and compares them using information criteria (AIC, BIC, CAIC, etc.)
+to help select the optimal number of segments.
+
+``` r
+library(seminr)
+library(seminrExtras)
+
+# Estimate a PLS model
+corp_pls <- estimate_pls(
+  data = corp_rep_data,
+  measurement_model = corp_rep_mm_ext,
+  structural_model  = corp_rep_sm_ext,
+  missing = mean_replacement,
+  missing_value = "-99")
+
+# FIMIX with K=2 segments
+fimix_k2 <- assess_fimix(corp_pls, K = 2, nstart = 10, seed = 123)
+print(fimix_k2)
+summary(fimix_k2)
+plot(fimix_k2)
+
+# Compare across K=2..4 using information criteria
+fimix_compare <- assess_fimix_compare(corp_pls,
+                                       K_range = 2:4,
+                                       nstart = 10,
+                                       seed = 123)
+print(fimix_compare)
+plot(fimix_compare)
+```
+
+## Congruence Testing
+
+Congruence testing (Franke, Sarstedt, & Danks, 2021) evaluates
+whether PLS composite weights are stable across bootstrap samples by
+computing congruence coefficients. A congruence coefficient close to
+1 indicates that the composite weight pattern is robust.
+
+``` r
+cong_result <- congruence_test(mobi_pls,
+                                nboot = 2000,
+                                seed = 123)
+print(cong_result)
+summary(cong_result)
+```
+
 # References
 
 - Becker, J.-M., Richter, N. F., Ringle, C. M., & Sarstedt, M. (2026).
@@ -307,6 +369,9 @@ print(cta_no_borrow)
 - Franke, G. R., Sarstedt, M., & Danks, N. P. (2021). An empirical
   comparison of factor score estimation methods. Journal of Business
   Research, 130, 318-334.
+- Hahn, C., Johnson, M. D., Herrmann, A., & Huber, F. (2002). Capturing
+  Customer Heterogeneity using a Finite Mixture PLS Approach.
+  Schmalenbach Business Review, 54, 243-269.
 - Gudergan, S. P., Ringle, C. M., Wende, S. & Will, A. (2008).
   Confirmatory Tetrad Analysis in PLS Path Modeling. Journal of Business
   Research, 61(12), 1238-1249.
@@ -329,6 +394,9 @@ print(cta_no_borrow)
   Sarstedt, M. (2020). When predictors of outcomes are necessary:
   guidelines for the combined use of PLS-SEM and NCA. Industrial
   Management & Data Systems, 120(12), 2243-2267.
+- Sarstedt, M., Becker, J.-M., Ringle, C. M. & Schwaiger, M. (2011).
+  Uncovering and Treating Unobserved Heterogeneity with FIMIX-PLS.
+  Schmalenbach Business Review, 63(1), 34-62.
 - Ringle, C. M. & Sarstedt, M. (2016). Gain More Insight from Your
   PLS-SEM Results: The Importance-Performance Map Analysis. Industrial
   Management & Data Systems, 119(9), 1865-1886.

@@ -4,3 +4,6 @@
 ^Meta$
 ^.github
 README.Rmd
+^\.claude$
+^CLAUDE\.md$
+^Manuscript_accepted_version\.pdf$
