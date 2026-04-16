@@ -104,7 +104,7 @@ assess_cvpat_compare(established_model,
 }
 \references{
 Sharma, P. N., Liengaard, B. D., Hair, J. F., Sarstedt, M., &
-Ringle, C. M. (2022). Predictive model assessment and selection in
+Ringle, C. M. (2023). Predictive model assessment and selection in
 composite-based modeling using PLS-SEM: extensions and guidelines for
 using CVPAT. European journal of marketing, 57(6), 1662-1677.
 

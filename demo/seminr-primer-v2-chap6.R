@@ -137,10 +137,10 @@ sum_model3 <- summary(pls_model3)
 # Inspect the IT Criteria matrix of Model1
 sum_model1$it_criteria
 
-# Subset the matrix to only return the BIC row and CUSL column
+# Subset the matrix to only return the BIC row and CUSA column
 sum_model1$it_criteria["BIC", "CUSA"]
 
-# Collect the vector of BIC values for CUSL
+# Collect the vector of BIC values for CUSA
 itcriteria_vector <- c(sum_model1$it_criteria["BIC","CUSA"],
                        sum_model2$it_criteria["BIC","CUSA"],
                        sum_model3$it_criteria["BIC","CUSA"])

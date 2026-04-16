@@ -24,6 +24,10 @@ PLS-SEM models:
 - **Cross-Validated Predictive Ability Test (CVPAT)** — Compare model
   predictive performance against benchmarks or alternative models
   (Liengaard et al., 2021; Sharma et al., 2022).
+- **Predictive Contribution of the Mediator (PCM)** — Evaluate whether
+  a mediating construct improves out-of-sample predictive accuracy by
+  comparing Direct Antecedent (DA) and Earliest Antecedent (EA)
+  prediction approaches (Danks, 2021).
 - **Combined Importance-Performance Map Analysis (cIPMA)** — IPMA with
   NCA integration to identify constructs that are both important and
   necessary (Ringle & Sarstedt, 2016; Sarstedt et al., 2024; Hauff
@@ -61,6 +65,7 @@ in R workbook (Hair et al., 2026).
 |---|---|
 | `assess_cvpat()` | CVPAT against LM and IA benchmarks |
 | `assess_cvpat_compare()` | Compare predictive loss of two PLS models |
+| `assess_pcm()` | Predictive Contribution of the Mediator (Danks, 2021) |
 | `assess_ipma()` | Importance-Performance Map Analysis (IPMA) |
 | `assess_cipma()` | Combined IPMA with Necessary Condition Analysis (cIPMA) |
 | `assess_coa()` | Composite Overfit Analysis (full pipeline) |
@@ -86,6 +91,7 @@ In order to access the demo files for the textbook, you can run the
 
 - seminr-help-debugging
 - seminr-pls-cvpat
+- seminr-pls-pcm
 - seminr-pls-cipma
 - seminr-pls-coa
 - seminr-pls-nca

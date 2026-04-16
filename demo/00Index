@@ -1,4 +1,5 @@
 seminr-pls-cvpat      A demonstration of CVPAT using SEMinR syntax
+seminr-pls-pcm        A demonstration of PCM (Predictive Contribution of the Mediator) with SEMinR
 seminr-pls-cipma      A demonstration of cIPMA and IPMA using SEMinR syntax
 seminr-pls-coa        A demonstration of Composite Overfit Analysis using SEMinR syntax
 seminr-pls-nca        A demonstration of NCA (Necessary Condition Analysis) with SEMinR

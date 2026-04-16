@@ -8,6 +8,7 @@ seminrExtras is a supplementary R package that extends SEMinR (Structural Equati
 
 **Primary features:**
 - Cross-Validated Predictive Ability Test (CVPAT) - `assess_cvpat()` and `assess_cvpat_compare()`
+- Predictive Contribution of the Mediator (PCM) - `assess_pcm()`
 - Combined Importance-Performance Map Analysis (cIPMA) - `assess_cipma()` and `assess_ipma()`
 - Composite Overfit Analysis (COA) - `assess_coa()`, `predictive_deviance()`, `deviance_tree()`, `unstable_params()`
 - Necessary Condition Analysis (NCA) - `assess_nca()` and `assess_nca_esse()`
@@ -133,6 +134,10 @@ usethis::use_package("pkgname", "Suggests")  # Add to Suggests
 - **feature_cvpat.R** (~475 LOC) - Core CVPAT implementation
   - `assess_cvpat()` - Compare PLS model against LM and IA benchmarks
   - `assess_cvpat_compare()` - Compare two PLS models' predictive performance
+
+- **feature_pcm.R** (~410 LOC) - Predictive Contribution of the Mediator
+  - `assess_pcm()` - Compare DA vs EA predictions to quantify mediator contribution
+  - Isolates each mediation path into sub-models for independent evaluation
 
 - **feature_cipma.R** (~780 LOC) - Combined Importance-Performance Map Analysis
   - `assess_cipma()` - cIPMA (IPMA + NCA integration)
