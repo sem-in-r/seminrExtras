@@ -1,6 +1,6 @@
 ---
 title: "seminrExtras"
-author: "S. Ray and N.P. Danks"
+author: "Nicholas .P. Danks and Soumya Ray"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
@@ -16,6 +16,9 @@ knitr::opts_chunk$set(
 )
 library(seminr)
 library(seminrExtras)
+
+# set the theme for plotting output
+seminr_theme_set(seminr_theme_academic())
 
 # Create measurement model ----
 corp_rep_mm_ext <- constructs(
@@ -71,17 +74,63 @@ competing_model <- estimate_pls(
 
 ```
 
-SEMinR (Ray & Danks) is a domaign specific language for modeling and estimating structural equation models. 
-This package serves to provide additional extra methods and functions that can be used to analyze PLS-SEM models. 
+SEMinR (Ray, Danks, & Calero Valdez, 2026) is a domain specific language for modeling and estimating structural equation models. This is a supplementary package for SEMinR and not a standalone package.
+This package serves to provide additional extra methods and functions that can be used to analyze PLS-SEM models.
 
-New features implemented with this package
-CVPAT 
-- ```assess_cvpat()```
-- ```assess_cvpat_compare()```
+SEMinRExtras provides advanced SEM tools which are compatible with SEMinR. It implements several methods for evaluating PLS-SEM models, including CVPAT (Liengaard et al., 2021; Sharma et al., 2022), Combined Importance-Performance Map Analysis (cIPMA; Sarstedt et al., 2024; Hauff et al., 2024), Composite Overfit Analysis (COA), Necessary Condition Analysis (NCA; Dul, 2016; Richter et al., 2020), NCA-ESSE (Becker et al., 2026), Confirmatory Tetrad Analysis (CTA-PLS; Gudergan et al., 2008), FIMIX-PLS (Hahn et al., 2002; Sarstedt et al., 2011), PLS-POS (Becker et al., 2013), and congruence testing (Franke, Sarstedt, & Danks, 2021).
+
+SEMinRExtras also serves to host the example models used in the PLS-SEM in R workbook (Hair et al., 2026).
+
+### Functions
+
+| Function | Description |
+|---|---|
+| `assess_cvpat()` | CVPAT against LM and IA benchmarks |
+| `assess_cvpat_compare()` | Compare predictive loss of two PLS models |
+| `assess_ipma()` | Importance-Performance Map Analysis (IPMA) |
+| `assess_cipma()` | Combined IPMA with Necessary Condition Analysis (cIPMA) |
+| `assess_coa()` | Composite Overfit Analysis (full pipeline) |
+| `predictive_deviance()` | Compute predictive deviance scores |
+| `deviance_tree()` | Identify deviant case groups via decision tree |
+| `unstable_params()` | Parameter instability analysis |
+| `group_rules()` | Extract decision rules for deviant groups |
+| `competes()` | Show competing splits at tree nodes |
+| `assess_nca()` | Necessary Condition Analysis for PLS-SEM |
+| `assess_nca_esse()` | NCA with Effect Size Sensitivity Extension |
+| `assess_cta()` | Confirmatory Tetrad Analysis (CTA-PLS) with indicator borrowing (Gudergan et al., 2008) |
+| `assess_fimix()` | FIMIX-PLS latent class segmentation |
+| `assess_fimix_compare()` | Compare FIMIX solutions across K values |
+| `assess_pos()` | PLS-POS prediction-oriented segmentation (Becker et al., 2013) |
+| `assess_pos_compare()` | Compare PLS-POS solutions across K values |
+| `pos_segments()` | Extract segment-specific re-estimated PLS models |
+| `congruence_test()` | Bootstrapped congruence coefficient testing |
+
+## The demo files for Hair et al. (2026)  
+
+In order to access the demo files for the textbook, you can run the ```demo()``` function after loading the SEMinRExtras package. 
+
+- seminr-help-debugging
+- seminr-pls-cvpat
+- seminr-pls-cipma
+- seminr-pls-coa
+- seminr-pls-nca
+- seminr-pls-fimix
+- seminr-pls-cta
+- seminr-pls-pos
+- seminr-pls-congruence
+- seminr-primer-v2-chap2
+- seminr-primer-v2-chap3
+- seminr-primer-v2-chap4
+- seminr-primer-v2-chap5
+- seminr-primer-v2-chap6 
+- seminr-primer-v2-chap7 
+- seminr-primer-v2-chap8
+
+E.g. ```demo("seminr-pls-cvpat", package = "seminrExtras")```
 
 ## The Example model: Corporate Reputation
 
-We are applying our CV-PAT to the corporate reputation example bundled with SEMinR. 
+We are applying the CVPAT process to the corporate reputation example bundled with SEMinR. Since we will be comparing two models, we will first estimate and plot both models. Below you will find the competing and established models which will be compared. 
 
 ```{r, fig.show='hold'}
 plot(established_model)
@@ -168,6 +217,21 @@ print(assess_results$CVPAT_compare_IA,
 
 ```
 
+## First, conduct CVPAT analysis of the established model.
+
+```{r, echo=TRUE}
+# Assess the base model ----
+assess_results <- assess_cvpat(established_model,
+                               seed = 123, 
+                               cores = 1)
+print(assess_results$CVPAT_compare_LM,
+      digits = 3)
+print(assess_results$CVPAT_compare_IA,
+      digits = 3)
+```
+
+The established model has significantly lower predictive loss compared to both the naive benchmark IA and the LM model. Thus, we can say that the established model has predictive relevance.   
+
 Now we compare the results:
 
 ```{r, echo=TRUE}
@@ -182,28 +246,364 @@ compare_results <- assess_cvpat_compare(established_model = established_model,
                                         reps = 10,
                                         cores = 1)
 
-print(compare_results, 
-      cores = 1,
+print(compare_results,
       digits = 3)
 ```
 
-```{r, echo=TRUE}
-# Assess the base model ----
-assess_results <- assess_cvpat(established_model,
-                               seed = 123, 
-                               cores = 1)
-print(assess_results$CVPAT_compare_LM,
-      digits = 3)
-print(assess_results$CVPAT_compare_IA,
-      digits = 3)
+The established model has significantly lower predictive loss compared to the competing model. Thus, we can say that the established model has superior predictive performance compared to the competing model.
+
+## Combined Importance-Performance Map Analysis (cIPMA)
+
+IPMA (Ringle & Sarstedt, 2016) extends PLS-SEM results by jointly considering the **importance** (unstandardized total effect) and **performance** (rescaled 0--100 mean score) of each construct in predicting a target outcome. cIPMA (Sarstedt et al., 2024; Hauff et al., 2024) further integrates NCA to distinguish which constructs are **necessary conditions** vs. merely sufficient predictors.
+
+`assess_cipma()` computes both IPMA and NCA in one call, classifying constructs into four categories: Top priority (high importance + necessary), Important driver (high importance, not necessary), Bottleneck risk (low importance but necessary), and Low priority.
+
+```{r, eval=FALSE, echo=TRUE}
+library(seminr)
+library(seminrExtras)
+
+# Estimate a model
+mobi_mm <- constructs(
+  composite("Image",        multi_items("IMAG", 1:5)),
+  composite("Expectation",  multi_items("CUEX", 1:3)),
+  composite("Value",        multi_items("PERV", 1:2)),
+  composite("Satisfaction", multi_items("CUSA", 1:3)),
+  composite("Loyalty",      multi_items("CUSL", 1:3))
+)
+
+mobi_sm <- relationships(
+  paths(from = "Image",        to = c("Expectation", "Satisfaction", "Loyalty")),
+  paths(from = "Expectation",  to = c("Value", "Satisfaction")),
+  paths(from = "Value",        to = "Satisfaction"),
+  paths(from = "Satisfaction", to = "Loyalty")
+)
+
+mobi_pls <- estimate_pls(data = mobi,
+                          measurement_model = mobi_mm,
+                          structural_model  = mobi_sm)
+
+# Run cIPMA (IPMA + NCA)
+cipma_result <- assess_cipma(mobi_pls,
+                              target = "Loyalty",
+                              scale_min = 1,
+                              scale_max = 10,
+                              nca_test.rep = 1000,
+                              seed = 123)
+
+# View results
+print(cipma_result)
+summary(cipma_result)
+
+# cIPMA map (importance vs. performance, with NCA overlay)
+plot(cipma_result, type = "cipma")
+
+# Standard IPMA map (without NCA distinction)
+plot(cipma_result, type = "ipma")
+
+# Use standardized total effects for importance axis
+plot(cipma_result, importance_metric = "standardized")
 ```
 
-# References 
-- Sharma, P. N., Liengaard, B. D., Hair, J. F., Sarstedt, M., & Ringle, C. M. (2022). Predictive model assessment and selection in composite-based modeling using PLS-SEM: extensions and guidelines for using CVPAT. European journal of marketing, 57(6), 1662-1677.
-- Liengaard, B. D., Sharma, P. N., Hult, G. T. M., Jensen, M. B., Sarstedt, M., Hair, J. F., & Ringle, C. M. (2021). Prediction: coveted,yet forsaken? Introducing a cross‐validated predictive ability test in partial least squares path modeling. Decision Sciences, 52(2), 362-392.
- - Ray, S., Danks, N.P., Calero Valdez, A. (2024) SEMinR: Domain-specific language for building, estimating, and visualizing structural equation models in R.
- 
-Also a quote using `>`:
+All outer weights must be positive for valid performance rescaling. Interaction constructs are automatically excluded. The function warns if negative weights are detected and recommends reverse-coding indicators (Ringle & Sarstedt, 2016).
 
-> "He who gives up [code] safety for [code] speed deserves neither."
-([via](https://twitter.com/hadleywickham/status/504368538874703872))
+## Necessary Condition Analysis (NCA)
+
+NCA (Dul, 2016) tests whether a predictor is a *necessary condition* for an outcome -- i.e., whether a certain level of X is required (but not sufficient) for a certain level of Y. This complements the sufficiency-based logic of PLS-SEM regression.
+
+`assess_nca()` auto-detects direct predictors from the structural model and runs ceiling-based NCA analysis using internal CE-FDH and CR-FDH algorithms.
+
+```{r, eval=FALSE, echo=TRUE}
+library(seminr)
+library(seminrExtras)
+
+# Estimate a simple model
+mobi_mm <- constructs(
+  composite("Image",        multi_items("IMAG", 1:5)),
+  composite("Value",        multi_items("PERV", 1:2)),
+  composite("Satisfaction", multi_items("CUSA", 1:3)),
+  composite("Loyalty",      multi_items("CUSL", 1:3))
+)
+
+mobi_sm <- relationships(
+  paths(from = c("Image", "Value"), to = "Satisfaction"),
+  paths(from = "Satisfaction", to = "Loyalty")
+)
+
+mobi_pls <- estimate_pls(data = mobi,
+                          measurement_model = mobi_mm,
+                          structural_model  = mobi_sm)
+
+# Run NCA -- predictors auto-detected from structural model
+nca_result <- assess_nca(mobi_pls,
+                          target = "Satisfaction",
+                          test.rep = 1000,
+                          seed = 123)
+
+# Effect sizes and significance
+print(nca_result)
+
+# Full summary with bottleneck tables
+summary(nca_result)
+
+# Visualize
+plot(nca_result, type = "effects")   # Effect size bar chart
+plot(nca_result, type = "scatter")   # Ceiling line scatter plots
+```
+
+A predictor is identified as a necessary condition when it has an effect size d >= 0.1 and a significant permutation test (p < 0.05), following guidelines from Richter et al. (2020).
+
+## NCA-ESSE: Effect Size Sensitivity Extension
+
+NCA-ESSE (Becker et al., 2026) extends standard NCA by assessing how sensitive effect sizes are to extreme response patterns. It systematically varies the ECDF ceiling threshold and compares empirical effect size changes against a theoretical benchmark derived from a joint uniform distribution.
+
+```{r, eval=FALSE, echo=TRUE}
+# Run NCA-ESSE on the same model
+esse_result <- assess_nca_esse(mobi_pls,
+                                target = "Satisfaction",
+                                thresholds = seq(0, 0.05, by = 0.005),
+                                seed = 123)
+
+# View results
+print(esse_result)
+
+# Summary tables (Table A2 style)
+summary(esse_result)
+
+# Sensitivity plot (Fig. 4 in Becker et al., 2026)
+plot(esse_result, type = "sensitivity")
+
+# Difference plot (Fig. 6 in Becker et al., 2026)
+plot(esse_result, type = "difference")
+```
+
+At each threshold `t`, observations whose joint ECDF_NCA value P(X <= x, Y >= y) is at most `t` are treated as extreme upper-left cases and excluded. The uniform benchmark d = t(1 - ln(t)) gives the expected effect size increase if no true necessity exists. Empirical effect sizes that consistently exceed the benchmark provide evidence for a robust necessary condition.
+
+## Composite Overfit Analysis (COA)
+
+COA detects observation-level overfitting in PLS composite models. It computes predictive deviance (the gap between in-sample fitted and out-of-sample predicted scores), then uses a decision tree to identify subgroups where the model overfits.
+
+```{r, eval=FALSE, echo=TRUE}
+library(seminr)
+library(seminrExtras)
+
+# Estimate a model
+corp_mm <- constructs(
+  composite("COMP", multi_items("comp_", 1:3)),
+  composite("LIKE", multi_items("like_", 1:3)),
+  composite("CUSA", single_item("cusa")),
+  composite("CUSL", multi_items("cusl_", 1:3))
+)
+
+corp_sm <- relationships(
+  paths(from = c("COMP", "LIKE"), to = "CUSA"),
+  paths(from = "CUSA", to = "CUSL")
+)
+
+corp_model <- estimate_pls(
+  data = corp_rep_data,
+  measurement_model = corp_mm,
+  structural_model  = corp_sm,
+  missing = mean_replacement,
+  missing_value = "-99")
+
+# Run full COA pipeline
+coa_result <- assess_coa(corp_model,
+                          focal_construct = "CUSL",
+                          noFolds = 10, reps = 1, cores = 1,
+                          seed = 123)
+
+# Print results
+print(coa_result)
+summary(coa_result)
+
+# Visualize
+plot(coa_result, type = "pd")      # Predictive deviance distribution
+plot(coa_result, type = "tree")    # Decision tree
+plot(coa_result, type = "groups")  # Deviant group highlights
+```
+
+COA proceeds in four steps: (1) compute predictive deviance via cross-validated prediction, (2) grow a decision tree to identify deviant subgroups, (3) analyze parameter instability by re-estimating the model without each deviant group, and (4) inspect group rules and competing splits.
+
+## Confirmatory Tetrad Analysis (CTA-PLS)
+
+CTA-PLS (Gudergan et al., 2008) empirically tests whether a construct's measurement model is consistent with a reflective (common factor) specification. Under a reflective model, all model-implied vanishing tetrads equal zero. If any tetrad is significantly non-zero (after multiple testing correction), the reflective specification is rejected in favour of a formative one.
+
+CTA-PLS requires at least 4 indicators per construct. When `borrow = TRUE` (the default), constructs with only 2 or 3 indicators can still be tested by borrowing indicators from structurally connected constructs. The borrowing rules follow Gudergan et al. (2008, Table 1):
+
+- **3 own indicators + 1 borrowed** from an adjacent reflective construct: all tetrads vanish under H0.
+- **2 own indicators + 2 borrowed** from any adjacent construct: only the cross-tetrad tau_1342 vanishes.
+- Formative focal constructs cannot be tested via borrowing (no vanishing tetrads exist under a formative model).
+
+When `borrow = FALSE`, constructs with fewer than 4 indicators are skipped entirely.
+
+```{r, eval=FALSE, echo=TRUE}
+library(seminr)
+library(seminrExtras)
+
+mobi_mm <- constructs(
+  composite("Image",        multi_items("IMAG", 1:5)),
+  composite("Expectation",  multi_items("CUEX", 1:3)),
+  composite("Value",        multi_items("PERV", 1:2)),
+  composite("Satisfaction", multi_items("CUSA", 1:3)),
+  composite("Loyalty",      multi_items("CUSL", 1:3))
+)
+
+mobi_sm <- relationships(
+  paths(from = "Image",       to = c("Expectation", "Satisfaction", "Loyalty")),
+  paths(from = "Expectation", to = c("Value", "Satisfaction")),
+  paths(from = "Value",       to = "Satisfaction"),
+  paths(from = "Satisfaction", to = "Loyalty")
+)
+
+mobi_pls <- estimate_pls(data = mobi,
+                          measurement_model = mobi_mm,
+                          structural_model  = mobi_sm)
+
+# CTA-PLS with borrowing (default)
+cta_result <- assess_cta(mobi_pls, nboot = 5000, seed = 123)
+print(cta_result)
+summary(cta_result)
+
+# Without borrowing — only Image (5 indicators) is testable
+cta_no_borrow <- assess_cta(mobi_pls, nboot = 5000, borrow = FALSE)
+print(cta_no_borrow)
+
+# Visualize adjusted p-values per construct
+plot(cta_result)
+```
+
+The `print()` output shows a per-construct summary with the measurement mode, number of indicators (including borrowed), number of tetrads tested, how many are significant, and the verdict (reflective supported or rejected). Constructs that borrowed indicators are annotated with the donor construct. The `summary()` output additionally shows the individual tetrad estimates, bootstrap t-values, confidence intervals, and adjusted p-values.
+
+Benjamini-Hochberg (BH) correction for multiple testing is applied by default (Cefis et al., 2025). Bonferroni correction and no correction are also available via the `correction` parameter.
+
+## Unobserved Heterogeneity (FIMIX-PLS and PLS-POS)
+
+FIMIX-PLS and PLS-POS are complementary approaches for detecting unobserved heterogeneity in PLS-SEM. FIMIX-PLS uses probabilistic (EM-based) assignment and assumes normally distributed residuals, while PLS-POS uses deterministic (hill-climbing) assignment with no distributional assumptions. Both methods partition the sample into K segments with segment-specific path coefficients.
+
+### FIMIX-PLS (Finite Mixture PLS)
+
+FIMIX-PLS (Hahn et al., 2002; Sarstedt et al., 2011) probabilistically assigns observations to K segments, each with segment-specific structural path coefficients.
+
+`assess_fimix()` estimates a single K-segment solution, while `assess_fimix_compare()` compares solutions across K values using information criteria (AIC, BIC, CAIC, etc.) to help select the optimal number of segments.
+
+```{r, eval=FALSE, echo=TRUE}
+# FIMIX with K=2 segments (using the corporate reputation model from the setup)
+fimix_k2 <- assess_fimix(established_model, K = 2, nstart = 10, seed = 123)
+print(fimix_k2)
+summary(fimix_k2)
+plot(fimix_k2)
+
+# Compare across K=2..4 using information criteria
+fimix_compare <- assess_fimix_compare(established_model,
+                                       K_range = 2:4,
+                                       nstart = 10,
+                                       seed = 123)
+print(fimix_compare)
+plot(fimix_compare)
+```
+
+### PLS-POS (Prediction-Oriented Segmentation)
+
+PLS-POS (Becker et al., 2013) maximizes the sum of R-squared values across all endogenous constructs across K segments using deterministic hill-climbing. Unlike FIMIX-PLS, it makes no distributional assumptions and can detect heterogeneity in both structural and formative measurement models.
+
+`assess_pos()` estimates a single K-segment solution with multiple random starts, while `assess_pos_compare()` compares solutions across K values using the objective criterion.
+
+```{r, eval=FALSE, echo=TRUE}
+# PLS-POS with K=2 segments
+pos_k2 <- assess_pos(established_model, K = 2, nstart = 10, seed = 123)
+print(pos_k2)
+summary(pos_k2)
+plot(pos_k2, type = "rsquared")
+plot(pos_k2, type = "paths")
+
+# Compare across K=2..4 to find optimal number of segments
+pos_compare <- assess_pos_compare(established_model,
+                                   K_range = 2:4,
+                                   nstart = 10,
+                                   seed = 123)
+print(pos_compare)
+plot(pos_compare)
+
+# Extract segment-specific models for further analysis
+seg_models <- pos_segments(pos_k2)
+summary(seg_models[[1]])
+```
+
+PLS-POS assigns each observation to exactly one segment (hard assignment) and re-estimates the full PLS model within each segment. The algorithm iteratively reassigns observations one at a time, accepting only moves that improve the objective criterion. Multiple random starting partitions help avoid local optima.
+
+## Predictive Contribution of the Mediator (PCM)
+
+Mediators are a popular mechanism for adding nuance and greater explanatory power to causal models. However, mediators pose a special challenge to generating predictions as they serve a dual role of antecedent and outcome. The Predictive Contribution of the Mediator (PCM; Danks, 2021) evaluates whether a mediating construct improves out-of-sample predictive accuracy.
+
+PCM compares predictions from two approaches on an isolated sub-model for each mediation path:
+
+- **DA (Direct Antecedents)**: Uses direct predictors (including the mediator) to predict the outcome.
+- **EA (Earliest Antecedents)**: Uses only the earliest antecedent, propagated through the structural model.
+
+The PCM metric is computed as: `PCM = (METRIC_EA - METRIC_DA) / METRIC_EA`
+
+Rules of thumb: PCM < 0.05 = Weak, 0.05-0.10 = Moderate, > 0.10 = Strong.
+
+```{r, eval=FALSE, echo=TRUE}
+# Specify a mediation model
+mobi_mm <- constructs(
+  composite("Image",        multi_items("IMAG", 1:5)),
+  composite("Expectation",  multi_items("CUEX", 1:3)),
+  composite("Value",        multi_items("PERV", 1:2)),
+  composite("Satisfaction", multi_items("CUSA", 1:3)),
+  composite("Loyalty",      multi_items("CUSL", 1:3))
+)
+mobi_sm <- relationships(
+  paths(from = "Image",       to = c("Expectation", "Satisfaction", "Loyalty")),
+  paths(from = "Expectation", to = c("Value", "Satisfaction")),
+  paths(from = "Value",       to = "Satisfaction"),
+  paths(from = "Satisfaction", to = "Loyalty")
+)
+pls_model <- estimate_pls(mobi, mobi_mm, mobi_sm)
+
+# Compute PCM for all mediation paths to Loyalty
+pcm_result <- assess_pcm(pls_model,
+                         target  = "Loyalty",
+                         noFolds = 10,
+                         reps    = 10)
+
+# Print concise overview
+pcm_result
+
+# Detailed per-indicator results
+summary(pcm_result)
+
+# Visual comparison of mediation paths
+plot(pcm_result)
+```
+
+## Congruence Testing
+
+Congruence testing (Franke, Sarstedt, & Danks, 2021) evaluates whether PLS composite weights are stable across bootstrap samples by computing congruence coefficients. A congruence coefficient close to 1 indicates that the composite weight pattern is robust.
+
+```{r, eval=FALSE, echo=TRUE}
+cong_result <- congruence_test(mobi_pls,
+                                nboot = 2000,
+                                seed = 123)
+print(cong_result)
+summary(cong_result)
+```
+
+# References
+- Becker, J.-M., Rai, A., Ringle, C. M., & Voelckner, F. (2013). Discovering Unobserved Heterogeneity in Structural Equation Models to Avert Validity Threats. MIS Quarterly, 37(3), 665-694.
+- Danks, N. P. (2021). The Piggy in the Middle: The Role of Mediators in PLS-SEM Prediction. The DATA BASE for Advances in Information Systems, 52(SI), 24-42.
+- Becker, J.-M., Richter, N. F., Ringle, C. M., & Sarstedt, M. (2026). Must-have, or maybe not? A sensitivity-based extension to necessary condition analysis. Journal of Business Research, 206, 115920.
+- Cefis, M., Angelelli, M., Carpita, M. & Ciavolino, E. (2025). Confirmatory Tetrad Analysis in PLS-SEM: A Multiple Testing Correction Perspective. Social Indicators Research (advance online).
+- Dul, J. (2016). Necessary Condition Analysis (NCA): Logic and Methodology of 'Necessary but Not Sufficient' Causality. Organizational Research Methods, 19(1), 10-52.
+- Franke, G. R., Sarstedt, M., & Danks, N. P. (2021). An empirical comparison of factor score estimation methods. Journal of Business Research, 130, 318-334.
+- Gudergan, S. P., Ringle, C. M., Wende, S. & Will, A. (2008). Confirmatory Tetrad Analysis in PLS Path Modeling. Journal of Business Research, 61(12), 1238-1249.
+- Hahn, C., Johnson, M. D., Herrmann, A., & Huber, F. (2002). Capturing Customer Heterogeneity using a Finite Mixture PLS Approach. Schmalenbach Business Review, 54, 243-269.
+- Hair, J.F. (Jr), Hult, T.M., Ringle, C.M., Sarstedt, M., Danks, N.P., and Adler, S. (2026). Partial Least Squares Structural Equation Modeling (PLS-SEM) Using R (Second Edition) - A Workbook. Springer.
+- Hauff, S., Richter, N. F., Sarstedt, M., & Ringle, C. M. (2024). Importance and Performance in PLS-SEM and NCA: Introducing the Combined Importance-Performance Map Analysis (cIPMA). Journal of Retailing and Consumer Services, 78, 103723.
+- Liengaard, B. D., Sharma, P. N., Hult, G. T. M., Jensen, M. B., Sarstedt, M., Hair, J. F., & Ringle, C. M. (2021). Prediction: coveted, yet forsaken? Introducing a cross-validated predictive ability test in partial least squares path modeling. Decision Sciences, 52(2), 362-392.
+- Ray, S., Danks, N.P., Calero Valdez, A. (2026) SEMinR: Domain-specific language for building, estimating, and visualizing structural equation models in R.
+- Richter, N. F., Schubring, S., Hauff, S., Ringle, C. M., & Sarstedt, M. (2020). When predictors of outcomes are necessary: guidelines for the combined use of PLS-SEM and NCA. Industrial Management & Data Systems, 120(12), 2243-2267.
+- Ringle, C. M. & Sarstedt, M. (2016). Gain More Insight from Your PLS-SEM Results: The Importance-Performance Map Analysis. Industrial Management & Data Systems, 119(9), 1865-1886.
+- Sarstedt, M., Becker, J.-M., Ringle, C. M. & Schwaiger, M. (2011). Uncovering and Treating Unobserved Heterogeneity with FIMIX-PLS. Schmalenbach Business Review, 63(1), 34-62.
+- Sarstedt, M., Richter, N. F., Hauff, S. & Ringle, C. M. (2024). Combined Importance-Performance Map Analysis (cIPMA): A SmartPLS 4 Tutorial. Journal of Marketing Analytics, 12, 746-760.
+- Sharma, P. N., Liengaard, B. D., Hair, J. F., Sarstedt, M., & Ringle, C. M. (2022). Predictive model assessment and selection in composite-based modeling using PLS-SEM: extensions and guidelines for using CVPAT. European Journal of Marketing, 57(6), 1662-1677.

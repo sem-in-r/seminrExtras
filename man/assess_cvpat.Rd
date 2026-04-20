@@ -2,7 +2,7 @@
 % Please edit documentation in R/feature_cvpat.R
 \name{assess_cvpat}
 \alias{assess_cvpat}
-\title{SEMinR function to compare CV-PAT loss of two models}
+\title{Assess single model CVPAT against benchmarks}
 \usage{
 assess_cvpat(
   seminr_model,
@@ -16,7 +16,7 @@ assess_cvpat(
 )
 }
 \arguments{
-\item{seminr_model}{The SEMinR model for CV-PAT comparison.}
+\item{seminr_model}{The SEMinR model for CVPAT analysis}
 
 \item{testtype}{Either "two.sided" (default) or "greater".}
 
@@ -26,22 +26,33 @@ assess_cvpat(
 
 \item{technique}{predict_EA or predict_DA (default).}
 
-\item{noFolds}{Mumber of folds for k-fold cross validation.}
+\item{noFolds}{Number of folds for k-fold cross validation.}
 
 \item{reps}{Number of repetitions for cross validation.}
 
 \item{cores}{Number of cores for parallelization.}
 }
 \value{
-A matrix of the estimated loss and results of significance testing.
+A list containing two matrices: CVPAT_compare_LM (comparison with
+  linear model) and CVPAT_compare_IA (comparison with indicator average).
 }
 \description{
-`assess_cvpat` conducts a single model CV-PAT assessment against item average
-and linear model benchmarks.
+`assess_cvpat` conducts a single model CVPAT assessment against item average
+and linear model prediction benchmarks. Use this to determine whether your
+PLS model has meaningful predictive power.
+}
+\details{
+Two benchmarks are used:
+- **Linear Model (LM)**: Multiple regression predicting each item
+- **Indicator Average (IA)**: Naive benchmark using training set means
+
+If PLS loss < LM loss (significantly), the structural model adds predictive value.
+If PLS loss < IA loss (significantly), the model has basic predictive relevance.
 }
 \examples{
 # Load libraries
 library(seminr)
+library(seminrExtras)
 
 # Create measurement model ----
 corp_rep_mm_ext <- constructs(
@@ -79,7 +90,7 @@ assess_cvpat(seminr_model = corp_rep_pls_model_ext,
 }
 \references{
 Sharma, P. N., Liengaard, B. D., Hair, J. F., Sarstedt, M., &
-Ringle, C. M. (2022). Predictive model assessment and selection in
+Ringle, C. M. (2023). Predictive model assessment and selection in
 composite-based modeling using PLS-SEM: extensions and guidelines for
 using CVPAT. European journal of marketing, 57(6), 1662-1677.
 
@@ -87,4 +98,7 @@ Liengaard, B. D., Sharma, P. N., Hult, G. T. M., Jensen, M. B.,
 Sarstedt, M., Hair, J. F., & Ringle, C. M. (2021). Prediction: coveted,
 yet forsaken? Introducing a cross‐validated predictive ability test in
 partial least squares path modeling. Decision Sciences, 52(2), 362-392.
+}
+\seealso{
+[assess_cvpat_compare()] for comparing two PLS models
 }

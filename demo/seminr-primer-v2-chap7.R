@@ -1,11 +1,12 @@
 ### Accompanying Code for:
-## Partial Least Squares Structural Equation Modeling (PLS-SEM) Using R - A Workbook (2021)
-## Hair, J.F. (Jr), Hult, T.M., Ringle, C.M., Sarstedt, M., Danks, N.P., and Ray, S.
+## Partial Least Squares Structural Equation Modeling (PLS-SEM) Using R - A Workbook (2026)
+## Hair, J.F. (Jr), Hult, T.M., Ringle, C.M., Sarstedt, M., Danks, N.P., and Adler, S.
 
-## Chapter 8: Moderation analysis
+## Chapter 7: Moderation analysis
 
 # Load the SEMinR library
 library(seminr)
+library(seminrExtras)
 
 # Load the data
 corp_rep_data <- corp_rep_data
@@ -42,14 +43,18 @@ corp_rep_pls_model_mod <- estimate_pls(
 sum_corp_rep_mod <- summary(corp_rep_pls_model_mod)
 
 # Bootstrap the model ----
-boot_corp_rep_mod <- bootstrap_model(seminr_model = corp_rep_pls_model_mod,
-                                     nboot = 1000)
+boot_corp_rep_mod <- bootstrap_model(
+  seminr_model = corp_rep_pls_model_mod,
+  nboot = 1000)
 
 # Summarize the results of the bootstrap
 sum_boot_corp_rep_mod <- summary(boot_corp_rep_mod, alpha = 0.05)
 
 # Inspect the bootstrapped structural paths
 sum_boot_corp_rep_mod$bootstrapped_paths
+
+# Inspect the fsquare
+sum_corp_rep_mod$fSquare
 
 # Simple slope analysis plot
 slope_analysis(

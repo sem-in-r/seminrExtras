@@ -1,11 +1,12 @@
 ### Accompanying Code for:
-## Partial Least Squares Structural Equation Modeling (PLS-SEM) Using R - A Workbook (2021)
-## Hair, J.F. (Jr), Hult, T.M., Ringle, C.M., Sarstedt, M., Danks, N.P., and Ray, S.
+## Partial Least Squares Structural Equation Modeling (PLS-SEM) Using R - A Workbook 2nd Ed. (2026)
+## Hair, J.F. (Jr), Hult, T.M., Ringle, C.M., Sarstedt, M., Danks, N.P., and Adler, S.
 
 ## Chapter 5: Evaluation of formative measurement models
 
-# Load the SEMinR library
+# Load the SEMinR and seminrExtras libraries
 library(seminr)
+library(seminrExtras)
 
 # Load the corporate repuation data
 corp_rep_data <- corp_rep_data
@@ -45,7 +46,8 @@ summary_corp_rep_ext$iterations
 
 # Bootstrap the model
 boot_corp_rep_ext <- bootstrap_model(seminr_model = corp_rep_pls_model_ext,
-                                     nboot = 1000)
+                                     nboot = 1000,
+                                     seed = 123)
 
 # Store the summary of the bootstrapped model
 sum_boot_corp_rep_ext <- summary(boot_corp_rep_ext, alpha = 0.10)
@@ -58,9 +60,6 @@ summary_corp_rep_ext$loadings^2
 
 # Inspect the internal consistency and reliability
 summary_corp_rep_ext$reliability
-
-# Table of the FL criteria
-summary_corp_rep_ext$validity$fl_criteria
 
 # HTMT Ratio
 summary_corp_rep_ext$validity$htmt
