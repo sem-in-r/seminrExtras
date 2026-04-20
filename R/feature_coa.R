@@ -311,8 +311,9 @@ deviance_tree <- function(pd_result, deviance_bounds = c(0.025, 0.975)) {
 #' parameters.
 #'
 #' @param seminr_model An estimated SEMinR model.
-#' @param deviant_groups Named list of deviant case index vectors
-#'   (from `deviance_tree()$deviant_groups`).
+#' @param deviant_groups A `coa_dtree` object from [deviance_tree()], or a
+#'   named list of integer vectors of case indices. When a `coa_dtree` is
+#'   passed, the `$deviant_groups` element is extracted automatically.
 #' @param params Character vector of model parameters to diff
 #'   (default `"path_coef"`).
 #'
@@ -325,6 +326,11 @@ deviance_tree <- function(pd_result, deviance_bounds = c(0.025, 0.975)) {
 unstable_params <- function(seminr_model,
                             deviant_groups,
                             params = "path_coef") {
+
+  # Accept a coa_dtree object (from deviance_tree()) and unwrap
+  if (inherits(deviant_groups, "coa_dtree")) {
+    deviant_groups <- deviant_groups$deviant_groups
+  }
 
   if (length(deviant_groups) == 0) {
     result <- list()
@@ -456,20 +462,38 @@ param_diffs <- function(remove_cases, pls_model, params = "path_coef") {
 # RULES EXTRACTION
 # =============================================================================
 
-#' Extract Split Rules for a Deviant Group
+#' Extract Split Rules for Deviant Groups
 #'
-#' Returns the decision tree split criteria that define a deviant group.
+#' Returns the decision tree split criteria that define deviant group(s).
+#' When called with a single `coa_analysis` or `coa_dtree` object, returns
+#' rules for all deviant groups. When called with a group name and a
+#' `coa_analysis` object, returns rules for that specific group.
 #'
-#' @param group_name Single uppercase letter identifying the group (e.g., "A").
-#' @param coa_result A `coa_analysis` object from `assess_coa()`.
+#' @param group_name A `coa_analysis` object (to get rules for all groups),
+#'   a `coa_dtree` object, or a single uppercase letter identifying a specific
+#'   group (e.g., \code{"A"}).
+#' @param coa_result A `coa_analysis` object from [assess_coa()]. Required
+#'   only when \code{group_name} is a character group letter.
 #'
-#' @return A data frame with columns `construct`, `gte`, and `lt` describing
-#'   the range of construct scores that define the group.
+#' @return A data frame (or named list of data frames) with columns
+#'   `construct`, `gte`, and `lt` describing the construct score ranges
+#'   that define each group.
 #'
 #' @seealso [assess_coa()], [competes()]
 #'
 #' @export
-group_rules <- function(group_name, coa_result) {
+group_rules <- function(group_name, coa_result = NULL) {
+  # Convenience: accept coa_analysis or coa_dtree as single arg
+  if (inherits(group_name, "coa_analysis")) {
+    coa_result <- group_name
+    return(group_rules_all(coa_result))
+  }
+  if (inherits(group_name, "coa_dtree")) {
+    # Wrap dtree into a minimal coa_result-like structure
+    coa_result <- list(deviance_tree = group_name)
+    return(group_rules_all(coa_result))
+  }
+
   dtree <- coa_result$deviance_tree
   group_root <- dtree$group_roots[[group_name]]
   node_path <- path_to(group_root)[-1]
@@ -490,21 +514,50 @@ group_rules <- function(group_name, coa_result) {
   consolidate_all_rules(splits_df)
 }
 
+#' @noRd
+group_rules_all <- function(coa_result) {
+  dtree <- coa_result$deviance_tree
+  group_names <- names(dtree$deviant_groups)
+  if (length(group_names) == 0) return(list())
+  rules <- lapply(group_names, function(g) group_rules(g, coa_result))
+  names(rules) <- group_names
+  rules
+}
+
 #' Report Competing Split Criteria
 #'
-#' Shows all competing split variables at a given tree node, ranked by
-#' improvement. Useful for understanding which constructs nearly split
-#' instead of the chosen variable.
+#' Shows all competing split variables at tree nodes, ranked by improvement.
+#' Useful for understanding which constructs nearly split instead of the
+#' chosen variable.
 #'
-#' @param node_id Integer node ID from the rpart tree.
+#' When called with a single `coa_dtree` object, returns competing splits
+#' at all deviant group root nodes. When called with a node ID and a
+#' `coa_dtree` object, returns competing splits at that specific node.
+#'
+#' @param node_id A `coa_dtree` object (to get competing splits for all
+#'   group roots), or an integer node ID from the rpart tree.
 #' @param dtree A `coa_dtree` object (from `coa_result$deviance_tree`).
+#'   Required only when \code{node_id} is an integer.
 #'
-#' @return A data frame with columns `criterion`, `sign`, `value`, and `improve`.
+#' @return A data frame (or named list of data frames) with columns
+#'   `criterion`, `sign`, `value`, and `improve`.
 #'
 #' @seealso [group_rules()], [assess_coa()]
 #'
 #' @export
-competes <- function(node_id, dtree) {
+competes <- function(node_id, dtree = NULL) {
+  # Convenience: accept coa_dtree as single arg
+  if (inherits(node_id, "coa_dtree")) {
+    dtree <- node_id
+    group_names <- names(dtree$deviant_groups)
+    if (length(group_names) == 0) return(list())
+    results <- lapply(group_names, function(g) {
+      competes(dtree$group_roots[[g]], dtree)
+    })
+    names(results) <- group_names
+    return(results)
+  }
+
   if (node_id == 1) stop("No splits before root (node 1) of tree")
 
   tree <- dtree$tree

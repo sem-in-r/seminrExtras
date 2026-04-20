@@ -60,14 +60,19 @@ pd <- predictive_deviance(corp_model,
                            seed = 123)
 
 # Step 2: Identify deviant groups via decision tree
-tree <- deviance_tree(pd, bounds = c(0.025, 0.975))
+tree <- deviance_tree(pd, deviance_bounds = c(0.025, 0.975))
 
 # Step 3: Analyze parameter instability
+# unstable_params() accepts the tree object directly (or tree$deviant_groups)
 instab <- unstable_params(corp_model, tree, params = "path_coef")
 print(instab)
 
-# Extract decision rules for deviant groups
+# Extract decision rules for all deviant groups
 group_rules(tree)
 
-# Show competing splits at tree nodes
+# Show competing splits at all group root nodes
 competes(tree)
+
+# You can also target a specific group:
+# group_rules("A", coa_result)
+# competes(tree$group_roots[["A"]], tree)

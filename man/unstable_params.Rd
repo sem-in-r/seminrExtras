@@ -9,8 +9,9 @@ unstable_params(seminr_model, deviant_groups, params = "path_coef")
 \arguments{
 \item{seminr_model}{An estimated SEMinR model.}
 
-\item{deviant_groups}{Named list of deviant case index vectors
-(from `deviance_tree()$deviant_groups`).}
+\item{deviant_groups}{A `coa_dtree` object from [deviance_tree()], or a
+named list of integer vectors of case indices. When a `coa_dtree` is
+passed, the `$deviant_groups` element is extracted automatically.}
 
 \item{params}{Character vector of model parameters to diff
 (default `"path_coef"`).}
