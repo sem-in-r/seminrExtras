@@ -266,6 +266,7 @@ pos_palette <- function(K) {
 #' Threats. \emph{MIS Quarterly}, 37(3), 665-694.
 #'
 #' @examples
+#' \donttest{
 #' library(seminr)
 #'
 #' mobi_mm <- constructs(
@@ -282,10 +283,11 @@ pos_palette <- function(K) {
 #' pls_model <- estimate_pls(data = mobi, measurement_model = mobi_mm,
 #'                            structural_model = mobi_sm)
 #'
-#' pos_result <- assess_pos(pls_model, K = 2, nstart = 3, max_iter = 20,
+#' pos_result <- assess_pos(pls_model, K = 2, nstart = 2, max_iter = 10,
 #'                           seed = 123)
 #' print(pos_result)
 #' summary(pos_result)
+#' }
 #'
 #' @export
 assess_pos <- function(seminr_model,
@@ -536,8 +538,8 @@ assess_pos <- function(seminr_model,
 #' pls_model <- estimate_pls(data = mobi, measurement_model = mobi_mm,
 #'                            structural_model = mobi_sm)
 #'
-#' pos_comp <- assess_pos_compare(pls_model, K_range = 2:4,
-#'                                 nstart = 3, max_iter = 20, seed = 123)
+#' pos_comp <- assess_pos_compare(pls_model, K_range = 2:3,
+#'                                 nstart = 2, max_iter = 10, seed = 123)
 #' print(pos_comp)
 #' plot(pos_comp)
 #' }

@@ -58,6 +58,7 @@ It computes predictive deviance for a focal construct, identifies groups of
 deviant cases using a decision tree, and assesses parameter instability.
 }
 \examples{
+\donttest{
 library(seminr)
 library(seminrExtras)
 
@@ -87,6 +88,7 @@ coa_result <- assess_coa(mobi_pls,
 print(coa_result)
 summary(coa_result)
 plot(coa_result, type = "pd")
+}
 
 }
 \seealso{

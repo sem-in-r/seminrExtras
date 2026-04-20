@@ -65,8 +65,8 @@ mobi_sm <- relationships(
 pls_model <- estimate_pls(data = mobi, measurement_model = mobi_mm,
                            structural_model = mobi_sm)
 
-pos_comp <- assess_pos_compare(pls_model, K_range = 2:4,
-                                nstart = 3, max_iter = 20, seed = 123)
+pos_comp <- assess_pos_compare(pls_model, K_range = 2:3,
+                                nstart = 2, max_iter = 10, seed = 123)
 print(pos_comp)
 plot(pos_comp)
 }

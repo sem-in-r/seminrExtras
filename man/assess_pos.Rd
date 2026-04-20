@@ -61,6 +61,7 @@ Unlike FIMIX-PLS, PLS-POS makes no distributional assumptions and can
 detect heterogeneity in both structural and (formative) measurement models.
 }
 \examples{
+\donttest{
 library(seminr)
 
 mobi_mm <- constructs(
@@ -77,10 +78,11 @@ mobi_sm <- relationships(
 pls_model <- estimate_pls(data = mobi, measurement_model = mobi_mm,
                            structural_model = mobi_sm)
 
-pos_result <- assess_pos(pls_model, K = 2, nstart = 3, max_iter = 20,
+pos_result <- assess_pos(pls_model, K = 2, nstart = 2, max_iter = 10,
                           seed = 123)
 print(pos_result)
 summary(pos_result)
+}
 
 }
 \references{

@@ -52,6 +52,7 @@
 #'   [group_rules()], [competes()]
 #'
 #' @examples
+#' \donttest{
 #' library(seminr)
 #' library(seminrExtras)
 #'
@@ -81,6 +82,7 @@
 #' print(coa_result)
 #' summary(coa_result)
 #' plot(coa_result, type = "pd")
+#' }
 #'
 #' @export
 assess_coa <- function(seminr_model,
