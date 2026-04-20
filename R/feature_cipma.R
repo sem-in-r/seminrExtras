@@ -34,7 +34,7 @@ check_positive_weights <- function(model, constructs) {
   construct_cols <- colnames(model$outer_weights)
 
   for (construct in constructs) {
-    items <- seminr:::items_of_construct(construct, model)
+    items <- items_of_construct(construct, model)
     weights <- model$outer_weights[items, construct]
     if (any(weights < 0)) {
       neg <- c(neg, construct)
@@ -74,7 +74,7 @@ compute_ipma_performance <- function(model, constructs, scale_min, scale_max) {
   construct_cols <- colnames(model$outer_weights)
 
   for (construct in constructs) {
-    items <- seminr:::items_of_construct(construct, model)
+    items <- items_of_construct(construct, model)
 
     # Detect HOC: items that are themselves construct names in outer_weights
     loc_names <- items[items %in% construct_cols]
@@ -123,7 +123,7 @@ compute_observation_performance <- function(model, constructs, scale_min, scale_
   construct_cols <- colnames(model$outer_weights)
 
   for (construct in constructs) {
-    items <- seminr:::items_of_construct(construct, model)
+    items <- items_of_construct(construct, model)
 
     # Detect HOC: items that are themselves construct names
     loc_names <- items[items %in% construct_cols]

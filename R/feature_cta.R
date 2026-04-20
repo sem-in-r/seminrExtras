@@ -122,7 +122,7 @@ format_tetrad_label <- function(i, j, k, l, tetrad_id) {
 #'   is_hoc (logical), needs_reestimation (logical).
 #' @noRd
 resolve_indicators <- function(construct, model) {
-  items <- seminr:::items_of_construct(construct, model)
+  items <- items_of_construct(construct, model)
   construct_cols <- colnames(model$outer_weights)
 
   # Detect HOC: items that are themselves construct names in outer_weights

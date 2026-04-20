@@ -62,12 +62,47 @@ validate_for_prediction <- function(model, func_name = "This function") {
 }
 
 # =============================================================================
+# SEMINR INTERNAL REIMPLEMENTATIONS
+# =============================================================================
+# These replace seminr:::  calls to avoid CRAN NOTEs about unexported imports.
+
+#' Extract unique endogenous (target) constructs from a structural model matrix.
+#' @noRd
+all_endogenous <- function(smMatrix) {
+  unique(smMatrix[, "target"])
+}
+
+#' Get the measurement indicator names for a construct.
+#' @noRd
+items_of_construct <- function(construct, model) {
+  model$mmMatrix[model$mmMatrix[, 1] == construct, 2]
+}
+
+#' Compute bootstrap percentile confidence interval for a path.
+#' @noRd
+conf_int <- function(boot_array, from, to, through = NULL, alpha = 0.05) {
+  if (is.null(through)) {
+    coefficient <- boot_array[from, to, ]
+  } else {
+    coefficient <- boot_array[from, through, ] * boot_array[through, to, ]
+  }
+  quantile(coefficient, probs = c(alpha / 2, 1 - alpha / 2))
+}
+
+#' Assign the table_output class to a matrix for seminr-compatible printing.
+#' @noRd
+convert_to_table_output <- function(matrix) {
+  class(matrix) <- c("table_output", class(matrix))
+  matrix
+}
+
+# =============================================================================
 # ENDOGENOUS CONSTRUCT HELPERS
 # =============================================================================
 
 #' @noRd
 get_endogenous_constructs <- function(model) {
-  seminr:::all_endogenous(model$smMatrix)
+  all_endogenous(model$smMatrix)
 }
 
 #' @noRd
@@ -75,8 +110,10 @@ get_endogenous_items <- function(model, constructs = NULL) {
   if (is.null(constructs)) {
     constructs <- get_endogenous_constructs(model)
   }
+  # Interaction constructs have no measurement indicators — exclude them
+  constructs <- constructs[!grepl("\\*", constructs)]
   unlist(lapply(constructs, function(x) {
-    seminr:::items_of_construct(construct = x, model = model)
+    items_of_construct(construct = x, model = model)
   }))
 }
 
@@ -86,7 +123,7 @@ get_endogenous_items <- function(model, constructs = NULL) {
 
 #' @noRd
 lv_loss <- function(construct, model, error) {
-  items <- seminr:::items_of_construct(construct = construct, model = model)
+  items <- items_of_construct(construct = construct, model = model)
   if (length(dim(error)) > 1) {
     loss <- rowMeans(error[, items, drop = FALSE]^2)
   } else {

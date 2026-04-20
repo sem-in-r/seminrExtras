@@ -205,7 +205,7 @@ congruence_test <- function(seminr_model,
         }
 
         # Compute bootstrap confidence intervals using seminr's internal function
-        ci <- seminr:::conf_int(boot_array,
+        ci <- conf_int(boot_array,
                                 from = rownames(original_matrix)[i],
                                 to = colnames(original_matrix)[j],
                                 alpha = alpha)
@@ -229,7 +229,7 @@ congruence_test <- function(seminr_model,
   rownames(return_matrix) <- Path
 
   # Convert to table_output class for consistent printing
-  return_matrix <- seminr:::convert_to_table_output(return_matrix)
+  return_matrix <- convert_to_table_output(return_matrix)
 
   return(list(results = return_matrix))
 }

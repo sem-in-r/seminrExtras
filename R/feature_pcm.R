@@ -93,7 +93,7 @@ build_isolated_sub_model <- function(model, antecedent, mediator, target) {
   # Reconstruct measurement model from the parent model's mmMatrix
   meas_specs <- list()
   for (cname in constructs_to_keep) {
-    indicators <- seminr:::items_of_construct(cname, model)
+    indicators <- items_of_construct(cname, model)
     mode <- get_construct_mode(cname, model)
 
     if (mode == "C") {
@@ -150,7 +150,7 @@ compute_pcm_for_path <- function(model, antecedent, mediator, target,
   sum_ea <- summary(pred_ea)
 
   # Extract target indicators
-  target_indicators <- seminr:::items_of_construct(target, sub_model)
+  target_indicators <- items_of_construct(target, sub_model)
 
   # Get RMSE and MAE for target indicators (metrics = rows, indicators = cols)
   rmse_da <- sum_da$PLS_out_of_sample["RMSE", target_indicators]
@@ -189,7 +189,7 @@ compute_pcm_for_path <- function(model, antecedent, mediator, target,
 #' being column names in the outer_weights matrix.
 #' @noRd
 is_hoc_construct <- function(construct, model) {
-  items <- seminr:::items_of_construct(construct, model)
+  items <- items_of_construct(construct, model)
   construct_names <- colnames(model$outer_weights)
   any(items %in% construct_names)
 }
