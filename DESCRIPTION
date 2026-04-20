@@ -3,7 +3,7 @@ Type: Package
 Title: Conduct Additional Modeling and Analysis for 'seminr'
 Version: 1.0.0
 Authors@R: c(person("Soumya", "Ray", email = "soumya.ray@gmail.com", role = c("aut", "ths")),
-             person("Nicholas Patrick", "Danks", email = "nicholasdanks@iss.nthu.edu.tw", role = c("aut","cre"))
+             person("Nicholas Patrick", "Danks", email = "nicholasdanks@hotmail.com", role = c("aut","cre"))
             )
 Description: Supplemental functions for estimating and analysing structural equation models.
     Methods include Cross Validated Predictive Ability Testing (CVPAT, Liengaard et al., 2021 <doi:10.1111/deci.12445>),
