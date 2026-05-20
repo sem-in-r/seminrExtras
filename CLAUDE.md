@@ -44,13 +44,10 @@ Follow the SEMinR prefix conventions:
 
 ### Leveraging seminr Infrastructure
 
-**Always use seminr's existing functions rather than reimplementing:**
-- `seminr::estimate_pls()` — for model estimation and re-estimation
-- `seminr::predict_pls()` — for k-fold cross-validated prediction (handles moderation, mediation, HOC)
-- `seminr:::rerun()` — for re-estimating models with modified parameters
-- `seminr:::all_endogenous()` — for extracting endogenous constructs
-- `seminr:::items_of_construct()` — for getting measurement items
-- `seminr:::rhoC_AVE()` — for reliability/validity metrics
+Use only seminr's **exported** functions (e.g. `seminr::estimate_pls()`,
+`seminr::predict_pls()`). Do **not** use `seminr:::` to reach into
+internals — if a needed helper isn't exported, add a local copy to
+`R/helpers.R`.
 
 **Model types that must be supported:**
 - Simple path models
@@ -61,9 +58,9 @@ Follow the SEMinR prefix conventions:
 ### Key Patterns
 
 - Functions accept seminr model objects from `estimate_pls()`
-- Bootstrap resampling via seminr's internal `rerun()` function
-- Accesses seminr internals via `seminr:::` (e.g., `seminr:::rhoC_AVE()`)
 - Avoid reimplementing prediction/CV — use `seminr::predict_pls()` instead
+- No new `seminr:::` calls — use exported seminr functions or local
+  helpers in `R/helpers.R`
 
 ### Model Type Compatibility
 
