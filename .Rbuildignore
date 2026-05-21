@@ -1,11 +1,14 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^\.git$
+^\.gitignore$
 ^doc$
 ^Meta$
 ^.github
 README.Rmd
 ^\.claude$
 ^CLAUDE\.md$
+^cran-comments\.md$
 ^Manuscript_accepted_version\.pdf$
 ^Discovering_Unobserved_Heterogeneity_in\.pdf$
 ^EBSCO-FullText-25_02_2026\.pdf$

@@ -120,7 +120,7 @@ test_that("performance changes with scale range", {
 
 test_that("performance is correct for known calculation", {
   # Manual calculation for one construct
-  items <- seminr:::items_of_construct("Image", pls_model)
+  items <- items_of_construct("Image", pls_model)
   weights <- pls_model$outer_weights[items, "Image"]
   indicator_means <- colMeans(pls_model$data[, items])
   indicator_perf <- (indicator_means - 1) / (10 - 1) * 100
@@ -558,12 +558,12 @@ test_that("HOC two-stage performance chains through LOC indicators", {
                           scale_min = 1, scale_max = 10)
 
   # Manual computation of HOC Quality performance via LOC chain
-  img_items <- seminr:::items_of_construct("Image", pls_hoc)
+  img_items <- items_of_construct("Image", pls_hoc)
   img_w <- pls_hoc$outer_weights[img_items, "Image"]
   img_means <- colMeans(pls_hoc$data[, img_items])
   img_perf <- sum(img_w * (img_means - 1) / 9 * 100) / sum(img_w)
 
-  exp_items <- seminr:::items_of_construct("Expectation", pls_hoc)
+  exp_items <- items_of_construct("Expectation", pls_hoc)
   exp_w <- pls_hoc$outer_weights[exp_items, "Expectation"]
   exp_means <- colMeans(pls_hoc$data[, exp_items])
   exp_perf <- sum(exp_w * (exp_means - 1) / 9 * 100) / sum(exp_w)

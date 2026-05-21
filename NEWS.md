@@ -1,3 +1,13 @@
+# seminrExtras 1.0.1
+
+### Fixed
+
+* Tests in `test-cipma-comprehensive.R` and `test-fimix.R` no longer reach
+  into seminr's non-exported internals via `seminr:::items_of_construct()`
+  and `seminr:::all_endogenous()`. They now use seminrExtras's own local
+  helpers of the same name. This avoids breakage against forthcoming
+  seminr 2.5.0, which refactors (and renames) those internal helpers.
+
 # seminrExtras 1.0.0
 
 ## Major new features

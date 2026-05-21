@@ -135,7 +135,7 @@ test_that("segment path coefficients are zero where model has no paths", {
 
 test_that("segment intercepts have correct structure", {
   expect_equal(length(fimix_k2$segment_intercepts), 2)
-  endogenous <- seminr:::all_endogenous(pls_model$smMatrix)
+  endogenous <- all_endogenous(pls_model$smMatrix)
   for (k in 1:2) {
     expect_equal(length(fimix_k2$segment_intercepts[[k]]), length(endogenous))
     expect_true(all(names(fimix_k2$segment_intercepts[[k]]) %in% endogenous))
@@ -147,7 +147,7 @@ test_that("segment intercepts have correct structure", {
 # =============================================================================
 
 test_that("segment_variances has correct dimensions", {
-  endogenous <- seminr:::all_endogenous(pls_model$smMatrix)
+  endogenous <- all_endogenous(pls_model$smMatrix)
   expect_equal(nrow(fimix_k2$segment_variances), length(endogenous))
   expect_equal(ncol(fimix_k2$segment_variances), 2)
 })
