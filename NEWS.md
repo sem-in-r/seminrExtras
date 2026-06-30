@@ -1,3 +1,19 @@
+# seminrExtras 1.0.2
+
+### Fixed
+
+* `congruence_test()` now attaches each congruence coefficient — and its
+  bootstrap SD, t-statistic, and confidence interval — to the correct
+  construct pair. Coefficients were generated in `combn()` (row-major) order
+  but written into the results matrix via `upper.tri()` (column-major) order;
+  the two orderings diverge for models with four or more constructs, which
+  mislabelled non-adjacent pairs (e.g. `COMP <> CUSL` and `LIKE <> CUSA` were
+  swapped in the simple corporate-reputation model, and 10 of 15 pairs were
+  mislabelled in the six-construct example). The coefficient values themselves
+  were correct; only their pair labels were wrong. Added a regression test
+  asserting pair-label correctness against an independent name-indexed
+  reference.
+
 # seminrExtras 1.0.1
 
 ### Fixed

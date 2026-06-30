@@ -131,11 +131,17 @@ congruence_test <- function(seminr_model,
     # This creates a matrix where diagonal = reliability, off-diagonal = correlations
     diag(ret_mat) <- seminr::rhoC_AVE(x = it_model)[colnames(ret_mat), 1]
 
-    # Calculate congruence coefficient for each construct pair
-    # Store in upper triangle of the result array
-    ret_array[, , iter][upper.tri(ret_mat)] <- apply(combns, 1, function(x) {
-      calc_congruence(ret_mat, x[1], x[2])
-    })
+    # Calculate congruence coefficient for each construct pair.
+    # Assign by construct name (not via upper.tri()): apply() returns values in
+    # combn() row-major order, whereas `M[upper.tri(M)] <-` fills column-major.
+    # Those orderings diverge for >3 constructs, which would attach each
+    # coefficient to the wrong construct pair.
+    slice <- matrix(NA, length(construct_names), length(construct_names),
+                    dimnames = list(construct_names, construct_names))
+    for (r in seq_len(nrow(combns))) {
+      slice[combns[r, 1], combns[r, 2]] <- calc_congruence(ret_mat, combns[r, 1], combns[r, 2])
+    }
+    ret_array[, , iter] <- slice
   }
 
   # ---------------------------------------------------------------------------
@@ -152,10 +158,12 @@ congruence_test <- function(seminr_model,
   original_matrix[lower.tri(original_matrix)] <- 0
   diag(original_matrix) <- 0
 
-  # Calculate congruence coefficients for original data
-  original_matrix[upper.tri(original_matrix)] <- apply(combns, 1, function(x) {
-    calc_congruence(cor_mat, x[1], x[2])
-  })
+  # Calculate congruence coefficients for original data.
+  # Assign by construct name (see note in Step 4) so each coefficient lands in
+  # the cell for its actual construct pair rather than the column-major slot.
+  for (r in seq_len(nrow(combns))) {
+    original_matrix[combns[r, 1], combns[r, 2]] <- calc_congruence(cor_mat, combns[r, 1], combns[r, 2])
+  }
 
   # ---------------------------------------------------------------------------
   # Step 6: Compute bootstrap statistics for each construct pair
