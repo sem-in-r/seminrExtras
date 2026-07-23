@@ -3,8 +3,10 @@
 # =============================================================================
 # This file implements the COA framework for PLS-SEM models, as described in:
 #
-# - Ray, S., Danks, N. P., & Valdez, A. C. (2022). "A framework for
-#   Composite Overfit Analysis." Information Systems Research.
+# - Danks, N. P., Ray, S., & Shmueli, G. (2024). "The Composite Overfit
+#   Analysis Framework: Assessing the Out-of-Sample Generalizability of
+#   Construct-Based Models Using Predictive Deviance, Deviance Trees, and
+#   Unstable Paths." Management Science, 70(1), 647-669.
 #
 # COA identifies cases whose predictions are unstable (overfit) and groups
 # them to reveal which model parameters are affected. The analysis proceeds
