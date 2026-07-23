@@ -596,7 +596,7 @@ summary(cong_result)
 - Becker, J.-M., Richter, N. F., Ringle, C. M., & Sarstedt, M. (2026). Must-have, or maybe not? A sensitivity-based extension to necessary condition analysis. Journal of Business Research, 206, 115920.
 - Cefis, M., Angelelli, M., Carpita, M. & Ciavolino, E. (2025). Confirmatory Tetrad Analysis in PLS-SEM: A Multiple Testing Correction Perspective. Social Indicators Research (advance online).
 - Dul, J. (2016). Necessary Condition Analysis (NCA): Logic and Methodology of 'Necessary but Not Sufficient' Causality. Organizational Research Methods, 19(1), 10-52.
-- Franke, G. R., Sarstedt, M., & Danks, N. P. (2021). An empirical comparison of factor score estimation methods. Journal of Business Research, 130, 318-334.
+- Franke, G. R., Sarstedt, M., & Danks, N. P. (2021). Assessing measure congruence in nomological networks. Journal of Business Research, 130, 318-334.
 - Gudergan, S. P., Ringle, C. M., Wende, S. & Will, A. (2008). Confirmatory Tetrad Analysis in PLS Path Modeling. Journal of Business Research, 61(12), 1238-1249.
 - Hahn, C., Johnson, M. D., Herrmann, A., & Huber, F. (2002). Capturing Customer Heterogeneity using a Finite Mixture PLS Approach. Schmalenbach Business Review, 54, 243-269.
 - Hair, J.F. (Jr), Hult, T.M., Ringle, C.M., Sarstedt, M., Danks, N.P., and Adler, S. (2026). Partial Least Squares Structural Equation Modeling (PLS-SEM) Using R (Second Edition) - A Workbook. Springer.
