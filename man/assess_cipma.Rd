@@ -76,8 +76,8 @@ scale.
 
 When \code{nca = TRUE}, NCA is run on construct scores for each
 predecessor--target pair, and constructs are classified into four
-categories based on crossing importance (above/below median) with
-necessity (NCA d >= 0.1 and p < 0.05).
+categories based on crossing importance (at/above vs. below the mean, the
+standard IPMA crosshair) with necessity (NCA d >= 0.1 and p < 0.05).
 }
 \examples{
 library(seminr)
