@@ -170,11 +170,44 @@ test_that("classification priority is a valid category", {
   expect_true(all(cipma_result$classification$Priority %in% valid_priorities))
 })
 
-test_that("High_Importance splits at median", {
+test_that("High_Importance splits at the mean importance", {
   imp <- cipma_result$importance_unstd
   high <- cipma_result$classification$High_Importance
-  expect_true(all(imp[high] > median(imp)))
-  expect_true(all(imp[!high] <= median(imp)))
+  expect_true(all(imp[high] >= mean(imp)))
+  expect_true(all(imp[!high] < mean(imp)))
+})
+
+test_that("mean split does not demote the median construct (n = 3 regression)", {
+  # Regression for the median-split degeneracy: with three antecedents the
+  # median IS a construct, so `importance > median` demoted the middle driver
+  # to "not high" regardless of magnitude. A mean split classifies it by size.
+  # corp_rep: importance COMP ~0.11, LIKE ~0.52, CUSA ~0.61 (mean ~0.41), so
+  # the median driver (LIKE) is genuinely above the mean and must be "high".
+  cr_mm <- constructs(
+    composite("COMP", multi_items("comp_", 1:3)),
+    composite("LIKE", multi_items("like_", 1:3)),
+    composite("CUSA", single_item("cusa")),
+    composite("CUSL", multi_items("cusl_", 1:3))
+  )
+  cr_sm <- relationships(
+    paths(from = c("COMP", "LIKE"), to = c("CUSA", "CUSL")),
+    paths(from = "CUSA",            to = "CUSL")
+  )
+  cr_fit <- estimate_pls(
+    data = corp_rep_data, measurement_model = cr_mm, structural_model = cr_sm,
+    missing = mean_replacement, missing_value = "-99"
+  )
+  cr <- assess_cipma(cr_fit, target = "CUSL", scale_min = 1, scale_max = 7,
+                     nca_test.rep = 0, seed = 123)
+
+  imp <- cr$importance_unstd
+  cls <- cr$classification
+  mid <- names(sort(imp))[2L]                       # the median-importance driver
+  expect_gte(imp[[mid]], mean(imp))                 # it is above the mean here
+  expect_true(cls$High_Importance[cls$Construct == mid])
+  # ...so it must NOT be dumped into a low-importance bucket
+  expect_false(cls$Priority[cls$Construct == mid] %in%
+                 c("Low priority", "Bottleneck risk"))
 })
 
 test_that("classification without NCA has all Necessary = FALSE", {
