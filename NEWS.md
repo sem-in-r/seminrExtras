@@ -1,3 +1,28 @@
+# seminrExtras (development version)
+
+### Changed
+
+* `congruence_test()` gains a `reliability` argument selecting which estimate
+  sits on the diagonal of the construct-correlation matrix: `"rhoA"`, `"rhoC"`,
+  or `"one"`. Franke, Sarstedt & Danks (2021, Eq. 2) specify "the reliabilities"
+  without fixing an estimator, so all three are in specification.
+
+* **The default is now `"rhoA"`, changed from the previous `"rhoC"`.** This
+  aligns seminrExtras with SmartPLS: on the simple corporate reputation model
+  the `"rhoA"` diagonal reproduces SmartPLS's published coefficients to three
+  decimal places on all six construct pairs, and the estimator choice accounts
+  for the whole of the previous disagreement between the two programs. Pass
+  `reliability = "rhoC"` to reproduce results generated with 1.0.2 or earlier.
+
+  Note for models that mix measurement modes: internal consistency is undefined
+  for composites, so `"rhoA"` returns exactly 1 for Mode B and single-item
+  constructs while estimating a value below 1 for reflective ones. The diagonal
+  is then determined by measurement mode rather than by the data, which shifts
+  coefficients systematically — on the extended corporate reputation model,
+  reflective-reflective pairs rise while formative-formative pairs fall, and the
+  ranking of most-congruent pairs changes. `"rhoC"` and `"one"` do not introduce
+  that split.
+
 # seminrExtras 1.0.2
 
 ### Fixed

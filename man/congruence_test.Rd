@@ -9,7 +9,8 @@ congruence_test(
   nboot = 2000,
   seed = 123,
   alpha = 0.05,
-  threshold = 1
+  threshold = 1,
+  reliability = c("rhoA", "rhoC", "one")
 )
 }
 \arguments{
@@ -24,6 +25,22 @@ to 0.05). Used to compute confidence intervals.}
 
 \item{threshold}{The threshold with which to compare significance testing.
 H0: rc < threshold (defaults to 1).}
+
+\item{reliability}{Which reliability estimate to place on the diagonal of the
+construct-correlation matrix: \code{"rhoA"} (default, matches SmartPLS),
+\code{"rhoC"} (composite reliability, the behaviour of seminrExtras <= 1.0.2),
+or \code{"one"} (unity, as permitted by Franke et al. (2021) when reliabilities
+are unknown).
+
+The choice is consequential. Internal consistency is undefined for
+composites, so \code{"rhoA"} returns exactly 1 for Mode B and single-item
+constructs while estimating a value below 1 for reflective ones. In a model
+that mixes measurement modes the diagonal is then set by mode rather than
+by the data, which shifts congruence coefficients systematically: on the
+extended corporate reputation model, reflective-reflective pairs rise while
+formative-formative pairs fall, changing which pairs rank as most
+congruent. \code{"rhoC"} estimates a value for every construct and \code{"one"}
+treats all constructs alike; neither introduces that split.}
 }
 \value{
 A list containing a matrix of congruence coefficients and

@@ -28,6 +28,21 @@
 #'   to 0.05). Used to compute confidence intervals.
 #' @param threshold The threshold with which to compare significance testing.
 #'   H0: rc < threshold (defaults to 1).
+#' @param reliability Which reliability estimate to place on the diagonal of the
+#'   construct-correlation matrix: `"rhoA"` (default, matches SmartPLS),
+#'   `"rhoC"` (composite reliability, the behaviour of seminrExtras <= 1.0.2),
+#'   or `"one"` (unity, as permitted by Franke et al. (2021) when reliabilities
+#'   are unknown).
+#'
+#'   The choice is consequential. Internal consistency is undefined for
+#'   composites, so `"rhoA"` returns exactly 1 for Mode B and single-item
+#'   constructs while estimating a value below 1 for reflective ones. In a model
+#'   that mixes measurement modes the diagonal is then set by mode rather than
+#'   by the data, which shifts congruence coefficients systematically: on the
+#'   extended corporate reputation model, reflective-reflective pairs rise while
+#'   formative-formative pairs fall, changing which pairs rank as most
+#'   congruent. `"rhoC"` estimates a value for every construct and `"one"`
+#'   treats all constructs alike; neither introduces that split.
 #'
 #' @return A list containing a matrix of congruence coefficients and
 #'   significance test results for all construct pairs.
@@ -78,7 +93,10 @@ congruence_test <- function(seminr_model,
                             nboot = 2000,
                             seed = 123,
                             alpha = 0.05,
-                            threshold = 1) {
+                            threshold = 1,
+                            reliability = c("rhoA", "rhoC", "one")) {
+
+  reliability <- match.arg(reliability)
 
   # Set seed for reproducibility of bootstrap resampling
   set.seed(seed)
@@ -101,6 +119,17 @@ congruence_test <- function(seminr_model,
   # This is essentially a cosine similarity applied to correlation patterns.
   calc_congruence <- function(mat, X, Y) {
     return(sum(mat[, X] * mat[, Y]) / sqrt(sum(mat[, X]^2) * sum(mat[, Y]^2)))
+  }
+
+  # Reliabilities for the diagonal, per the selected estimator. Recomputed from
+  # whichever model is passed in, so the bootstrap gets resample-specific values
+  # rather than the original fit's.
+  diagonal_values <- function(model, constructs) {
+    switch(reliability,
+      rhoA = seminr::rho_A(model, constructs)[constructs, 1],
+      rhoC = seminr::rhoC_AVE(x = model)[constructs, 1],
+      one  = stats::setNames(rep(1, length(constructs)), constructs)
+    )
   }
 
   # ---------------------------------------------------------------------------
@@ -127,9 +156,9 @@ congruence_test <- function(seminr_model,
     # Compute correlation matrix of construct scores for this bootstrap sample
     ret_mat <- stats::cor(it_model$construct_scores)
 
-    # Replace diagonal with rhoC (composite reliability) values
+    # Replace diagonal with the selected reliability estimates
     # This creates a matrix where diagonal = reliability, off-diagonal = correlations
-    diag(ret_mat) <- seminr::rhoC_AVE(x = it_model)[colnames(ret_mat), 1]
+    diag(ret_mat) <- diagonal_values(it_model, colnames(ret_mat))
 
     # Calculate congruence coefficient for each construct pair.
     # Assign by construct name (not via upper.tri()): apply() returns values in
@@ -150,8 +179,8 @@ congruence_test <- function(seminr_model,
   # Compute correlation matrix from original model
   cor_mat <- stats::cor(seminr_model$construct_scores)
 
-  # Replace diagonal with rhoC values
-  diag(cor_mat) <- seminr::rhoC_AVE(x = seminr_model)[colnames(ret_mat), 1]
+  # Replace diagonal with the selected reliability estimates
+  diag(cor_mat) <- diagonal_values(seminr_model, colnames(cor_mat))
 
   # Prepare matrix for original estimates (upper triangle only)
   original_matrix <- cor_mat

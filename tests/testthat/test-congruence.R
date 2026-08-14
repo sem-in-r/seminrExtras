@@ -191,10 +191,16 @@ test_that("congruence_test confidence intervals are ordered correctly", {
 # NAME, so it is independent of any fill-order convention.
 
 # Independent, name-based congruence coefficient (Franke, Sarstedt & Danks 2021,
-# Eq. 2): cor matrix of construct scores with rhoC on the diagonal.
-reference_rc <- function(model, X, Y) {
+# Eq. 2): cor matrix of construct scores with the selected reliability estimate
+# on the diagonal. Defaults to rhoA, matching congruence_test()'s own default.
+reference_rc <- function(model, X, Y, reliability = "rhoA") {
   m <- stats::cor(model$construct_scores)
-  diag(m) <- seminr::rhoC_AVE(model)[colnames(m), 1]
+  cn <- colnames(m)
+  diag(m) <- switch(reliability,
+    rhoA = seminr::rho_A(model, cn)[cn, 1],
+    rhoC = seminr::rhoC_AVE(model)[cn, 1],
+    one  = rep(1, length(cn))
+  )
   sum(m[, X] * m[, Y]) / sqrt(sum(m[, X]^2) * sum(m[, Y]^2))
 }
 
@@ -224,4 +230,139 @@ test_that("congruence_test does not swap COMP<>CUSL and LIKE<>CUSA", {
   expect_equal(unname(like_cusa), reference_rc(test_model, "LIKE", "CUSA"), tolerance = 1e-8)
   # And they must be distinct, so a swap would be caught.
   expect_false(isTRUE(all.equal(unname(comp_cusl), unname(like_cusa))))
+})
+
+# ============================================================================
+# Reliability on the diagonal: 1 / rhoA / rhoC
+# ============================================================================
+# Franke, Sarstedt & Danks (2021, Eq. 2) place "the reliabilities" on the
+# diagonal of the construct-correlation matrix without fixing an estimator.
+# SmartPLS uses rhoA; seminrExtras <= 1.0.2 hard-coded rhoC. The two disagree,
+# so the estimator is now selectable.
+#
+# ORACLE: values published by SmartPLS for the simple corporate reputation
+# model (C. M. Ringle, personal communication, 13 Aug 2026). This is an
+# independent implementation, not a value read back out of this package.
+#
+# NB: this fixture is NOT `test_model` above — the structural model differs
+# (COMP/LIKE feed CUSL directly here). Construct scores depend on the inner
+# model, so the oracle only applies to this specification.
+
+smartpls_mm <- constructs(
+  composite("COMP", multi_items("comp_", 1:3)),
+  composite("LIKE", multi_items("like_", 1:3)),
+  composite("CUSA", single_item("cusa")),
+  composite("CUSL", multi_items("cusl_", 1:3))
+)
+smartpls_sm <- relationships(
+  paths(from = c("COMP", "LIKE"), to = c("CUSA", "CUSL")),
+  paths(from = "CUSA", to = "CUSL")
+)
+smartpls_model <- estimate_pls(
+  data = corp_rep_data,
+  measurement_model = smartpls_mm,
+  structural_model  = smartpls_sm,
+  missing = mean_replacement,
+  missing_value = "-99"
+)
+
+# SmartPLS congruence coefficients (rhoA on the diagonal), 3 d.p. as published.
+smartpls_rc <- c(
+  "COMP -> LIKE" = 0.971,
+  "COMP -> CUSA" = 0.848,
+  "COMP -> CUSL" = 0.891,
+  "LIKE -> CUSA" = 0.902,
+  "LIKE -> CUSL" = 0.954,
+  "CUSA -> CUSL" = 0.967
+)
+
+est_for_pair <- function(result, pair) {
+  key <- gsub(" ", "", pair)
+  rn  <- gsub(" ", "", rownames(result$results))
+  unname(result$results[which(rn == key), "Original Est."])
+}
+
+test_that("congruence_test reproduces SmartPLS's published coefficients", {
+  result <- congruence_test(smartpls_model, nboot = 20, seed = 123)
+
+  for (pair in names(smartpls_rc)) {
+    expect_equal(
+      est_for_pair(result, pair),
+      unname(smartpls_rc[[pair]]),
+      # published to 3 d.p., so agreement is only asserted at that precision
+      tolerance = 5e-4,
+      info = paste("disagrees with SmartPLS for", pair)
+    )
+  }
+})
+
+test_that("reliability = 'rhoC' reproduces pre-1.0.3 behaviour", {
+  # Oracle: reference_rc is an independent, name-indexed implementation of
+  # Eq. 2, not a value read back from congruence_test().
+  result <- congruence_test(smartpls_model, nboot = 20, seed = 123,
+                            reliability = "rhoC")
+  for (pair in names(smartpls_rc)) {
+    cs <- trimws(strsplit(pair, "->", fixed = TRUE)[[1]])
+    expect_equal(
+      est_for_pair(result, pair),
+      reference_rc(smartpls_model, cs[1], cs[2], reliability = "rhoC"),
+      tolerance = 1e-8, info = pair
+    )
+  }
+})
+
+test_that("reliability = 'one' puts unity on the diagonal", {
+  result <- congruence_test(smartpls_model, nboot = 20, seed = 123,
+                            reliability = "one")
+  for (pair in names(smartpls_rc)) {
+    cs <- trimws(strsplit(pair, "->", fixed = TRUE)[[1]])
+    expect_equal(
+      est_for_pair(result, pair),
+      reference_rc(smartpls_model, cs[1], cs[2], reliability = "one"),
+      tolerance = 1e-8, info = pair
+    )
+  }
+})
+
+test_that("the three estimators genuinely differ", {
+  # Guards against the argument being silently ignored.
+  a <- congruence_test(smartpls_model, nboot = 5, seed = 1, reliability = "rhoA")$results[, "Original Est."]
+  c <- congruence_test(smartpls_model, nboot = 5, seed = 1, reliability = "rhoC")$results[, "Original Est."]
+  o <- congruence_test(smartpls_model, nboot = 5, seed = 1, reliability = "one")$results[, "Original Est."]
+  expect_false(isTRUE(all.equal(a, c)))
+  expect_false(isTRUE(all.equal(a, o)))
+  expect_false(isTRUE(all.equal(c, o)))
+})
+
+test_that("rhoA equals unity for Mode B constructs, so the two agree when all are Mode B", {
+  # Internal consistency is undefined for composites: seminr::rho_A() assigns 1
+  # to every Mode B construct. An all-Mode-B model therefore has an all-ones
+  # diagonal under "rhoA", identical to "one". This is the edge case that makes
+  # the estimator choice consequential in MIXED models.
+  mb_mm <- constructs(
+    composite("QUAL", multi_items("qual_", 1:8), weights = mode_B),
+    composite("PERF", multi_items("perf_", 1:5), weights = mode_B),
+    composite("CSOR", multi_items("csor_", 1:5), weights = mode_B),
+    composite("ATTR", multi_items("attr_", 1:3), weights = mode_B)
+  )
+  mb_sm <- relationships(paths(from = c("QUAL", "PERF", "CSOR"), to = "ATTR"))
+  mb_model <- estimate_pls(corp_rep_data, mb_mm, mb_sm,
+                           missing = mean_replacement, missing_value = "-99")
+
+  expect_equal(
+    unname(seminr::rho_A(mb_model, colnames(mb_model$construct_scores))[, 1]),
+    rep(1, 4)
+  )
+  expect_equal(
+    congruence_test(mb_model, nboot = 5, seed = 1, reliability = "rhoA")$results[, "Original Est."],
+    congruence_test(mb_model, nboot = 5, seed = 1, reliability = "one")$results[, "Original Est."],
+    tolerance = 1e-10
+  )
+})
+
+test_that("an unrecognised reliability is rejected", {
+  expect_error(
+    congruence_test(smartpls_model, nboot = 5, reliability = "cronbach"),
+    "should be one of"
+  )
 })
