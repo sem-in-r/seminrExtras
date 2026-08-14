@@ -366,3 +366,63 @@ test_that("an unrecognised reliability is rejected", {
     "should be one of"
   )
 })
+
+test_that("the estimators coincide when every construct is single-item", {
+  # Both rhoA and rhoC return 1 for a single indicator, so the diagonal is all
+  # ones under every option and `reliability` has no effect. Documents that the
+  # estimators differ ONLY in their treatment of Mode B constructs.
+  si_mm <- constructs(
+    composite("A", single_item("comp_1")),
+    composite("B", single_item("like_1")),
+    composite("C", single_item("cusa")),
+    composite("D", single_item("cusl_1"))
+  )
+  si_sm <- relationships(paths(from = c("A", "B"), to = "C"),
+                         paths(from = "C", to = "D"))
+  si_model <- estimate_pls(corp_rep_data, si_mm, si_sm,
+                           missing = mean_replacement, missing_value = "-99")
+  cn <- colnames(si_model$construct_scores)
+
+  expect_equal(unname(seminr::rho_A(si_model, cn)[, 1]), rep(1, 4))
+  expect_equal(unname(seminr::rhoC_AVE(si_model)[cn, 1]), rep(1, 4))
+
+  a <- congruence_test(si_model, nboot = 5, seed = 1, reliability = "rhoA")$results[, "Original Est."]
+  c <- congruence_test(si_model, nboot = 5, seed = 1, reliability = "rhoC")$results[, "Original Est."]
+  o <- congruence_test(si_model, nboot = 5, seed = 1, reliability = "one")$results[, "Original Est."]
+  expect_equal(a, c, tolerance = 1e-12)
+  expect_equal(a, o, tolerance = 1e-12)
+})
+
+test_that("higher-order constructs are handled under every estimator", {
+  # Two-stage HOC: only the higher-order construct reaches construct_scores,
+  # so the LOCs are not pairs in the congruence analysis.
+  hoc_mm <- constructs(
+    composite("QUAL", multi_items("qual_", 1:8), weights = mode_B),
+    composite("PERF", multi_items("perf_", 1:5), weights = mode_B),
+    composite("CSOR", multi_items("csor_", 1:5), weights = mode_B),
+    composite("ATTR", multi_items("attr_", 1:3), weights = mode_B),
+    higher_composite("REPU", dimensions = c("QUAL", "PERF", "CSOR", "ATTR"),
+                     method = two_stage, weights = mode_A),
+    composite("CUSA", single_item("cusa")),
+    composite("CUSL", multi_items("cusl_", 1:3))
+  )
+  hoc_sm <- relationships(paths(from = "REPU", to = "CUSA"),
+                          paths(from = "CUSA", to = "CUSL"))
+  hoc_model <- estimate_pls(corp_rep_data, hoc_mm, hoc_sm,
+                            missing = mean_replacement, missing_value = "-99")
+
+  expect_setequal(colnames(hoc_model$construct_scores), c("REPU", "CUSA", "CUSL"))
+
+  for (rel in c("rhoA", "rhoC", "one")) {
+    res <- congruence_test(hoc_model, nboot = 5, seed = 1, reliability = rel)$results
+    est <- res[, "Original Est."]
+    expect_equal(length(est), choose(3, 2), info = rel)
+    expect_false(anyNA(est), info = rel)
+    expect_true(all(abs(est) <= 1 + 1e-9), info = rel)
+  }
+
+  # A mode_A higher-order construct gets a genuinely estimated reliability
+  # under both estimators -- it is not swept into the Mode B "always 1" case.
+  expect_lt(seminr::rho_A(hoc_model, "REPU")[1, 1], 1)
+  expect_lt(seminr::rhoC_AVE(hoc_model)["REPU", 1], 1)
+})

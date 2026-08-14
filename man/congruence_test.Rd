@@ -32,15 +32,25 @@ construct-correlation matrix: \code{"rhoA"} (default, matches SmartPLS),
 or \code{"one"} (unity, as permitted by Franke et al. (2021) when reliabilities
 are unknown).
 
-The choice is consequential. Internal consistency is undefined for
-composites, so \code{"rhoA"} returns exactly 1 for Mode B and single-item
-constructs while estimating a value below 1 for reflective ones. In a model
-that mixes measurement modes the diagonal is then set by mode rather than
-by the data, which shifts congruence coefficients systematically: on the
-extended corporate reputation model, reflective-reflective pairs rise while
-formative-formative pairs fall, changing which pairs rank as most
-congruent. \code{"rhoC"} estimates a value for every construct and \code{"one"}
-treats all constructs alike; neither introduces that split.}
+The three differ only where internal consistency is undefined. Both
+\code{"rhoA"} and \code{"rhoC"} return exactly 1 for \strong{single-item}
+constructs, so the estimators are indistinguishable in a model built entirely
+from single indicators. They part company on \strong{Mode B} constructs:
+\code{"rhoA"} returns 1 (nothing is estimated — internal consistency is
+undefined for a composite) while \code{"rhoC"} still computes a value from the
+loadings.
+
+That difference matters in a model mixing Mode A and Mode B. Under
+\code{"rhoA"} the diagonal is then set by measurement mode rather than by the
+data, shifting congruence coefficients systematically: on the extended
+corporate reputation model, reflective-reflective pairs rise while
+formative-formative pairs fall, changing which pairs rank as most congruent.
+\code{"one"} removes the distinction entirely by treating every construct alike.
+
+Interaction constructs are currently included in the analysis and receive a
+diagonal of 1 under every option; their measurement is determined by the
+product method rather than by theory, so treat coefficients involving them
+with caution.}
 }
 \value{
 A list containing a matrix of congruence coefficients and

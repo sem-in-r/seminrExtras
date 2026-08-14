@@ -14,14 +14,16 @@
   for the whole of the previous disagreement between the two programs. Pass
   `reliability = "rhoC"` to reproduce results generated with 1.0.2 or earlier.
 
-  Note for models that mix measurement modes: internal consistency is undefined
-  for composites, so `"rhoA"` returns exactly 1 for Mode B and single-item
-  constructs while estimating a value below 1 for reflective ones. The diagonal
-  is then determined by measurement mode rather than by the data, which shifts
-  coefficients systematically — on the extended corporate reputation model,
-  reflective-reflective pairs rise while formative-formative pairs fall, and the
-  ranking of most-congruent pairs changes. `"rhoC"` and `"one"` do not introduce
-  that split.
+  The estimators differ only where internal consistency is undefined. Both
+  `"rhoA"` and `"rhoC"` return 1 for single-item constructs, so all three
+  options coincide in a model built entirely from single indicators. They part
+  company on Mode B constructs: `"rhoA"` returns 1, while `"rhoC"` computes a
+  value from the loadings. In a model mixing Mode A and Mode B the `"rhoA"`
+  diagonal is therefore set by measurement mode rather than by the data, which
+  shifts coefficients systematically — on the extended corporate reputation
+  model, reflective-reflective pairs rise while formative-formative pairs fall,
+  and the ranking of most-congruent pairs changes. `"one"` removes the
+  distinction by treating every construct alike.
 
 # seminrExtras 1.0.2
 
