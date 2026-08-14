@@ -181,3 +181,47 @@ test_that("congruence_test confidence intervals are ordered correctly", {
   # Lower CI should be less than or equal to upper CI
   expect_true(all(lower_ci <= upper_ci))
 })
+
+# ============================================================================
+# Regression: estimates must be attached to the correct construct pair
+# ============================================================================
+# Guards against the row-major (combn) vs column-major (upper.tri) mismatch that
+# previously swapped coefficients between non-adjacent pairs (e.g. COMP<>CUSL and
+# LIKE<>CUSA in this 4-construct model). The reference below indexes by construct
+# NAME, so it is independent of any fill-order convention.
+
+# Independent, name-based congruence coefficient (Franke, Sarstedt & Danks 2021,
+# Eq. 2): cor matrix of construct scores with rhoC on the diagonal.
+reference_rc <- function(model, X, Y) {
+  m <- stats::cor(model$construct_scores)
+  diag(m) <- seminr::rhoC_AVE(model)[colnames(m), 1]
+  sum(m[, X] * m[, Y]) / sqrt(sum(m[, X]^2) * sum(m[, Y]^2))
+}
+
+test_that("congruence_test labels each estimate with the correct construct pair", {
+  result <- congruence_test(test_model, nboot = 20, seed = 123)
+
+  for (rn in rownames(result$results)) {
+    pair <- trimws(strsplit(rn, "->", fixed = TRUE)[[1]])
+    expect_equal(
+      unname(result$results[rn, "Original Est."]),
+      reference_rc(test_model, pair[1], pair[2]),
+      tolerance = 1e-8,
+      info = paste("mislabelled estimate for", rn)
+    )
+  }
+})
+
+test_that("congruence_test does not swap COMP<>CUSL and LIKE<>CUSA", {
+  # The two pairs that the column-major fill bug swapped in a 4-construct model.
+  result <- congruence_test(test_model, nboot = 20, seed = 123)
+  ests <- result$results[, "Original Est."]
+
+  comp_cusl <- ests[grepl("COMP +-> +CUSL", rownames(result$results))]
+  like_cusa <- ests[grepl("LIKE +-> +CUSA", rownames(result$results))]
+
+  expect_equal(unname(comp_cusl), reference_rc(test_model, "COMP", "CUSL"), tolerance = 1e-8)
+  expect_equal(unname(like_cusa), reference_rc(test_model, "LIKE", "CUSA"), tolerance = 1e-8)
+  # And they must be distinct, so a swap would be caught.
+  expect_false(isTRUE(all.equal(unname(comp_cusl), unname(like_cusa))))
+})
