@@ -201,8 +201,14 @@ compute_unstd_total_effects <- function(model, constructs, scale_min, scale_max)
 classify_cipma_constructs <- function(importance, performance, nca_result) {
   constructs <- names(importance)
 
-  imp_median <- median(importance, na.rm = TRUE)
-  high_importance <- importance > imp_median
+  # "High importance" = at or above the MEAN importance, i.e. the crosshair a
+  # standard IPMA map draws (Ringle & Sarstedt, 2016). Mean, not median: a
+  # median split with a strict `>` is degenerate at a small number of
+  # constructs, because the median IS a construct and can never exceed itself,
+  # so the middle construct is mislabelled "not high" regardless of magnitude
+  # (e.g. with three antecedents the median driver is always demoted).
+  imp_mean <- mean(importance, na.rm = TRUE)
+  high_importance <- importance >= imp_mean
 
   necessary <- rep(FALSE, length(constructs))
   names(necessary) <- constructs
@@ -329,8 +335,8 @@ assess_ipma <- function(seminr_model,
 #'
 #' When \code{nca = TRUE}, NCA is run on construct scores for each
 #' predecessor--target pair, and constructs are classified into four
-#' categories based on crossing importance (above/below median) with
-#' necessity (NCA d >= 0.1 and p < 0.05).
+#' categories based on crossing importance (at/above vs. below the mean, the
+#' standard IPMA crosshair) with necessity (NCA d >= 0.1 and p < 0.05).
 #'
 #' @param seminr_model An estimated SEMinR model from \code{estimate_pls()}.
 #' @param target Name of the target (endogenous) construct for the IPMA.

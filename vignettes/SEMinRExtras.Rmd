@@ -77,7 +77,7 @@ competing_model <- estimate_pls(
 SEMinR (Ray, Danks, & Calero Valdez, 2026) is a domain specific language for modeling and estimating structural equation models. This is a supplementary package for SEMinR and not a standalone package.
 This package serves to provide additional extra methods and functions that can be used to analyze PLS-SEM models.
 
-SEMinRExtras provides advanced SEM tools which are compatible with SEMinR. It implements several methods for evaluating PLS-SEM models, including CVPAT (Liengaard et al., 2021; Sharma et al., 2022), Combined Importance-Performance Map Analysis (cIPMA; Sarstedt et al., 2024; Hauff et al., 2024), Composite Overfit Analysis (COA), Necessary Condition Analysis (NCA; Dul, 2016; Richter et al., 2020), NCA-ESSE (Becker et al., 2026), Confirmatory Tetrad Analysis (CTA-PLS; Gudergan et al., 2008), FIMIX-PLS (Hahn et al., 2002; Sarstedt et al., 2011), PLS-POS (Becker et al., 2013), and congruence testing (Franke, Sarstedt, & Danks, 2021).
+SEMinRExtras provides advanced SEM tools which are compatible with SEMinR. It implements several methods for evaluating PLS-SEM models, including CVPAT (Liengaard et al., 2021; Sharma et al., 2022), Combined Importance-Performance Map Analysis (cIPMA; Sarstedt et al., 2024; Hauff et al., 2024), Composite Overfit Analysis (COA; Danks, Ray, & Shmueli, 2024), Necessary Condition Analysis (NCA; Dul, 2016; Richter et al., 2020), NCA-ESSE (Becker et al., 2026), Confirmatory Tetrad Analysis (CTA-PLS; Gudergan et al., 2008), FIMIX-PLS (Hahn et al., 2002; Sarstedt et al., 2011), PLS-POS (Becker et al., 2013), and congruence testing (Franke, Sarstedt, & Danks, 2021).
 
 SEMinRExtras also serves to host the example models used in the PLS-SEM in R workbook (Hair et al., 2026).
 
@@ -592,10 +592,11 @@ summary(cong_result)
 # References
 - Becker, J.-M., Rai, A., Ringle, C. M., & Voelckner, F. (2013). Discovering Unobserved Heterogeneity in Structural Equation Models to Avert Validity Threats. MIS Quarterly, 37(3), 665-694.
 - Danks, N. P. (2021). The Piggy in the Middle: The Role of Mediators in PLS-SEM Prediction. The DATA BASE for Advances in Information Systems, 52(SI), 24-42.
+- Danks, N. P., Ray, S., & Shmueli, G. (2024). The Composite Overfit Analysis Framework: Assessing the Out-of-Sample Generalizability of Construct-Based Models Using Predictive Deviance, Deviance Trees, and Unstable Paths. Management Science, 70(1), 647-669.
 - Becker, J.-M., Richter, N. F., Ringle, C. M., & Sarstedt, M. (2026). Must-have, or maybe not? A sensitivity-based extension to necessary condition analysis. Journal of Business Research, 206, 115920.
 - Cefis, M., Angelelli, M., Carpita, M. & Ciavolino, E. (2025). Confirmatory Tetrad Analysis in PLS-SEM: A Multiple Testing Correction Perspective. Social Indicators Research (advance online).
 - Dul, J. (2016). Necessary Condition Analysis (NCA): Logic and Methodology of 'Necessary but Not Sufficient' Causality. Organizational Research Methods, 19(1), 10-52.
-- Franke, G. R., Sarstedt, M., & Danks, N. P. (2021). An empirical comparison of factor score estimation methods. Journal of Business Research, 130, 318-334.
+- Franke, G. R., Sarstedt, M., & Danks, N. P. (2021). Assessing measure congruence in nomological networks. Journal of Business Research, 130, 318-334.
 - Gudergan, S. P., Ringle, C. M., Wende, S. & Will, A. (2008). Confirmatory Tetrad Analysis in PLS Path Modeling. Journal of Business Research, 61(12), 1238-1249.
 - Hahn, C., Johnson, M. D., Herrmann, A., & Huber, F. (2002). Capturing Customer Heterogeneity using a Finite Mixture PLS Approach. Schmalenbach Business Review, 54, 243-269.
 - Hair, J.F. (Jr), Hult, T.M., Ringle, C.M., Sarstedt, M., Danks, N.P., and Adler, S. (2026). Partial Least Squares Structural Equation Modeling (PLS-SEM) Using R (Second Edition) - A Workbook. Springer.
