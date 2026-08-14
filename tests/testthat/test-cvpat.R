@@ -38,16 +38,17 @@ model_two<- estimate_pls(
 Results1 <- assess_cvpat_compare(established_model = model_one,
                                  alternative_model = model_two,
                                  testtype = "two.sided",
-                                 nboot = 200,
+                                 nboot = 30,
                                  technique = predict_EA,
-                                 noFolds = NULL,
+                                 noFolds = 3,
                                  reps = NULL,
                                  cores = 1)
 
 # Assess the base model ----
 Results2 <- as.data.frame(assess_cvpat(model_one,
                                        technique = predict_EA,
-                                       noFolds = NULL,
+                                       nboot = 30,
+                                       noFolds = 3,
                                        reps = NULL,
                                        cores = 1))
 

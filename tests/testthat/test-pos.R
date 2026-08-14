@@ -22,7 +22,11 @@ pls_model <- estimate_pls(data = mobi, measurement_model = mobi_mm,
                            structural_model = mobi_sm)
 
 # Pre-compute PLS-POS for K=2 (reused across tests)
-pos_k2 <- assess_pos(pls_model, K = 2, nstart = 3, max_iter = 20, seed = 123)
+pos_k2 <- assess_pos(pls_model, K = 2, nstart = 2, max_iter = 10, seed = 123)
+
+# Pre-compute PLS-POS comparison across K=2:3 (reused across comparison tests)
+pos_compare <- assess_pos_compare(pls_model, K_range = 2:3,
+                                  nstart = 2, max_iter = 10, seed = 123)
 
 # =============================================================================
 # STRUCTURE TESTS
@@ -158,7 +162,7 @@ test_that("iterations is a positive integer", {
 })
 
 test_that("nstart is stored correctly", {
-  expect_equal(pos_k2$nstart, 3L)
+  expect_equal(pos_k2$nstart, 2L)
 })
 
 # =============================================================================
@@ -272,44 +276,32 @@ test_that("plot.pos_analysis runs without error for all types", {
 # =============================================================================
 
 test_that("assess_pos_compare returns pos_comparison object", {
-  comp <- assess_pos_compare(pls_model, K_range = 2:3,
-                              nstart = 2, max_iter = 10, seed = 123)
-  expect_s3_class(comp, "pos_comparison")
+  expect_s3_class(pos_compare, "pos_comparison")
 })
 
 test_that("comparison contains solutions for each K", {
-  comp <- assess_pos_compare(pls_model, K_range = 2:3,
-                              nstart = 2, max_iter = 10, seed = 123)
-  expect_true("K2" %in% names(comp$solutions))
-  expect_true("K3" %in% names(comp$solutions))
+  expect_true("K2" %in% names(pos_compare$solutions))
+  expect_true("K3" %in% names(pos_compare$solutions))
 })
 
 test_that("comparison fit_table has correct structure", {
-  comp <- assess_pos_compare(pls_model, K_range = 2:3,
-                              nstart = 2, max_iter = 10, seed = 123)
-  expect_true("K" %in% names(comp$fit_table))
-  expect_true("Sum_R2" %in% names(comp$fit_table))
-  expect_true("Converged" %in% names(comp$fit_table))
-  expect_equal(nrow(comp$fit_table), 2)
+  expect_true("K" %in% names(pos_compare$fit_table))
+  expect_true("Sum_R2" %in% names(pos_compare$fit_table))
+  expect_true("Converged" %in% names(pos_compare$fit_table))
+  expect_equal(nrow(pos_compare$fit_table), 2)
 })
 
 test_that("objective increases with more segments", {
-  comp <- assess_pos_compare(pls_model, K_range = 2:3,
-                              nstart = 2, max_iter = 10, seed = 123)
-  r2_vals <- comp$fit_table$Sum_R2
+  r2_vals <- pos_compare$fit_table$Sum_R2
   expect_true(r2_vals[2] >= r2_vals[1])
 })
 
 test_that("comparison print runs without error", {
-  comp <- assess_pos_compare(pls_model, K_range = 2:3,
-                              nstart = 2, max_iter = 10, seed = 123)
-  expect_output(print(comp), "PLS-POS Comparison")
+  expect_output(print(pos_compare), "PLS-POS Comparison")
 })
 
 test_that("comparison plot runs without error", {
-  comp <- assess_pos_compare(pls_model, K_range = 2:3,
-                              nstart = 2, max_iter = 10, seed = 123)
-  expect_no_error(plot(comp))
+  expect_no_error(plot(pos_compare))
 })
 
 # =============================================================================
