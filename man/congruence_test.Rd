@@ -45,13 +45,23 @@ That difference matters in a model mixing Mode A and Mode B. Under
 data, shifting congruence coefficients systematically: on the extended
 corporate reputation model, reflective-reflective pairs rise while
 formative-formative pairs fall, changing which pairs rank as most congruent.
-\code{"one"} removes the distinction entirely by treating every construct alike.
-
-Interaction constructs are currently included in the analysis and receive a
-diagonal of 1 under every option; their measurement is determined by the
-product method rather than by theory, so treat coefficients involving them
-with caution.}
+\code{"one"} removes the distinction entirely by treating every construct alike.}
 }
+\section{Model types}{
+\strong{Interaction constructs are excluded} from the construct set — entirely,
+not merely from the pair list, since Eq. 2 sums over the whole set. An
+interaction term's measurement is fixed by the product method rather than by
+theory, so its position in a nomological network is not interpretable. A
+message names any construct dropped. This matches \code{assess_cta()},
+\code{assess_pos()}, \code{assess_pcm()} and \code{assess_cipma()}.
+
+\strong{Higher-order models are not supported} and are refused with a warning.
+Two-stage estimation replaces the lower-order constructs with a single
+higher-order composite, and it has not been established what belongs on that
+composite's diagonal, nor whether a congruence coefficient between a
+higher-order and a first-order construct is interpretable.
+}
+
 \value{
 A list containing a matrix of congruence coefficients and
   significance test results for all construct pairs.

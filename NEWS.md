@@ -2,6 +2,23 @@
 
 ### Changed
 
+* `congruence_test()` now **excludes interaction constructs**, naming any it
+  drops in a message. An interaction term's measurement is fixed by the product
+  method rather than by theory, so its position in a nomological network is not
+  interpretable — and it was previously producing coefficients as low as -0.47
+  in a framework built around near-redundancy. It is removed from the construct
+  set entirely rather than only from the pair list, because Eq. 2 sums over the
+  whole set: coefficients for the remaining pairs change accordingly. This
+  brings congruence into line with `assess_cta()`, `assess_pos()`,
+  `assess_pcm()` and `assess_cipma()`, which already excluded them.
+
+* `congruence_test()` now **refuses higher-order models** with a warning rather
+  than returning a number. Two-stage estimation replaces the lower-order
+  constructs with a single higher-order composite, and it has not been
+  established what belongs on that composite's diagonal, nor whether a
+  congruence coefficient between a higher-order and a first-order construct is
+  interpretable. Previously such models ran and returned results.
+
 * `congruence_test()` gains a `reliability` argument selecting which estimate
   sits on the diagonal of the construct-correlation matrix: `"rhoA"`, `"rhoC"`,
   or `"one"`. Franke, Sarstedt & Danks (2021, Eq. 2) specify "the reliabilities"

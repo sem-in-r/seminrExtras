@@ -49,10 +49,19 @@
 #'   congruent. `"one"` removes the distinction entirely by treating every
 #'   construct alike.
 #'
-#'   Interaction constructs are currently included in the analysis and receive
-#'   a diagonal of 1 under every option; their measurement is determined by the
-#'   product method rather than by theory, so treat coefficients involving them
-#'   with caution.
+#' @section Model types:
+#' **Interaction constructs are excluded** from the construct set — entirely,
+#' not merely from the pair list, since Eq. 2 sums over the whole set. An
+#' interaction term's measurement is fixed by the product method rather than by
+#' theory, so its position in a nomological network is not interpretable. A
+#' message names any construct dropped. This matches [assess_cta()],
+#' [assess_pos()], [assess_pcm()] and [assess_cipma()].
+#'
+#' **Higher-order models are not supported** and are refused with a warning. Two-
+#' stage estimation replaces the lower-order constructs with a single
+#' higher-order composite, and it has not been established what belongs on that
+#' composite's diagonal, nor whether a congruence coefficient between a
+#' higher-order and a first-order construct is interpretable.
 #'
 #' @return A list containing a matrix of congruence coefficients and
 #'   significance test results for all construct pairs.
@@ -118,8 +127,44 @@ congruence_test <- function(seminr_model,
     return(NULL)
   }
 
+  # ---------------------------------------------------------------------------
+  # Step 1b: Refuse model types that are not yet supported
+  # ---------------------------------------------------------------------------
+  # Higher-order models are out of scope for now. Two-stage estimation replaces
+  # the lower-order constructs with a single higher-order composite, and it has
+  # not been established what belongs on the diagonal for that composite or
+  # whether a congruence coefficient between a HOC and a first-order construct
+  # is interpretable. Refuse rather than return an unvalidated number.
+  if (!is.null(seminr_model$hoc)) {
+    warning("congruence_test() does not yet support higher-order models.",
+            call. = FALSE)
+    return(NULL)
+  }
+
   # Get all construct names from the model
   construct_names <- colnames(seminr_model$construct_scores)
+
+  # ---------------------------------------------------------------------------
+  # Step 1c: Drop interaction constructs
+  # ---------------------------------------------------------------------------
+  # An interaction term's measurement is determined by the product method, not
+  # by theory, so it is not a construct whose position in the nomological
+  # network can be interpreted. It is removed from the construct set entirely,
+  # not merely from the pair list: Eq. 2 sums over the whole set, so leaving it
+  # in the correlation vectors would still perturb every coefficient. This
+  # matches assess_cta(), assess_pos(), assess_pcm() and assess_cipma().
+  is_interaction <- grepl("*", construct_names, fixed = TRUE)
+  if (any(is_interaction)) {
+    message("Excluding interaction constructs (measurement determined by method): ",
+            paste(construct_names[is_interaction], collapse = ", "))
+    construct_names <- construct_names[!is_interaction]
+  }
+
+  if (length(construct_names) < 2) {
+    warning("congruence_test() needs at least two non-interaction constructs.",
+            call. = FALSE)
+    return(NULL)
+  }
 
   # ---------------------------------------------------------------------------
   # Step 2: Define the congruence coefficient calculation
@@ -164,7 +209,9 @@ congruence_test <- function(seminr_model,
     it_model <- suppressMessages(seminr::rerun(seminr_model, data = resampled_data))
 
     # Compute correlation matrix of construct scores for this bootstrap sample
-    ret_mat <- stats::cor(it_model$construct_scores)
+    # Restricted to construct_names, so any excluded interaction leaves the
+    # summation in Eq. 2 rather than merely the pair list.
+    ret_mat <- stats::cor(it_model$construct_scores[, construct_names, drop = FALSE])
 
     # Replace diagonal with the selected reliability estimates
     # This creates a matrix where diagonal = reliability, off-diagonal = correlations
@@ -187,7 +234,7 @@ congruence_test <- function(seminr_model,
   # Step 5: Calculate original (non-bootstrap) congruence coefficients
   # ---------------------------------------------------------------------------
   # Compute correlation matrix from original model
-  cor_mat <- stats::cor(seminr_model$construct_scores)
+  cor_mat <- stats::cor(seminr_model$construct_scores[, construct_names, drop = FALSE])
 
   # Replace diagonal with the selected reliability estimates
   diag(cor_mat) <- diagonal_values(seminr_model, colnames(cor_mat))

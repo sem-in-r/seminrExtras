@@ -393,36 +393,58 @@ test_that("the estimators coincide when every construct is single-item", {
   expect_equal(a, o, tolerance = 1e-12)
 })
 
-test_that("higher-order constructs are handled under every estimator", {
-  # Two-stage HOC: only the higher-order construct reaches construct_scores,
-  # so the LOCs are not pairs in the congruence analysis.
+test_that("higher-order models are refused", {
+  # HOC support is not implemented: the two-stage construct scores mix a
+  # higher-order composite with first-stage constructs, and it has not been
+  # established what the diagonal should hold for the HOC. Refuse rather than
+  # return a number nobody has validated.
   hoc_mm <- constructs(
     composite("QUAL", multi_items("qual_", 1:8), weights = mode_B),
     composite("PERF", multi_items("perf_", 1:5), weights = mode_B),
-    composite("CSOR", multi_items("csor_", 1:5), weights = mode_B),
-    composite("ATTR", multi_items("attr_", 1:3), weights = mode_B),
-    higher_composite("REPU", dimensions = c("QUAL", "PERF", "CSOR", "ATTR"),
+    higher_composite("REPU", dimensions = c("QUAL", "PERF"),
                      method = two_stage, weights = mode_A),
-    composite("CUSA", single_item("cusa")),
     composite("CUSL", multi_items("cusl_", 1:3))
   )
-  hoc_sm <- relationships(paths(from = "REPU", to = "CUSA"),
-                          paths(from = "CUSA", to = "CUSL"))
+  hoc_sm <- relationships(paths(from = "REPU", to = "CUSL"))
   hoc_model <- estimate_pls(corp_rep_data, hoc_mm, hoc_sm,
                             missing = mean_replacement, missing_value = "-99")
 
-  expect_setequal(colnames(hoc_model$construct_scores), c("REPU", "CUSA", "CUSL"))
+  expect_warning(res <- congruence_test(hoc_model, nboot = 5), "higher-order")
+  expect_null(res)
+})
 
-  for (rel in c("rhoA", "rhoC", "one")) {
-    res <- congruence_test(hoc_model, nboot = 5, seed = 1, reliability = rel)$results
-    est <- res[, "Original Est."]
-    expect_equal(length(est), choose(3, 2), info = rel)
-    expect_false(anyNA(est), info = rel)
-    expect_true(all(abs(est) <= 1 + 1e-9), info = rel)
-  }
+test_that("interaction constructs are excluded from the analysis entirely", {
+  int_mm <- constructs(
+    composite("COMP", multi_items("comp_", 1:3)),
+    composite("LIKE", multi_items("like_", 1:3)),
+    composite("CUSA", single_item("cusa")),
+    composite("CUSL", multi_items("cusl_", 1:3)),
+    interaction_term(iv = "COMP", moderator = "LIKE", method = two_stage)
+  )
+  int_sm <- relationships(
+    paths(from = c("COMP", "LIKE", "COMP*LIKE"), to = "CUSA"),
+    paths(from = "CUSA", to = "CUSL")
+  )
+  int_model <- estimate_pls(corp_rep_data, int_mm, int_sm,
+                            missing = mean_replacement, missing_value = "-99")
 
-  # A mode_A higher-order construct gets a genuinely estimated reliability
-  # under both estimators -- it is not swept into the Mode B "always 1" case.
-  expect_lt(seminr::rho_A(hoc_model, "REPU")[1, 1], 1)
-  expect_lt(seminr::rhoC_AVE(hoc_model)["REPU", 1], 1)
+  expect_message(
+    result <- congruence_test(int_model, nboot = 5, seed = 1),
+    "[Ii]nteraction"
+  )
+
+  # No pair may mention the interaction term.
+  expect_false(any(grepl("*", rownames(result$results), fixed = TRUE)))
+  # 4 remaining constructs -> 6 pairs, not the 10 you get with the interaction.
+  expect_equal(nrow(result$results), choose(4, 2))
+
+  # And it must leave the CORRELATION VECTORS too, not just the pair list:
+  # Eq. 2 sums over the whole construct set, so a coefficient computed with the
+  # interaction still in the matrix would differ. Reference excludes it.
+  keep <- setdiff(colnames(int_model$construct_scores), "COMP*LIKE")
+  m <- stats::cor(int_model$construct_scores[, keep, drop = FALSE])
+  diag(m) <- seminr::rho_A(int_model, keep)[keep, 1]
+  expected <- sum(m[, "COMP"] * m[, "CUSL"]) /
+    sqrt(sum(m[, "COMP"]^2) * sum(m[, "CUSL"]^2))
+  expect_equal(est_for_pair(result, "COMP -> CUSL"), expected, tolerance = 1e-8)
 })
