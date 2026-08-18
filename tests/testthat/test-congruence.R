@@ -202,7 +202,7 @@ reference_rc <- function(model, X, Y, reliability = "rhoA") {
     # Oracle for alpha: seminr's own summary(). Independent of the package's
     # implementation, which computes alpha locally (summary() is ~400x slower
     # and cannot be called inside the bootstrap loop).
-    alpha = suppressWarnings(summary(model)$reliability)[cn, "alpha"],
+    cronbach = suppressWarnings(summary(model)$reliability)[cn, "alpha"],
     one   = rep(1, length(cn))
   )
   sum(m[, X] * m[, Y]) / sqrt(sum(m[, X]^2) * sum(m[, Y]^2))
@@ -365,8 +365,14 @@ test_that("rhoA equals unity for Mode B constructs, so the two agree when all ar
 })
 
 test_that("an unrecognised reliability is rejected", {
+  # "omega" is not offered; McDonald's omega is not among the four conventions.
   expect_error(
-    congruence_test(smartpls_model, nboot = 5, reliability = "cronbach"),
+    congruence_test(smartpls_model, nboot = 5, reliability = "omega"),
+    "should be one of"
+  )
+  # The pre-rename spelling of the Cronbach option must not silently work.
+  expect_error(
+    congruence_test(smartpls_model, nboot = 5, reliability = "alpha"),
     "should be one of"
   )
 })
@@ -453,21 +459,21 @@ test_that("interaction constructs are excluded from the analysis entirely", {
   expect_equal(est_for_pair(result, "COMP -> CUSL"), expected, tolerance = 1e-8)
 })
 
-test_that("reliability = 'alpha' puts Cronbach's alpha on the diagonal", {
+test_that("reliability = 'cronbach' puts Cronbach's alpha on the diagonal", {
   # ORACLE: seminr's own summary()$reliability alpha column.
   result <- congruence_test(smartpls_model, nboot = 20, seed = 123,
-                            reliability = "alpha")
+                            reliability = "cronbach")
   for (pair in names(smartpls_rc)) {
     cs <- trimws(strsplit(pair, "->", fixed = TRUE)[[1]])
     expect_equal(
       est_for_pair(result, pair),
-      reference_rc(smartpls_model, cs[1], cs[2], reliability = "alpha"),
+      reference_rc(smartpls_model, cs[1], cs[2], reliability = "cronbach"),
       tolerance = 1e-8, info = pair
     )
   }
 })
 
-test_that("alpha is estimated for Mode B constructs, unlike rhoA", {
+test_that("cronbach is estimated for Mode B constructs, unlike rhoA", {
   # rhoA returns exactly 1 for Mode B (internal consistency is undefined for a
   # composite); alpha and rhoC both compute a value. This is the reason alpha
   # is offered: it applies one rule to every multi-item construct, which makes
@@ -490,12 +496,12 @@ test_that("alpha is estimated for Mode B constructs, unlike rhoA", {
   expect_true(all(ref[c("QUAL", "PERF"), "alpha"] < 1))
 
   # So the two estimators must disagree on this model.
-  a <- congruence_test(mb_model, nboot = 5, seed = 1, reliability = "alpha")$results[, "Original Est."]
+  a <- congruence_test(mb_model, nboot = 5, seed = 1, reliability = "cronbach")$results[, "Original Est."]
   r <- congruence_test(mb_model, nboot = 5, seed = 1, reliability = "rhoA")$results[, "Original Est."]
   expect_false(isTRUE(all.equal(a, r)))
 })
 
-test_that("alpha matches seminr's own computation for every construct", {
+test_that("cronbach matches seminr's own alpha for every construct", {
   # Guards the local reimplementation against drift from seminr's cronbachs_alpha.
   cn <- colnames(smartpls_model$construct_scores)
   ref <- suppressWarnings(summary(smartpls_model)$reliability)[cn, "alpha"]

@@ -57,9 +57,10 @@ construct_alphas <- function(model, constructs) {
 #' @param reliability Which reliability estimate to place on the diagonal of the
 #'   construct-correlation matrix: `"rhoA"` (default, matches SmartPLS),
 #'   `"rhoC"` (composite reliability, the behaviour of seminrExtras <= 1.0.2),
-#'   `"alpha"` (Cronbach's alpha), or `"one"` (unity, as permitted by Franke et
+#'   `"cronbach"` (Cronbach's alpha), or `"one"` (unity, as permitted by Franke et
 #'   al. (2021) when reliabilities are unknown). Not to be confused with the
-#'   `alpha` argument above, which sets the confidence level.
+#'   `alpha` argument above, which sets the confidence level. The option is named
+#'   `"cronbach"` rather than `"alpha"` precisely to keep the two apart.
 #'
 #'   Franke et al. (2021, Eq. 2) specify "the reliabilities" without fixing an
 #'   estimator, so all four are in specification. They agree wherever a
@@ -68,11 +69,11 @@ construct_alphas <- function(model, constructs) {
 #'
 #'   \itemize{
 #'     \item **Single-item constructs** get 1 under `"rhoA"`, `"rhoC"` and
-#'       `"alpha"` alike. In a model built entirely from single indicators the
+#'       `"cronbach"` alike. In a model built entirely from single indicators the
 #'       argument has no effect at all.
 #'     \item **Mode B (formative) constructs** are where they part company.
 #'       `"rhoA"` returns exactly 1, because internal consistency is undefined
-#'       for a composite and nothing is estimated. `"rhoC"` and `"alpha"` both
+#'       for a composite and nothing is estimated. `"rhoC"` and `"cronbach"` both
 #'       still compute a value from the indicators. That is arguably the less
 #'       honest choice — each presumes a measurement model the construct does
 #'       not have — but it does keep one rule for every multi-item construct.
@@ -90,7 +91,7 @@ construct_alphas <- function(model, constructs) {
 #'   construct's -- so a coefficient between two reflective constructs is
 #'   invariant to whatever sits on any other construct's diagonal.
 #'
-#'   `"alpha"` is offered chiefly for comparison with covariance-based SEM,
+#'   `"cronbach"` is offered chiefly for comparison with covariance-based SEM,
 #'   where rho_A is not available.
 #'
 #' @section Model types:
@@ -157,7 +158,7 @@ congruence_test <- function(seminr_model,
                             seed = 123,
                             alpha = 0.05,
                             threshold = 1,
-                            reliability = c("rhoA", "rhoC", "alpha", "one")) {
+                            reliability = c("rhoA", "rhoC", "cronbach", "one")) {
 
   reliability <- match.arg(reliability)
 
@@ -227,7 +228,7 @@ congruence_test <- function(seminr_model,
     switch(reliability,
       rhoA  = seminr::rho_A(model, constructs)[constructs, 1],
       rhoC  = seminr::rhoC_AVE(x = model)[constructs, 1],
-      alpha = construct_alphas(model, constructs),
+      cronbach = construct_alphas(model, constructs),
       one   = stats::setNames(rep(1, length(constructs)), constructs)
     )
   }
