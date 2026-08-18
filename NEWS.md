@@ -1,4 +1,4 @@
-# seminrExtras (development version)
+# seminrExtras 1.0.3
 
 ### Changed
 
