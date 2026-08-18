@@ -15,9 +15,9 @@ assess_cta(
 )
 }
 \arguments{
-\item{seminr_model}{A PLS-SEM model estimated by [seminr::estimate_pls()].}
+\item{seminr_model}{A PLS-SEM model estimated by \code{\link[seminr:estimate_pls]{seminr::estimate_pls()}}.}
 
-\item{constructs}{Character vector of construct names to test. If `NULL`
+\item{constructs}{Character vector of construct names to test. If \code{NULL}
 (default), all constructs in the model are tested.}
 
 \item{nboot}{Number of bootstrap subsamples (default 5000).}
@@ -26,43 +26,43 @@ assess_cta(
 
 \item{alpha}{Significance level (default 0.05).}
 
-\item{correction}{Multiple testing correction method: `"BH"`
-(Benjamini-Hochberg, default), `"bonferroni"`, or `"none"`.}
+\item{correction}{Multiple testing correction method: \code{"BH"}
+(Benjamini-Hochberg, default), \code{"bonferroni"}, or \code{"none"}.}
 
-\item{borrow}{Logical. If `TRUE` (default), constructs with 2--3
+\item{borrow}{Logical. If \code{TRUE} (default), constructs with 2--3
 indicators borrow indicators from structurally connected constructs
 to reach the minimum of 4 needed for tetrad testing (Gudergan et al.,
-2008, Table 1). If `FALSE`, constructs with fewer than 4 indicators
+2008, Table 1). If \code{FALSE}, constructs with fewer than 4 indicators
 are skipped.}
 }
 \value{
-An S3 object of class `cta_analysis` containing:
+An S3 object of class \code{cta_analysis} containing:
 \describe{
-  \item{construct_results}{Data frame summarising each construct: mode,
-    number of indicators, tetrads tested, significant tetrads, and verdict.}
-  \item{tetrad_details}{Named list of per-construct data frames with
-    individual tetrad estimates, bootstrap CIs, and adjusted p-values.}
-  \item{nboot}{Number of bootstrap subsamples used.}
-  \item{alpha}{Significance level used.}
-  \item{correction}{Multiple testing correction method used.}
-  \item{skipped}{Character vector of constructs that were skipped.}
-  \item{borrowing}{Named list of borrowing details for constructs that
-    borrowed indicators (donor name, mode, and vanishing pattern).}
+\item{construct_results}{Data frame summarising each construct: mode,
+number of indicators, tetrads tested, significant tetrads, and verdict.}
+\item{tetrad_details}{Named list of per-construct data frames with
+individual tetrad estimates, bootstrap CIs, and adjusted p-values.}
+\item{nboot}{Number of bootstrap subsamples used.}
+\item{alpha}{Significance level used.}
+\item{correction}{Multiple testing correction method used.}
+\item{skipped}{Character vector of constructs that were skipped.}
+\item{borrowing}{Named list of borrowing details for constructs that
+borrowed indicators (donor name, mode, and vanishing pattern).}
 }
 }
 \description{
-`assess_cta` tests whether each construct's measurement model is consistent
+\code{assess_cta} tests whether each construct's measurement model is consistent
 with a reflective (common factor) specification. Under a reflective model,
 all vanishing tetrads equal zero. If any tetrad is significantly non-zero
 (after multiple testing correction), the reflective specification is rejected.
 }
 \details{
-**Minimum indicator requirement:** Without borrowing, constructs with fewer
-than 4 indicators are skipped. With `borrow = TRUE` (default), constructs
+\strong{Minimum indicator requirement:} Without borrowing, constructs with fewer
+than 4 indicators are skipped. With \code{borrow = TRUE} (default), constructs
 with 2--3 indicators borrow from structurally adjacent constructs.
 A minimum of 2 own indicators is always required.
 
-**Borrowing rules** (Gudergan et al., 2008, Table 1): For a reflective
+\strong{Borrowing rules} (Gudergan et al., 2008, Table 1): For a reflective
 focal construct with 3 own indicators, 1 indicator is borrowed from an
 adjacent reflective construct; all tetrads vanish under H0. For 2 own
 indicators, 2 are borrowed from any adjacent construct; only the
@@ -72,16 +72,16 @@ via borrowing.
 For HOC constructs, the lower-order constructs
 (LOCs) serve as "indicators"; at least 4 LOCs are required.
 
-**Interaction constructs** (moderation terms with `*` in the name) are
+\strong{Interaction constructs} (moderation terms with \code{*} in the name) are
 automatically excluded because their measurement specification is determined
 by the interaction method, not the data.
 
-**Multiple testing correction:** The number of tetrads grows combinatorially
+\strong{Multiple testing correction:} The number of tetrads grows combinatorially
 with indicators. Benjamini-Hochberg (BH) correction is recommended as the
 default (Cefis et al., 2025). Bonferroni is more conservative. With only
 4 indicators (2 tetrads), correction has minimal impact.
 
-**Sample size:** CTA-PLS requires adequate sample sizes for reliable results.
+\strong{Sample size:} CTA-PLS requires adequate sample sizes for reliable results.
 A warning is issued if N < 200.
 }
 \examples{
@@ -120,13 +120,13 @@ cta_no_borrow <- assess_cta(pls_model, nboot = 50, borrow = FALSE)
 }
 \references{
 Gudergan, S. P., Ringle, C. M., Wende, S. & Will, A. (2008). Confirmatory
-Tetrad Analysis in PLS Path Modeling. *Journal of Business Research*, 61(12),
+Tetrad Analysis in PLS Path Modeling. \emph{Journal of Business Research}, 61(12),
 1238-1249.
 
 Cefis, M., Angelelli, M., Carpita, M. & Ciavolino, E. (2025). Confirmatory
 Tetrad Analysis in PLS-SEM: A Multiple Testing Correction Perspective.
-*Social Indicators Research* (advance online).
+\emph{Social Indicators Research} (advance online).
 }
 \seealso{
-[congruence_test()] for congruence coefficient testing
+\code{\link[=congruence_test]{congruence_test()}} for congruence coefficient testing
 }

@@ -9,16 +9,16 @@ unstable_params(seminr_model, deviant_groups, params = "path_coef")
 \arguments{
 \item{seminr_model}{An estimated SEMinR model.}
 
-\item{deviant_groups}{A `coa_dtree` object from [deviance_tree()], or a
-named list of integer vectors of case indices. When a `coa_dtree` is
-passed, the `$deviant_groups` element is extracted automatically.}
+\item{deviant_groups}{A \code{coa_dtree} object from \code{\link[=deviance_tree]{deviance_tree()}}, or a
+named list of integer vectors of case indices. When a \code{coa_dtree} is
+passed, the \verb{$deviant_groups} element is extracted automatically.}
 
 \item{params}{Character vector of model parameters to diff
-(default `"path_coef"`).}
+(default \code{"path_coef"}).}
 }
 \value{
-An object of class `coa_unstable`: a named list (one entry per group)
-  each containing `cases` and `param_diffs`.
+An object of class \code{coa_unstable}: a named list (one entry per group)
+each containing \code{cases} and \code{param_diffs}.
 }
 \description{
 Identifies unstable model parameters by removing each deviant group
@@ -26,5 +26,5 @@ and re-estimating the model, then computing the difference in specified
 parameters.
 }
 \seealso{
-[assess_coa()], [deviance_tree()]
+\code{\link[=assess_coa]{assess_coa()}}, \code{\link[=deviance_tree]{deviance_tree()}}
 }

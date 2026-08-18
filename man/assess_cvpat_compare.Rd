@@ -39,7 +39,7 @@ assess_cvpat_compare(
 A matrix of the estimated loss and results of significance testing.
 }
 \description{
-`assess_cvpat_compare` conducts a CVPAT significance test of loss between
+\code{assess_cvpat_compare} conducts a CVPAT significance test of loss between
 two models. Use this to determine which of two competing models has
 superior predictive performance.
 }
@@ -114,5 +114,5 @@ yet forsaken? Introducing a cross‐validated predictive ability test in
 partial least squares path modeling. Decision Sciences, 52(2), 362-392.
 }
 \seealso{
-[assess_cvpat()] for single model assessment against benchmarks
+\code{\link[=assess_cvpat]{assess_cvpat()}} for single model assessment against benchmarks
 }

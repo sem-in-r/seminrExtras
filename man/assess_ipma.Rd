@@ -19,8 +19,8 @@ assess_ipma(seminr_model, target, scale_min = 1, scale_max = 7, seed = 123)
 }
 \value{
 An object of class \code{cipma_analysis} (see
-  \code{\link{assess_cipma}} for details). The \code{nca} element will
-  be \code{NULL}.
+\code{\link{assess_cipma}} for details). The \code{nca} element will
+be \code{NULL}.
 }
 \description{
 \code{assess_ipma} conducts an Importance-Performance Map Analysis (IPMA)

@@ -64,7 +64,7 @@ estimate_segment_models <- function(model, assignment, K) {
 #' Returns -Inf if any segment model is NULL (failed estimation).
 #'
 #' Note: seminr's rSquared is a matrix with rows "Rsq"/"AdjRsq" and
-#' construct names as columns, so we index as rs["Rsq", endogenous].
+#' construct names as columns, so we index as rs\["Rsq", endogenous\].
 #' @noRd
 compute_pos_objective <- function(segment_models, endogenous) {
   total <- 0

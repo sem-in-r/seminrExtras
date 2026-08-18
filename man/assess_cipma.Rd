@@ -39,17 +39,17 @@ Set > 0 to obtain significance for the necessity classification.}
 }
 \value{
 An object of class \code{cipma_analysis} containing:
-  \item{importance_unstd}{Named numeric vector of unstandardized total effects}
-  \item{importance_std}{Named numeric vector of standardized total effects}
-  \item{performance}{Named numeric vector of construct performances (0--100)}
-  \item{nca}{An \code{nca_analysis} object (NULL if \code{nca = FALSE})}
-  \item{classification}{Data frame classifying each construct}
-  \item{target}{Name of the target construct}
-  \item{constructs}{Character vector of included constructs}
-  \item{scale_range}{Numeric vector \code{c(scale_min, scale_max)}}
-  \item{negative_weight_constructs}{Constructs with negative outer weights (if any)}
-  \item{excluded_interactions}{Interaction constructs excluded from IPMA}
-  \item{pls_model}{The original estimated seminr model}
+\item{importance_unstd}{Named numeric vector of unstandardized total effects}
+\item{importance_std}{Named numeric vector of standardized total effects}
+\item{performance}{Named numeric vector of construct performances (0--100)}
+\item{nca}{An \code{nca_analysis} object (NULL if \code{nca = FALSE})}
+\item{classification}{Data frame classifying each construct}
+\item{target}{Name of the target construct}
+\item{constructs}{Character vector of included constructs}
+\item{scale_range}{Numeric vector \code{c(scale_min, scale_max)}}
+\item{negative_weight_constructs}{Constructs with negative outer weights (if any)}
+\item{excluded_interactions}{Interaction constructs excluded from IPMA}
+\item{pls_model}{The original estimated seminr model}
 }
 \description{
 \code{assess_cipma} conducts an Importance-Performance Map Analysis (IPMA)
@@ -128,5 +128,5 @@ Introducing the cIPMA. Journal of Retailing and Consumer Services, 78,
 }
 \seealso{
 \code{\link{assess_ipma}} for IPMA without NCA,
-  \code{\link{assess_nca}} for standalone NCA analysis
+\code{\link{assess_nca}} for standalone NCA analysis
 }

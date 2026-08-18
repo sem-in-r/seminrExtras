@@ -36,19 +36,19 @@ number of predictors for any endogenous construct.}
 }
 \value{
 An S3 object of class \code{"pos_analysis"} with components:
-  \describe{
-    \item{K}{Number of segments}
-    \item{segment_assignment}{Integer vector of segment assignments (length N)}
-    \item{segment_sizes}{Named integer vector of segment sizes}
-    \item{segment_models}{List of K re-estimated seminr model objects}
-    \item{segment_rsquared}{Matrix of R-squared values (endogenous x K)}
-    \item{segment_paths}{List of K path coefficient matrices}
-    \item{objective}{Sum of R-squared (objective criterion)}
-    \item{converged}{Whether the best start converged}
-    \item{iterations}{Number of iterations in the best start}
-    \item{nstart}{Number of random starts attempted}
-    \item{all_objectives}{Objective values for all starts}
-  }
+\describe{
+\item{K}{Number of segments}
+\item{segment_assignment}{Integer vector of segment assignments (length N)}
+\item{segment_sizes}{Named integer vector of segment sizes}
+\item{segment_models}{List of K re-estimated seminr model objects}
+\item{segment_rsquared}{Matrix of R-squared values (endogenous x K)}
+\item{segment_paths}{List of K path coefficient matrices}
+\item{objective}{Sum of R-squared (objective criterion)}
+\item{converged}{Whether the best start converged}
+\item{iterations}{Number of iterations in the best start}
+\item{nstart}{Number of random starts attempted}
+\item{all_objectives}{Objective values for all starts}
+}
 }
 \description{
 Performs prediction-oriented segmentation (PLS-POS) to uncover unobserved
@@ -91,5 +91,5 @@ Unobserved Heterogeneity in Structural Equation Models to Avert Validity
 Threats. \emph{MIS Quarterly}, 37(3), 665-694.
 }
 \seealso{
-[assess_fimix()] for probabilistic (EM-based) segmentation
+\code{\link[=assess_fimix]{assess_fimix()}} for probabilistic (EM-based) segmentation
 }

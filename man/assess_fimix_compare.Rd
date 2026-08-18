@@ -29,10 +29,10 @@ change (default 1e-6).}
 }
 \value{
 An object of class \code{fimix_comparison} containing:
-  \item{solutions}{Named list of \code{fimix_analysis} objects (one per K)}
-  \item{fit_table}{Data frame with K as rows and criteria as columns}
-  \item{K_range}{The evaluated K values}
-  \item{pls_model}{The original model}
+\item{solutions}{Named list of \code{fimix_analysis} objects (one per K)}
+\item{fit_table}{Data frame with K as rows and criteria as columns}
+\item{K_range}{The evaluated K values}
+\item{pls_model}{The original model}
 }
 \description{
 \code{assess_fimix_compare} runs \code{\link{assess_fimix}} for each value
@@ -41,7 +41,7 @@ criteria to guide segment number selection.
 }
 \details{
 The recommended approach is to inspect AIC3 and CAIC jointly: when both
-agree on K, accuracy reaches approximately 84\% (Sarstedt et al., 2011).
+agree on K, accuracy reaches approximately 84\\% (Sarstedt et al., 2011).
 AIC4 is the best-performing single criterion. Entropy (EN) indicates
 classification quality but should not be used alone to select K.
 }

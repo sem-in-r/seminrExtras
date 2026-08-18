@@ -9,7 +9,8 @@ congruence_test(
   nboot = 2000,
   seed = 123,
   alpha = 0.05,
-  threshold = 1
+  threshold = 1,
+  reliability = c("rhoA", "rhoC", "cronbach", "one")
 )
 }
 \arguments{
@@ -24,13 +25,46 @@ to 0.05). Used to compute confidence intervals.}
 
 \item{threshold}{The threshold with which to compare significance testing.
 H0: rc < threshold (defaults to 1).}
+
+\item{reliability}{Which reliability estimate to place on the diagonal of the
+construct-correlation matrix: \code{"rhoA"} (default, matches SmartPLS),
+\code{"rhoC"} (composite reliability, the behaviour of seminrExtras <= 1.0.2),
+\code{"cronbach"} (Cronbach's alpha), or \code{"one"} (unity, as permitted by Franke et
+al. (2021) when reliabilities are unknown). Not to be confused with the
+\code{alpha} argument above, which sets the confidence level. The option is named
+\code{"cronbach"} rather than \code{"alpha"} precisely to keep the two apart.
+
+Franke et al. (2021, Eq. 2) specify "the reliabilities" without fixing an
+estimator, so all four are in specification. They agree wherever a
+construct has a well-defined internal consistency and diverge where it does
+not:
+
+\itemize{
+\item \strong{Single-item constructs} get 1 under \code{"rhoA"}, \code{"rhoC"} and
+\code{"cronbach"} alike. In a model built entirely from single indicators the
+argument has no effect at all.
+\item \strong{Mode B (formative) constructs} are where they part company.
+\code{"rhoA"} returns exactly 1, because internal consistency is undefined
+for a composite and nothing is estimated. \code{"rhoC"} and \code{"cronbach"} both
+still compute a value from the indicators. That is arguably the less
+honest choice — each presumes a measurement model the construct does
+not have — but it does keep one rule for every multi-item construct.
+}
+
+Note that this only ever affects pairs that \strong{involve} a Mode B construct.
+Each column of the matrix carries exactly one reliability -- its own
+construct's -- so a coefficient between two reflective constructs is
+invariant to whatever sits on any other construct's diagonal.
+
+\code{"cronbach"} is offered chiefly for comparison with covariance-based SEM,
+where rho_A is not available.}
 }
 \value{
 A list containing a matrix of congruence coefficients and
-  significance test results for all construct pairs.
+significance test results for all construct pairs.
 }
 \description{
-`congruence_test` conducts a bootstrapped significance test of congruence
+\code{congruence_test} conducts a bootstrapped significance test of congruence
 coefficients between all pairs of constructs in a PLS-SEM model.
 }
 \details{
@@ -38,6 +72,22 @@ The congruence coefficient (rc) measures how similarly two constructs
 relate to other constructs in the model. Values close to 1 indicate high
 congruence. The test evaluates H0: rc < threshold (default = 1).
 }
+\section{Model types}{
+
+\strong{Interaction constructs are excluded} from the construct set — entirely,
+not merely from the pair list, since Eq. 2 sums over the whole set. An
+interaction term's measurement is fixed by the product method rather than by
+theory, so its position in a nomological network is not interpretable. A
+message names any construct dropped. This matches \code{\link[=assess_cta]{assess_cta()}},
+\code{\link[=assess_pos]{assess_pos()}}, \code{\link[=assess_pcm]{assess_pcm()}} and \code{\link[=assess_cipma]{assess_cipma()}}.
+
+\strong{Higher-order models are not supported} and are refused with a warning. Two-
+stage estimation replaces the lower-order constructs with a single
+higher-order composite, and it has not been established what belongs on that
+composite's diagonal, nor whether a congruence coefficient between a
+higher-order and a first-order construct is interpretable.
+}
+
 \examples{
 # Load libraries
 library(seminr)
@@ -80,5 +130,5 @@ measure congruence in nomological networks. Journal of Business Research,
 130, 318-334.
 }
 \seealso{
-[assess_cvpat()] and [assess_cvpat_compare()] for predictive validity testing
+\code{\link[=assess_cvpat]{assess_cvpat()}} and \code{\link[=assess_cvpat_compare]{assess_cvpat_compare()}} for predictive validity testing
 }

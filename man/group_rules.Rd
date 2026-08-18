@@ -7,24 +7,24 @@
 group_rules(group_name, coa_result = NULL)
 }
 \arguments{
-\item{group_name}{A `coa_analysis` object (to get rules for all groups),
-a `coa_dtree` object, or a single uppercase letter identifying a specific
+\item{group_name}{A \code{coa_analysis} object (to get rules for all groups),
+a \code{coa_dtree} object, or a single uppercase letter identifying a specific
 group (e.g., \code{"A"}).}
 
-\item{coa_result}{A `coa_analysis` object from [assess_coa()]. Required
+\item{coa_result}{A \code{coa_analysis} object from \code{\link[=assess_coa]{assess_coa()}}. Required
 only when \code{group_name} is a character group letter.}
 }
 \value{
 A data frame (or named list of data frames) with columns
-  `construct`, `gte`, and `lt` describing the construct score ranges
-  that define each group.
+\code{construct}, \code{gte}, and \code{lt} describing the construct score ranges
+that define each group.
 }
 \description{
 Returns the decision tree split criteria that define deviant group(s).
-When called with a single `coa_analysis` or `coa_dtree` object, returns
+When called with a single \code{coa_analysis} or \code{coa_dtree} object, returns
 rules for all deviant groups. When called with a group name and a
-`coa_analysis` object, returns rules for that specific group.
+\code{coa_analysis} object, returns rules for that specific group.
 }
 \seealso{
-[assess_coa()], [competes()]
+\code{\link[=assess_coa]{assess_coa()}}, \code{\link[=competes]{competes()}}
 }

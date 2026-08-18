@@ -42,16 +42,16 @@ computation time by the number of thresholds.}
 }
 \value{
 An object of class \code{nca_esse} containing:
-  \item{effect_sizes}{Matrix of empirical effect sizes (thresholds x predictors)}
-  \item{benchmark}{Matrix of theoretical benchmark effect sizes}
-  \item{delta}{Matrix of empirical minus benchmark differences}
-  \item{significance}{Matrix of p-values (NULL if test.rep = 0)}
-  \item{pls_model}{The original estimated seminr model}
-  \item{target}{Name of the target construct}
-  \item{predictors}{Character vector of predictor names}
-  \item{thresholds}{Numeric vector of ECDF thresholds used}
-  \item{ceiling}{Ceiling technique used}
-  \item{n_obs}{Number of observations}
+\item{effect_sizes}{Matrix of empirical effect sizes (thresholds x predictors)}
+\item{benchmark}{Matrix of theoretical benchmark effect sizes}
+\item{delta}{Matrix of empirical minus benchmark differences}
+\item{significance}{Matrix of p-values (NULL if test.rep = 0)}
+\item{pls_model}{The original estimated seminr model}
+\item{target}{Name of the target construct}
+\item{predictors}{Character vector of predictor names}
+\item{thresholds}{Numeric vector of ECDF thresholds used}
+\item{ceiling}{Ceiling technique used}
+\item{n_obs}{Number of observations}
 }
 \description{
 \code{assess_nca_esse} applies the NCA-ESSE method (Becker et al., 2026)
@@ -63,13 +63,13 @@ distribution) to determine whether a necessary condition is robust.
 \details{
 The method proceeds in three steps:
 \enumerate{
-  \item Run standard NCA (threshold 0\%) to identify potential necessary
-    conditions
-  \item Apply NCA-ESSE: vary the ECDF threshold from 0\% to a maximum
-    (default 5\%), computing CE-FDH effect sizes at each level and
-    comparing against the uniform benchmark
-  \item (Optional) Select a threshold where the empirical effect size
-    meaningfully exceeds the benchmark for further evaluation
+\item Run standard NCA (threshold 0\\%) to identify potential necessary
+conditions
+\item Apply NCA-ESSE: vary the ECDF threshold from 0\\% to a maximum
+(default 5\\%), computing CE-FDH effect sizes at each level and
+comparing against the uniform benchmark
+\item (Optional) Select a threshold where the empirical effect size
+meaningfully exceeds the benchmark for further evaluation
 }
 
 At each threshold \code{t}, observations whose joint ECDF_NCA value

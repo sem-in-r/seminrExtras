@@ -34,17 +34,19 @@ assess_cvpat(
 }
 \value{
 A list containing two matrices: CVPAT_compare_LM (comparison with
-  linear model) and CVPAT_compare_IA (comparison with indicator average).
+linear model) and CVPAT_compare_IA (comparison with indicator average).
 }
 \description{
-`assess_cvpat` conducts a single model CVPAT assessment against item average
+\code{assess_cvpat} conducts a single model CVPAT assessment against item average
 and linear model prediction benchmarks. Use this to determine whether your
 PLS model has meaningful predictive power.
 }
 \details{
 Two benchmarks are used:
-- **Linear Model (LM)**: Multiple regression predicting each item
-- **Indicator Average (IA)**: Naive benchmark using training set means
+\itemize{
+\item \strong{Linear Model (LM)}: Multiple regression predicting each item
+\item \strong{Indicator Average (IA)}: Naive benchmark using training set means
+}
 
 If PLS loss < LM loss (significantly), the structural model adds predictive value.
 If PLS loss < IA loss (significantly), the model has basic predictive relevance.
@@ -100,5 +102,5 @@ yet forsaken? Introducing a cross‐validated predictive ability test in
 partial least squares path modeling. Decision Sciences, 52(2), 362-392.
 }
 \seealso{
-[assess_cvpat_compare()] for comparing two PLS models
+\code{\link[=assess_cvpat_compare]{assess_cvpat_compare()}} for comparing two PLS models
 }

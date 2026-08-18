@@ -47,7 +47,7 @@ get_ce_fdh_peers <- function(x, y) {
 
 #' Compute CE-FDH effect size d = ceiling_zone / scope.
 #' The ceiling zone is the empty area above the step-function ceiling
-#' within the scope rectangle [min(x),max(x)] x [min(y),max(y)].
+#' within the scope rectangle \[min(x),max(x)\] x \[min(y),max(y)\].
 #' @noRd
 ce_fdh_effect_size <- function(x, y) {
   x_range <- range(x)
@@ -719,7 +719,7 @@ benchmark_effect_size <- function(t) {
 #' @param predictors Optional character vector of predictor construct names.
 #'   If \code{NULL} (default), auto-detected from the structural model.
 #' @param thresholds Numeric vector of ECDF thresholds to evaluate
-#'   (default \code{seq(0, 0.05, by = 0.005)}). Values must be in [0, 1].
+#'   (default \code{seq(0, 0.05, by = 0.005)}). Values must be in \[0, 1\].
 #' @param ceiling Ceiling technique (default \code{"ce_fdh"}). The analytical
 #'   benchmark is derived for CE-FDH; other techniques will trigger a warning.
 #' @param test.rep Number of permutation test repetitions at each threshold

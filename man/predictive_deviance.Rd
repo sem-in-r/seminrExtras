@@ -20,7 +20,7 @@ predictive_deviance(
 
 \item{focal_construct}{Name of the construct to analyze.}
 
-\item{technique}{Prediction technique (default `predict_DA`).}
+\item{technique}{Prediction technique (default \code{predict_DA}).}
 
 \item{noFolds}{Number of CV folds (default 10).}
 
@@ -30,15 +30,15 @@ predictive_deviance(
 
 \item{seed}{Random seed (default 123).}
 
-\item{predict_model}{Optional pre-computed `predict_pls_model` object.}
+\item{predict_model}{Optional pre-computed \code{predict_pls_model} object.}
 }
 \value{
-An object of class `coa_deviance` containing PD values, metrics,
-  and the data frame used for tree construction.
+An object of class \code{coa_deviance} containing PD values, metrics,
+and the data frame used for tree construction.
 }
 \description{
 Computes per-case predictive deviance (PD) for a focal construct using
-k-fold cross-validated predictions from `predict_pls()`.
+k-fold cross-validated predictions from \code{predict_pls()}.
 }
 \details{
 PD = in-sample fitted score - out-of-sample predicted score.
@@ -46,5 +46,5 @@ High PD indicates a case that is well-fitted in-sample but poorly predicted
 out-of-sample, suggesting overfit.
 }
 \seealso{
-[assess_coa()], [deviance_tree()]
+\code{\link[=assess_coa]{assess_coa()}}, \code{\link[=deviance_tree]{deviance_tree()}}
 }

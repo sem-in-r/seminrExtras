@@ -7,10 +7,10 @@
 \method{plot}{coa_analysis}(x, type = c("pd", "groups", "tree"), ...)
 }
 \arguments{
-\item{x}{A `coa_analysis` object from `assess_coa()`.}
+\item{x}{A \code{coa_analysis} object from \code{assess_coa()}.}
 
-\item{type}{One of `"pd"` (predictive deviance scatter), `"groups"`
-(average construct scores per group), or `"tree"` (rpart tree diagram).}
+\item{type}{One of \code{"pd"} (predictive deviance scatter), \code{"groups"}
+(average construct scores per group), or \code{"tree"} (rpart tree diagram).}
 
 \item{...}{Additional arguments passed to the underlying plot function.}
 }

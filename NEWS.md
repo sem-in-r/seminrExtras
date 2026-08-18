@@ -1,3 +1,51 @@
+# seminrExtras (development version)
+
+### Changed
+
+* `congruence_test()` now **excludes interaction constructs**, naming any it
+  drops in a message. An interaction term's measurement is fixed by the product
+  method rather than by theory, so its position in a nomological network is not
+  interpretable — and it was previously producing coefficients as low as -0.47
+  in a framework built around near-redundancy. It is removed from the construct
+  set entirely rather than only from the pair list, because Eq. 2 sums over the
+  whole set: coefficients for the remaining pairs change accordingly. This
+  brings congruence into line with `assess_cta()`, `assess_pos()`,
+  `assess_pcm()` and `assess_cipma()`, which already excluded them.
+
+* `congruence_test()` now **refuses higher-order models** with a warning rather
+  than returning a number. Two-stage estimation replaces the lower-order
+  constructs with a single higher-order composite, and it has not been
+  established what belongs on that composite's diagonal, nor whether a
+  congruence coefficient between a higher-order and a first-order construct is
+  interpretable. Previously such models ran and returned results.
+
+* `congruence_test()` gains a `reliability` argument selecting which estimate
+  sits on the diagonal of the construct-correlation matrix: `"rhoA"`, `"rhoC"`,
+  `"cronbach"` (Cronbach's alpha) or `"one"`. `"cronbach"` is included chiefly for
+  comparison with covariance-based SEM, where rho_A is unavailable. Franke, Sarstedt & Danks (2021, Eq. 2) specify "the reliabilities"
+  without fixing an estimator, so all four are in specification.
+
+* **The default is now `"rhoA"`, changed from the previous `"rhoC"`.** This
+  aligns seminrExtras with SmartPLS: on the simple corporate reputation model
+  the `"rhoA"` diagonal reproduces SmartPLS's published coefficients to three
+  decimal places on all six construct pairs, and the estimator choice accounts
+  for the whole of the previous disagreement between the two programs. Pass
+  `reliability = "rhoC"` to reproduce results generated with 1.0.2 or earlier.
+
+  The estimators differ only where internal consistency is undefined. `"rhoA"`,
+  `"rhoC"` and `"cronbach"` all return 1 for single-item constructs, so every
+  option coincides in a model built entirely from single indicators. They part
+  company on Mode B constructs: `"rhoA"` returns 1, while `"rhoC"` and
+  `"cronbach"` compute a value from the indicators. Note this only affects pairs
+  that involve a Mode B construct — each matrix column carries exactly one
+  reliability, its own construct's, so a coefficient between two reflective
+  constructs is invariant to every other construct's diagonal. In a model mixing Mode A and Mode B the `"rhoA"`
+  diagonal is therefore set by measurement mode rather than by the data, which
+  shifts coefficients systematically — on the extended corporate reputation
+  model, reflective-reflective pairs rise while formative-formative pairs fall,
+  and the ranking of most-congruent pairs changes. `"one"` removes the
+  distinction by treating every construct alike.
+
 # seminrExtras 1.0.2
 
 ### Fixed

@@ -149,7 +149,7 @@ compute_observation_performance <- function(model, constructs, scale_min, scale_
 
 #' Compute total effects matrix from a path coefficient matrix.
 #'
-#' Total effects T = (I - B)^{-1} - I, where B[from, to] is the
+#' Total effects T = (I - B)^{-1} - I, where B\[from, to\] is the
 #' direct path coefficient from construct 'from' to construct 'to'.
 #' @noRd
 compute_total_effects <- function(path_coef_matrix) {
@@ -326,7 +326,7 @@ assess_ipma <- function(seminr_model,
 #'
 #' \strong{Performance} is the weighted average of rescaled indicator means,
 #' where each indicator is rescaled from the original measurement scale
-#' ([\code{scale_min}, \code{scale_max}]) to 0--100. Weights are the PLS
+#' (\[\code{scale_min}, \code{scale_max}\]) to 0--100. Weights are the PLS
 #' outer weights, which must all be positive for valid IPMA rescaling.
 #'
 #' Interaction constructs (e.g., \code{"X*W"}) are automatically excluded
