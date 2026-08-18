@@ -197,9 +197,13 @@ reference_rc <- function(model, X, Y, reliability = "rhoA") {
   m <- stats::cor(model$construct_scores)
   cn <- colnames(m)
   diag(m) <- switch(reliability,
-    rhoA = seminr::rho_A(model, cn)[cn, 1],
-    rhoC = seminr::rhoC_AVE(model)[cn, 1],
-    one  = rep(1, length(cn))
+    rhoA  = seminr::rho_A(model, cn)[cn, 1],
+    rhoC  = seminr::rhoC_AVE(model)[cn, 1],
+    # Oracle for alpha: seminr's own summary(). Independent of the package's
+    # implementation, which computes alpha locally (summary() is ~400x slower
+    # and cannot be called inside the bootstrap loop).
+    alpha = suppressWarnings(summary(model)$reliability)[cn, "alpha"],
+    one   = rep(1, length(cn))
   )
   sum(m[, X] * m[, Y]) / sqrt(sum(m[, X]^2) * sum(m[, Y]^2))
 }
@@ -447,4 +451,60 @@ test_that("interaction constructs are excluded from the analysis entirely", {
   expected <- sum(m[, "COMP"] * m[, "CUSL"]) /
     sqrt(sum(m[, "COMP"]^2) * sum(m[, "CUSL"]^2))
   expect_equal(est_for_pair(result, "COMP -> CUSL"), expected, tolerance = 1e-8)
+})
+
+test_that("reliability = 'alpha' puts Cronbach's alpha on the diagonal", {
+  # ORACLE: seminr's own summary()$reliability alpha column.
+  result <- congruence_test(smartpls_model, nboot = 20, seed = 123,
+                            reliability = "alpha")
+  for (pair in names(smartpls_rc)) {
+    cs <- trimws(strsplit(pair, "->", fixed = TRUE)[[1]])
+    expect_equal(
+      est_for_pair(result, pair),
+      reference_rc(smartpls_model, cs[1], cs[2], reliability = "alpha"),
+      tolerance = 1e-8, info = pair
+    )
+  }
+})
+
+test_that("alpha is estimated for Mode B constructs, unlike rhoA", {
+  # rhoA returns exactly 1 for Mode B (internal consistency is undefined for a
+  # composite); alpha and rhoC both compute a value. This is the reason alpha
+  # is offered: it applies one rule to every multi-item construct, which makes
+  # it comparable with CB-SEM where rhoA is unavailable.
+  mb_mm <- constructs(
+    composite("QUAL", multi_items("qual_", 1:8), weights = mode_B),
+    composite("PERF", multi_items("perf_", 1:5), weights = mode_B),
+    composite("COMP", multi_items("comp_", 1:3)),
+    composite("CUSL", multi_items("cusl_", 1:3))
+  )
+  mb_sm <- relationships(paths(from = c("QUAL", "PERF"), to = "COMP"),
+                         paths(from = "COMP", to = "CUSL"))
+  mb_model <- estimate_pls(corp_rep_data, mb_mm, mb_sm,
+                           missing = mean_replacement, missing_value = "-99")
+  cn <- colnames(mb_model$construct_scores)
+  ref <- suppressWarnings(summary(mb_model)$reliability)
+
+  # rhoA pins the two Mode B constructs at unity; alpha does not.
+  expect_equal(unname(seminr::rho_A(mb_model, cn)[c("QUAL", "PERF"), 1]), c(1, 1))
+  expect_true(all(ref[c("QUAL", "PERF"), "alpha"] < 1))
+
+  # So the two estimators must disagree on this model.
+  a <- congruence_test(mb_model, nboot = 5, seed = 1, reliability = "alpha")$results[, "Original Est."]
+  r <- congruence_test(mb_model, nboot = 5, seed = 1, reliability = "rhoA")$results[, "Original Est."]
+  expect_false(isTRUE(all.equal(a, r)))
+})
+
+test_that("alpha matches seminr's own computation for every construct", {
+  # Guards the local reimplementation against drift from seminr's cronbachs_alpha.
+  cn <- colnames(smartpls_model$construct_scores)
+  ref <- suppressWarnings(summary(smartpls_model)$reliability)[cn, "alpha"]
+  got <- vapply(cn, function(x) {
+    items <- seminr::construct_items(smartpls_model$mmMatrix, x)
+    if (length(items) < 2) return(1)
+    cm <- stats::cor(smartpls_model$data)[items, items]
+    k <- nrow(cm)
+    (k / (k - 1)) * (1 - sum(diag(cm)) / sum(cm))
+  }, numeric(1))
+  expect_equal(unname(got), unname(ref), tolerance = 1e-10)
 })

@@ -21,8 +21,9 @@
 
 * `congruence_test()` gains a `reliability` argument selecting which estimate
   sits on the diagonal of the construct-correlation matrix: `"rhoA"`, `"rhoC"`,
-  or `"one"`. Franke, Sarstedt & Danks (2021, Eq. 2) specify "the reliabilities"
-  without fixing an estimator, so all three are in specification.
+  `"alpha"` (Cronbach's alpha) or `"one"`. `"alpha"` is included chiefly for
+  comparison with covariance-based SEM, where rho_A is unavailable. Franke, Sarstedt & Danks (2021, Eq. 2) specify "the reliabilities"
+  without fixing an estimator, so all four are in specification.
 
 * **The default is now `"rhoA"`, changed from the previous `"rhoC"`.** This
   aligns seminrExtras with SmartPLS: on the simple corporate reputation model
@@ -31,11 +32,14 @@
   for the whole of the previous disagreement between the two programs. Pass
   `reliability = "rhoC"` to reproduce results generated with 1.0.2 or earlier.
 
-  The estimators differ only where internal consistency is undefined. Both
-  `"rhoA"` and `"rhoC"` return 1 for single-item constructs, so all three
-  options coincide in a model built entirely from single indicators. They part
-  company on Mode B constructs: `"rhoA"` returns 1, while `"rhoC"` computes a
-  value from the loadings. In a model mixing Mode A and Mode B the `"rhoA"`
+  The estimators differ only where internal consistency is undefined. `"rhoA"`,
+  `"rhoC"` and `"alpha"` all return 1 for single-item constructs, so every
+  option coincides in a model built entirely from single indicators. They part
+  company on Mode B constructs: `"rhoA"` returns 1, while `"rhoC"` and
+  `"alpha"` compute a value from the indicators. Note this only affects pairs
+  that involve a Mode B construct — each matrix column carries exactly one
+  reliability, its own construct's, so a coefficient between two reflective
+  constructs is invariant to every other construct's diagonal. In a model mixing Mode A and Mode B the `"rhoA"`
   diagonal is therefore set by measurement mode rather than by the data, which
   shifts coefficients systematically — on the extended corporate reputation
   model, reflective-reflective pairs rise while formative-formative pairs fall,

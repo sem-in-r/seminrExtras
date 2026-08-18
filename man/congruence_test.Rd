@@ -10,7 +10,7 @@ congruence_test(
   seed = 123,
   alpha = 0.05,
   threshold = 1,
-  reliability = c("rhoA", "rhoC", "one")
+  reliability = c("rhoA", "rhoC", "alpha", "one")
 )
 }
 \arguments{
@@ -29,23 +29,39 @@ H0: rc < threshold (defaults to 1).}
 \item{reliability}{Which reliability estimate to place on the diagonal of the
 construct-correlation matrix: \code{"rhoA"} (default, matches SmartPLS),
 \code{"rhoC"} (composite reliability, the behaviour of seminrExtras <= 1.0.2),
-or \code{"one"} (unity, as permitted by Franke et al. (2021) when reliabilities
-are unknown).
+\code{"alpha"} (Cronbach's alpha), or \code{"one"} (unity, as permitted by
+Franke et al. (2021) when reliabilities are unknown). Not to be confused with
+the \code{alpha} argument above, which sets the confidence level.
 
-The three differ only where internal consistency is undefined. Both
-\code{"rhoA"} and \code{"rhoC"} return exactly 1 for \strong{single-item}
-constructs, so the estimators are indistinguishable in a model built entirely
-from single indicators. They part company on \strong{Mode B} constructs:
-\code{"rhoA"} returns 1 (nothing is estimated — internal consistency is
-undefined for a composite) while \code{"rhoC"} still computes a value from the
-loadings.
+Franke et al. (2021, Eq. 2) specify "the reliabilities" without fixing an
+estimator, so all four are in specification. They agree wherever a construct has
+a well-defined internal consistency and diverge where it does not.
 
-That difference matters in a model mixing Mode A and Mode B. Under
-\code{"rhoA"} the diagonal is then set by measurement mode rather than by the
-data, shifting congruence coefficients systematically: on the extended
-corporate reputation model, reflective-reflective pairs rise while
-formative-formative pairs fall, changing which pairs rank as most congruent.
-\code{"one"} removes the distinction entirely by treating every construct alike.}
+\strong{Single-item constructs} get 1 under \code{"rhoA"}, \code{"rhoC"} and
+\code{"alpha"} alike; in a model built entirely from single indicators the
+argument has no effect at all.
+
+\strong{Mode B (formative) constructs} are where they part company.
+\code{"rhoA"} returns exactly 1, because internal consistency is undefined for a
+composite and nothing is estimated. \code{"rhoC"} and \code{"alpha"} both still
+compute a value from the indicators — arguably the less honest choice, since
+each presumes a measurement model the construct does not have, but it does keep
+one rule for every multi-item construct.
+
+The consequence in a model mixing Mode A and Mode B: under \code{"rhoA"} the
+diagonal is set by measurement mode rather than by the data, which shifts
+coefficients systematically. On the extended corporate reputation model, moving
+from \code{"rhoC"} to \code{"rhoA"} raises reflective-reflective pairs by about
++0.008 and lowers formative-formative pairs by about -0.022, reordering the
+most-congruent pairs.
+
+This only ever affects pairs that \strong{involve} a Mode B construct. Each
+column of the matrix carries exactly one reliability — its own construct's — so
+a coefficient between two reflective constructs is invariant to whatever sits on
+any other construct's diagonal.
+
+\code{"alpha"} is offered chiefly for comparison with covariance-based SEM,
+where rho_A is not available.}
 }
 \section{Model types}{
 \strong{Interaction constructs are excluded} from the construct set — entirely,

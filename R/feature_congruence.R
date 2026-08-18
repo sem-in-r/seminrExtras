@@ -12,6 +12,32 @@
 # high congruence (the constructs behave similarly in the nomological network).
 # =============================================================================
 
+# Standardised Cronbach's alpha per construct.
+#
+# Mirrors seminr's internal cronbachs_alpha(): the correlation matrix of a
+# construct's items, alpha = (k/(k-1))(1 - sum(diag)/sum(all)), and 1 for any
+# single-indicator construct. Reimplemented here rather than taken from
+# summary()$reliability because summary() is roughly 400x more expensive and
+# this runs once per bootstrap resample -- ~10 minutes of overhead at the
+# default nboot = 2000. Uses only exported seminr functions.
+#
+# @param model A fitted seminr model.
+# @param constructs Character vector of construct names.
+# @return Named numeric vector of alphas, in the order of `constructs`.
+# @noRd
+construct_alphas <- function(model, constructs) {
+  item_cors <- stats::cor(model$data)
+  vapply(constructs, function(cn) {
+    items <- seminr::construct_items(model$mmMatrix, cn)
+    if (length(items) < 2) {
+      return(1)
+    }
+    cm <- item_cors[items, items, drop = FALSE]
+    k <- nrow(cm)
+    (k / (k - 1)) * (1 - sum(diag(cm)) / sum(cm))
+  }, numeric(1))
+}
+
 #' Bootstrap congruence coefficient test
 #'
 #' `congruence_test` conducts a bootstrapped significance test of congruence
@@ -31,23 +57,41 @@
 #' @param reliability Which reliability estimate to place on the diagonal of the
 #'   construct-correlation matrix: `"rhoA"` (default, matches SmartPLS),
 #'   `"rhoC"` (composite reliability, the behaviour of seminrExtras <= 1.0.2),
-#'   or `"one"` (unity, as permitted by Franke et al. (2021) when reliabilities
-#'   are unknown).
+#'   `"alpha"` (Cronbach's alpha), or `"one"` (unity, as permitted by Franke et
+#'   al. (2021) when reliabilities are unknown). Not to be confused with the
+#'   `alpha` argument above, which sets the confidence level.
 #'
-#'   The three differ only where internal consistency is undefined. Both
-#'   `"rhoA"` and `"rhoC"` return exactly 1 for **single-item** constructs, so
-#'   the estimators are indistinguishable in a model built entirely from single
-#'   indicators. They part company on **Mode B** constructs: `"rhoA"` returns 1
-#'   (nothing is estimated — internal consistency is undefined for a composite)
-#'   while `"rhoC"` still computes a value from the loadings.
+#'   Franke et al. (2021, Eq. 2) specify "the reliabilities" without fixing an
+#'   estimator, so all four are in specification. They agree wherever a
+#'   construct has a well-defined internal consistency and diverge where it does
+#'   not:
 #'
-#'   That difference matters in a model mixing Mode A and Mode B. Under
-#'   `"rhoA"` the diagonal is then set by measurement mode rather than by the
-#'   data, shifting congruence coefficients systematically: on the extended
-#'   corporate reputation model, reflective-reflective pairs rise while
-#'   formative-formative pairs fall, changing which pairs rank as most
-#'   congruent. `"one"` removes the distinction entirely by treating every
-#'   construct alike.
+#'   \itemize{
+#'     \item **Single-item constructs** get 1 under `"rhoA"`, `"rhoC"` and
+#'       `"alpha"` alike. In a model built entirely from single indicators the
+#'       argument has no effect at all.
+#'     \item **Mode B (formative) constructs** are where they part company.
+#'       `"rhoA"` returns exactly 1, because internal consistency is undefined
+#'       for a composite and nothing is estimated. `"rhoC"` and `"alpha"` both
+#'       still compute a value from the indicators. That is arguably the less
+#'       honest choice — each presumes a measurement model the construct does
+#'       not have — but it does keep one rule for every multi-item construct.
+#'   }
+#'
+#'   The consequence in a model mixing Mode A and Mode B: under `"rhoA"` the
+#'   diagonal is set by measurement mode rather than by the data, which shifts
+#'   coefficients systematically. On the extended corporate reputation model,
+#'   moving from `"rhoC"` to `"rhoA"` raises reflective-reflective pairs by
+#'   about +0.008 and lowers formative-formative pairs by about -0.022,
+#'   reordering the most-congruent pairs.
+#'
+#'   Note that this only ever affects pairs that **involve** a Mode B construct.
+#'   Each column of the matrix carries exactly one reliability -- its own
+#'   construct's -- so a coefficient between two reflective constructs is
+#'   invariant to whatever sits on any other construct's diagonal.
+#'
+#'   `"alpha"` is offered chiefly for comparison with covariance-based SEM,
+#'   where rho_A is not available.
 #'
 #' @section Model types:
 #' **Interaction constructs are excluded** from the construct set — entirely,
@@ -113,7 +157,7 @@ congruence_test <- function(seminr_model,
                             seed = 123,
                             alpha = 0.05,
                             threshold = 1,
-                            reliability = c("rhoA", "rhoC", "one")) {
+                            reliability = c("rhoA", "rhoC", "alpha", "one")) {
 
   reliability <- match.arg(reliability)
 
@@ -181,9 +225,10 @@ congruence_test <- function(seminr_model,
   # rather than the original fit's.
   diagonal_values <- function(model, constructs) {
     switch(reliability,
-      rhoA = seminr::rho_A(model, constructs)[constructs, 1],
-      rhoC = seminr::rhoC_AVE(x = model)[constructs, 1],
-      one  = stats::setNames(rep(1, length(constructs)), constructs)
+      rhoA  = seminr::rho_A(model, constructs)[constructs, 1],
+      rhoC  = seminr::rhoC_AVE(x = model)[constructs, 1],
+      alpha = construct_alphas(model, constructs),
+      one   = stats::setNames(rep(1, length(constructs)), constructs)
     )
   }
 
