@@ -46,6 +46,13 @@
   and the ranking of most-congruent pairs changes. `"one"` removes the
   distinction by treating every construct alike.
 
+### Internal
+
+* Reduced test-suite runtime substantially (CVPAT tests now use fewer
+  cross-validation folds and bootstrap subsamples; the PLS-POS comparison is
+  pre-computed once and reused) so the package builds well within CRAN's
+  check-time limits. No change to user-facing behaviour or coverage.
+
 # seminrExtras 1.0.2
 
 ### Fixed
@@ -61,13 +68,6 @@
   were correct; only their pair labels were wrong. Added a regression test
   asserting pair-label correctness against an independent name-indexed
   reference.
-
-### Internal
-
-* Reduced test-suite runtime substantially (CVPAT tests now use fewer
-  cross-validation folds and bootstrap subsamples; the PLS-POS comparison is
-  pre-computed once and reused) so the package builds well within CRAN's
-  check-time limits. No change to user-facing behaviour or coverage.
 
 # seminrExtras 1.0.1
 
