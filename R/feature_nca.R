@@ -719,7 +719,7 @@ benchmark_effect_size <- function(t) {
 #' @param predictors Optional character vector of predictor construct names.
 #'   If \code{NULL} (default), auto-detected from the structural model.
 #' @param thresholds Numeric vector of ECDF thresholds to evaluate
-#'   (default \code{seq(0, 0.05, by = 0.005)}). Values must be in [0, 1].
+#'   (default \code{seq(0, 0.05, by = 0.005)}). Values must be in \[0, 1\].
 #' @param ceiling Ceiling technique (default \code{"ce_fdh"}). The analytical
 #'   benchmark is derived for CE-FDH; other techniques will trigger a warning.
 #' @param test.rep Number of permutation test repetitions at each threshold

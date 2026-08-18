@@ -7,15 +7,15 @@
 competes(node_id, dtree = NULL)
 }
 \arguments{
-\item{node_id}{A `coa_dtree` object (to get competing splits for all
+\item{node_id}{A \code{coa_dtree} object (to get competing splits for all
 group roots), or an integer node ID from the rpart tree.}
 
-\item{dtree}{A `coa_dtree` object (from `coa_result$deviance_tree`).
+\item{dtree}{A \code{coa_dtree} object (from \code{coa_result$deviance_tree}).
 Required only when \code{node_id} is an integer.}
 }
 \value{
 A data frame (or named list of data frames) with columns
-  `criterion`, `sign`, `value`, and `improve`.
+\code{criterion}, \code{sign}, \code{value}, and \code{improve}.
 }
 \description{
 Shows all competing split variables at tree nodes, ranked by improvement.
@@ -23,10 +23,10 @@ Useful for understanding which constructs nearly split instead of the
 chosen variable.
 }
 \details{
-When called with a single `coa_dtree` object, returns competing splits
+When called with a single \code{coa_dtree} object, returns competing splits
 at all deviant group root nodes. When called with a node ID and a
-`coa_dtree` object, returns competing splits at that specific node.
+\code{coa_dtree} object, returns competing splits at that specific node.
 }
 \seealso{
-[group_rules()], [assess_coa()]
+\code{\link[=group_rules]{group_rules()}}, \code{\link[=assess_coa]{assess_coa()}}
 }

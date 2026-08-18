@@ -17,5 +17,5 @@ Returns a list of fully re-estimated PLS models, one per segment, using the
 hard segment assignment from PLS-POS.
 }
 \seealso{
-[assess_pos()] for running PLS-POS segmentation
+\code{\link[=assess_pos]{assess_pos()}} for running PLS-POS segmentation
 }

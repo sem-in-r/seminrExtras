@@ -38,17 +38,17 @@ testing (default 1000). Set to 0 to skip significance testing.}
 }
 \value{
 An object of class \code{nca_analysis} containing:
-  \item{nca_raw}{Reserved (always NULL)}
-  \item{effect_sizes}{Matrix of effect sizes (d) per predictor and ceiling}
-  \item{significance}{Matrix of p-values per predictor and ceiling (NULL if test.rep = 0)}
-  \item{bottleneck}{List of bottleneck tables, one per ceiling technique}
-  \item{pls_model}{The original estimated seminr model}
-  \item{target}{Name of the target construct}
-  \item{predictors}{Character vector of predictor names used}
-  \item{ceilings}{Character vector of ceiling techniques used}
+\item{nca_raw}{Reserved (always NULL)}
+\item{effect_sizes}{Matrix of effect sizes (d) per predictor and ceiling}
+\item{significance}{Matrix of p-values per predictor and ceiling (NULL if test.rep = 0)}
+\item{bottleneck}{List of bottleneck tables, one per ceiling technique}
+\item{pls_model}{The original estimated seminr model}
+\item{target}{Name of the target construct}
+\item{predictors}{Character vector of predictor names used}
+\item{ceilings}{Character vector of ceiling techniques used}
 }
 \description{
-`assess_nca` conducts a Necessary Condition Analysis on construct scores
+\code{assess_nca} conducts a Necessary Condition Analysis on construct scores
 from an estimated PLS-SEM model. It identifies whether predictors are
 necessary conditions for achieving a given level of the target construct.
 }
