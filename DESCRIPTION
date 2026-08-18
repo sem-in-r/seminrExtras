@@ -4,7 +4,7 @@ Title: Conduct Additional Modeling and Analysis for 'seminr'
 Version: 1.0.2
 Date: 2026-06-30
 Authors@R: c(person("Soumya", "Ray", email = "soumya.ray@gmail.com", role = c("aut", "ths")),
-             person("Nicholas Patrick", "Danks", email = "nicholasdanks@hotmail.com", role = c("aut","cre"))
+             person("Nicholas Patrick", "Danks", email = "seminrgroup@gmail.com", role = c("aut","cre"))
             )
 Description: Supplementary tools for evaluating and validating partial least
     squares structural equation models estimated with 'seminr'. Provides methods
