@@ -47,7 +47,7 @@ get_ce_fdh_peers <- function(x, y) {
 
 #' Compute CE-FDH effect size d = ceiling_zone / scope.
 #' The ceiling zone is the empty area above the step-function ceiling
-#' within the scope rectangle [min(x),max(x)] x [min(y),max(y)].
+#' within the scope rectangle \[min(x),max(x)\] x \[min(y),max(y)\].
 #' @noRd
 ce_fdh_effect_size <- function(x, y) {
   x_range <- range(x)

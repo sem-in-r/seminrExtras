@@ -79,13 +79,6 @@ construct_alphas <- function(model, constructs) {
 #'       not have — but it does keep one rule for every multi-item construct.
 #'   }
 #'
-#'   The consequence in a model mixing Mode A and Mode B: under `"rhoA"` the
-#'   diagonal is set by measurement mode rather than by the data, which shifts
-#'   coefficients systematically. On the extended corporate reputation model,
-#'   moving from `"rhoC"` to `"rhoA"` raises reflective-reflective pairs by
-#'   about +0.008 and lowers formative-formative pairs by about -0.022,
-#'   reordering the most-congruent pairs.
-#'
 #'   Note that this only ever affects pairs that **involve** a Mode B construct.
 #'   Each column of the matrix carries exactly one reliability -- its own
 #'   construct's -- so a coefficient between two reflective constructs is
