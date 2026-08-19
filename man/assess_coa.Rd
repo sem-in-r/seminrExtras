@@ -18,18 +18,18 @@ assess_coa(
 )
 }
 \arguments{
-\item{seminr_model}{An estimated SEMinR model from `estimate_pls()`.}
+\item{seminr_model}{An estimated SEMinR model from \code{estimate_pls()}.}
 
 \item{focal_construct}{Name of the endogenous construct to analyze (character).}
 
 \item{deviance_bounds}{Two-element numeric vector of quantile bounds for
-identifying deviant cases (default `c(0.025, 0.975)`).}
+identifying deviant cases (default \code{c(0.025, 0.975)}).}
 
 \item{params}{Character vector of model parameters to assess for instability.
-Valid values include `"path_coef"`, `"outer_weights"`, `"outer_loadings"`,
-`"rSquared"` (default `"path_coef"`).}
+Valid values include \code{"path_coef"}, \code{"outer_weights"}, \code{"outer_loadings"},
+\code{"rSquared"} (default \code{"path_coef"}).}
 
-\item{technique}{Prediction technique: `predict_DA` (default) or `predict_EA`.}
+\item{technique}{Prediction technique: \code{predict_DA} (default) or \code{predict_EA}.}
 
 \item{noFolds}{Number of folds for k-fold cross-validation (default 10).}
 
@@ -39,21 +39,21 @@ Valid values include `"path_coef"`, `"outer_weights"`, `"outer_loadings"`,
 
 \item{seed}{Random seed for reproducibility (default 123).}
 
-\item{predict_model}{Optional pre-computed `predict_pls_model` object. If
+\item{predict_model}{Optional pre-computed \code{predict_pls_model} object. If
 provided, skips the cross-validation step (saves time when predictions
 have already been computed).}
 }
 \value{
-An object of class `coa_analysis` containing:
-  \item{pls_model}{The original estimated model}
-  \item{focal_construct}{Name of the analyzed construct}
-  \item{deviance_bounds}{Quantile bounds used}
-  \item{predictive_deviance}{Predictive deviance results (class `coa_deviance`)}
-  \item{deviance_tree}{Deviance tree and deviant groups (class `coa_dtree`)}
-  \item{unstable}{Parameter instability results (class `coa_unstable`)}
+An object of class \code{coa_analysis} containing:
+\item{pls_model}{The original estimated model}
+\item{focal_construct}{Name of the analyzed construct}
+\item{deviance_bounds}{Quantile bounds used}
+\item{predictive_deviance}{Predictive deviance results (class \code{coa_deviance})}
+\item{deviance_tree}{Deviance tree and deviant groups (class \code{coa_dtree})}
+\item{unstable}{Parameter instability results (class \code{coa_unstable})}
 }
 \description{
-`assess_coa` conducts a full Composite Overfit Analysis on a PLS-SEM model.
+\code{assess_coa} conducts a full Composite Overfit Analysis on a PLS-SEM model.
 It computes predictive deviance for a focal construct, identifies groups of
 deviant cases using a decision tree, and assesses parameter instability.
 }
@@ -92,6 +92,6 @@ plot(coa_result, type = "pd")
 
 }
 \seealso{
-[predictive_deviance()], [deviance_tree()], [unstable_params()],
-  [group_rules()], [competes()]
+\code{\link[=predictive_deviance]{predictive_deviance()}}, \code{\link[=deviance_tree]{deviance_tree()}}, \code{\link[=unstable_params]{unstable_params()}},
+\code{\link[=group_rules]{group_rules()}}, \code{\link[=competes]{competes()}}
 }

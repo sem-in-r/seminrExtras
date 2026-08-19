@@ -19,13 +19,13 @@ assess_pcm(seminr_model, target = NULL, noFolds = 10, reps = 10)
 \value{
 An object of class \code{pcm_analysis} containing:
 \describe{
-  \item{target}{The outcome construct name.}
-  \item{mediation_paths}{List of identified mediation triples
-    (antecedent, mediator, target).}
-  \item{pcm_results}{List of per-path results, each with RMSE/MAE for DA
-    and EA approaches plus PCM values per indicator.}
-  \item{noFolds}{Number of cross-validation folds used.}
-  \item{reps}{Number of cross-validation repetitions used.}
+\item{target}{The outcome construct name.}
+\item{mediation_paths}{List of identified mediation triples
+(antecedent, mediator, target).}
+\item{pcm_results}{List of per-path results, each with RMSE/MAE for DA
+and EA approaches plus PCM values per indicator.}
+\item{noFolds}{Number of cross-validation folds used.}
+\item{reps}{Number of cross-validation repetitions used.}
 }
 }
 \description{
@@ -42,20 +42,20 @@ mediation sub-model (X -> M -> Y with direct path X -> Y), then comparing
 out-of-sample predictions from two approaches:
 
 \itemize{
-  \item \strong{DA (Direct Antecedents)}: Predicts Y using its direct
-    structural predictors (M and X).
-  \item \strong{EA (Earliest Antecedents)}: Predicts Y using only the
-    earliest antecedent (X), propagated through the structural model.
+\item \strong{DA (Direct Antecedents)}: Predicts Y using its direct
+structural predictors (M and X).
+\item \strong{EA (Earliest Antecedents)}: Predicts Y using only the
+earliest antecedent (X), propagated through the structural model.
 }
 
 \deqn{PCM = \frac{METRIC_{EA} - METRIC_{DA}}{METRIC_{EA}}}
 
 Rules of thumb for PCM interpretation:
 \itemize{
-  \item \strong{0 to 0.05}: Weak predictive contribution
-  \item \strong{0.05 to 0.10}: Moderate predictive contribution
-  \item \strong{Greater than 0.10}: Strong predictive contribution
-  \item \strong{Negative}: Mediator damages predictive accuracy
+\item \strong{0 to 0.05}: Weak predictive contribution
+\item \strong{0.05 to 0.10}: Moderate predictive contribution
+\item \strong{Greater than 0.10}: Strong predictive contribution
+\item \strong{Negative}: Mediator damages predictive accuracy
 }
 }
 \examples{
@@ -90,5 +90,5 @@ Information Systems}, 52(SI), 24-42.
 }
 \seealso{
 \code{\link[seminr]{predict_pls}} for the underlying prediction
-  methods.
+methods.
 }

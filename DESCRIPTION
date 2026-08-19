@@ -1,10 +1,10 @@
 Package: seminrExtras
 Type: Package
 Title: Conduct Additional Modeling and Analysis for 'seminr'
-Version: 1.0.2
-Date: 2026-06-30
+Version: 1.0.3
+Date: 2026-08-18
 Authors@R: c(person("Soumya", "Ray", email = "soumya.ray@gmail.com", role = c("aut", "ths")),
-             person("Nicholas Patrick", "Danks", email = "nicholasdanks@hotmail.com", role = c("aut","cre"))
+             person("Nicholas Patrick", "Danks", email = "seminrgroup@gmail.com", role = c("aut","cre"))
             )
 Description: Supplementary tools for evaluating and validating partial least
     squares structural equation models estimated with 'seminr'. Provides methods
@@ -31,8 +31,9 @@ Suggests:
     paran,
     psych,
     learnr
+Roxygen: list(markdown = TRUE)
 Config/testthat/edition: 3
 URL: https://github.com/sem-in-r/seminrExtras
 BugReports: https://github.com/sem-in-r/seminrExtras/issues
-RoxygenNote: 7.3.2
 VignetteBuilder: knitr
+Config/roxygen2/version: 8.1.0

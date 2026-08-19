@@ -36,11 +36,11 @@ number of predictors for any endogenous construct.}
 }
 \value{
 An S3 object of class \code{"pos_comparison"} with components:
-  \describe{
-    \item{solutions}{Named list of \code{pos_analysis} objects}
-    \item{fit_table}{Data frame comparing K values}
-    \item{K_range}{The K values compared}
-  }
+\describe{
+\item{solutions}{Named list of \code{pos_analysis} objects}
+\item{fit_table}{Data frame comparing K values}
+\item{K_range}{The K values compared}
+}
 }
 \description{
 Runs \code{\link{assess_pos}} for each K in \code{K_range} and returns a
@@ -73,5 +73,5 @@ plot(pos_comp)
 
 }
 \seealso{
-[assess_fimix_compare()] for comparing FIMIX solutions across K
+\code{\link[=assess_fimix_compare]{assess_fimix_compare()}} for comparing FIMIX solutions across K
 }

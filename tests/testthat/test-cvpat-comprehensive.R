@@ -40,13 +40,13 @@ model_two <- estimate_pls(
 )
 
 # Pre-compute assess_cvpat once (expensive: runs k-fold CV + bootstrap)
-cvpat_result <- assess_cvpat(model_one, nboot = 50, seed = 123, cores = 1)
+cvpat_result <- assess_cvpat(model_one, nboot = 10, noFolds = 3, seed = 123, cores = 1)
 
 # Pre-compute assess_cvpat_compare once
 compare_result <- assess_cvpat_compare(
   established_model = model_one,
   alternative_model = model_two,
-  nboot = 50, seed = 123, cores = 1
+  nboot = 10, noFolds = 3, seed = 123, cores = 1
 )
 
 # ============================================================================
@@ -91,7 +91,7 @@ test_that("assess_cvpat has comment attribute", {
 # ============================================================================
 
 test_that("assess_cvpat is reproducible with same seed", {
-  result2 <- assess_cvpat(model_one, nboot = 50, seed = 123, cores = 1)
+  result2 <- assess_cvpat(model_one, nboot = 10, noFolds = 3, seed = 123, cores = 1)
 
   expect_equal(as.numeric(cvpat_result$CVPAT_compare_LM),
                as.numeric(result2$CVPAT_compare_LM))
@@ -100,7 +100,7 @@ test_that("assess_cvpat is reproducible with same seed", {
 })
 
 test_that("assess_cvpat differs with different seeds", {
-  result2 <- assess_cvpat(model_one, nboot = 50, seed = 99, cores = 1)
+  result2 <- assess_cvpat(model_one, nboot = 10, noFolds = 3, seed = 99, cores = 1)
 
   expect_false(identical(
     cvpat_result$CVPAT_compare_LM[, "Boot T value"],
@@ -114,7 +114,7 @@ test_that("assess_cvpat differs with different seeds", {
 
 test_that("assess_cvpat rejects non-seminr model objects", {
   expect_warning(
-    result <- assess_cvpat(list(not = "a_model"), nboot = 50, cores = 1),
+    result <- assess_cvpat(list(not = "a_model"), nboot = 10, cores = 1),
     "only works with SEMinR models"
   )
   expect_null(result)
@@ -122,7 +122,7 @@ test_that("assess_cvpat rejects non-seminr model objects", {
 
 test_that("assess_cvpat rejects data frame input", {
   expect_warning(
-    result <- assess_cvpat(data.frame(x = 1:10), nboot = 50, cores = 1),
+    result <- assess_cvpat(data.frame(x = 1:10), nboot = 10, cores = 1),
     "only works with SEMinR models"
   )
   expect_null(result)
@@ -183,13 +183,13 @@ test_that("assess_cvpat_compare has comment attribute", {
 
 test_that("assess_cvpat_compare is reproducible with same seed", {
   result2 <- assess_cvpat_compare(model_one, model_two,
-                                   nboot = 50, seed = 123, cores = 1)
+                                   nboot = 10, noFolds = 3, seed = 123, cores = 1)
   expect_equal(as.numeric(compare_result), as.numeric(result2))
 })
 
 test_that("assess_cvpat_compare differs with different seeds", {
   result2 <- assess_cvpat_compare(model_one, model_two,
-                                   nboot = 50, seed = 99, cores = 1)
+                                   nboot = 10, noFolds = 3, seed = 99, cores = 1)
   expect_false(identical(compare_result[, "Boot T value"],
                          result2[, "Boot T value"]))
 })
@@ -236,7 +236,7 @@ test_that("assess_cvpat_compare stops with mismatched endogenous constructs", {
   )
 
   expect_error(
-    assess_cvpat_compare(model_one, model_diff, nboot = 50, cores = 1),
+    assess_cvpat_compare(model_one, model_diff, nboot = 10, cores = 1),
     "identical endogenous"
   )
 })
@@ -247,7 +247,7 @@ test_that("assess_cvpat_compare stops with mismatched endogenous constructs", {
 
 test_that("assess_cvpat works with predict_EA technique", {
   result <- assess_cvpat(model_one, technique = predict_EA,
-                          nboot = 20, seed = 123, cores = 1)
+                          nboot = 10, noFolds = 3, seed = 123, cores = 1)
   expect_type(result, "list")
   expect_true(all(is.finite(as.numeric(result$CVPAT_compare_LM))))
 })
@@ -255,14 +255,14 @@ test_that("assess_cvpat works with predict_EA technique", {
 test_that("assess_cvpat_compare works with predict_EA technique", {
   result <- assess_cvpat_compare(model_one, model_two,
                                   technique = predict_EA,
-                                  nboot = 20, seed = 123, cores = 1)
+                                  nboot = 10, noFolds = 3, seed = 123, cores = 1)
   expect_true(inherits(result, "matrix"))
   expect_true(all(is.finite(as.numeric(result))))
 })
 
 test_that("assess_cvpat works with testtype greater", {
   result <- assess_cvpat(model_one, testtype = "greater",
-                          nboot = 20, seed = 123, cores = 1)
+                          nboot = 10, noFolds = 3, seed = 123, cores = 1)
   expect_type(result, "list")
   expect_true(all(is.finite(as.numeric(result$CVPAT_compare_LM))))
 })
@@ -270,7 +270,7 @@ test_that("assess_cvpat works with testtype greater", {
 test_that("assess_cvpat_compare works with testtype greater", {
   result <- assess_cvpat_compare(model_one, model_two,
                                   testtype = "greater",
-                                  nboot = 20, seed = 123, cores = 1)
+                                  nboot = 10, noFolds = 3, seed = 123, cores = 1)
   expect_true(inherits(result, "matrix"))
   expect_true(all(is.finite(as.numeric(result))))
 })

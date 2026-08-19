@@ -29,21 +29,21 @@ change (default 1e-6).}
 }
 \value{
 An object of class \code{fimix_analysis} containing:
-  \item{K}{Number of segments}
-  \item{segment_proportions}{Named numeric vector of mixing proportions}
-  \item{posterior}{N x K matrix of posterior segment probabilities}
-  \item{segment_assignment}{Integer vector of hard assignments (argmax)}
-  \item{segment_paths}{List of K path coefficient matrices}
-  \item{segment_intercepts}{List of K intercept vectors}
-  \item{segment_variances}{J x K matrix of residual variances}
-  \item{log_likelihood}{Final log-likelihood}
-  \item{n_parameters}{Number of free parameters}
-  \item{info_criteria}{Named vector of information criteria}
-  \item{converged}{Logical; whether EM converged}
-  \item{iterations}{Number of EM iterations}
-  \item{n_starts_completed}{Number of random starts completed}
-  \item{pls_model}{The original estimated seminr model}
-  \item{n_obs}{Sample size}
+\item{K}{Number of segments}
+\item{segment_proportions}{Named numeric vector of mixing proportions}
+\item{posterior}{N x K matrix of posterior segment probabilities}
+\item{segment_assignment}{Integer vector of hard assignments (argmax)}
+\item{segment_paths}{List of K path coefficient matrices}
+\item{segment_intercepts}{List of K intercept vectors}
+\item{segment_variances}{J x K matrix of residual variances}
+\item{log_likelihood}{Final log-likelihood}
+\item{n_parameters}{Number of free parameters}
+\item{info_criteria}{Named vector of information criteria}
+\item{converged}{Logical; whether EM converged}
+\item{iterations}{Number of EM iterations}
+\item{n_starts_completed}{Number of random starts completed}
+\item{pls_model}{The original estimated seminr model}
+\item{n_obs}{Sample size}
 }
 \description{
 \code{assess_fimix} runs the FIMIX-PLS (Finite Mixture PLS) procedure to

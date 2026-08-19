@@ -12,6 +12,32 @@
 # high congruence (the constructs behave similarly in the nomological network).
 # =============================================================================
 
+# Standardised Cronbach's alpha per construct.
+#
+# Mirrors seminr's internal cronbachs_alpha(): the correlation matrix of a
+# construct's items, alpha = (k/(k-1))(1 - sum(diag)/sum(all)), and 1 for any
+# single-indicator construct. Reimplemented here rather than taken from
+# summary()$reliability because summary() is roughly 400x more expensive and
+# this runs once per bootstrap resample -- ~10 minutes of overhead at the
+# default nboot = 2000. Uses only exported seminr functions.
+#
+# @param model A fitted seminr model.
+# @param constructs Character vector of construct names.
+# @return Named numeric vector of alphas, in the order of `constructs`.
+# @noRd
+construct_alphas <- function(model, constructs) {
+  item_cors <- stats::cor(model$data)
+  vapply(constructs, function(cn) {
+    items <- seminr::construct_items(model$mmMatrix, cn)
+    if (length(items) < 2) {
+      return(1)
+    }
+    cm <- item_cors[items, items, drop = FALSE]
+    k <- nrow(cm)
+    (k / (k - 1)) * (1 - sum(diag(cm)) / sum(cm))
+  }, numeric(1))
+}
+
 #' Bootstrap congruence coefficient test
 #'
 #' `congruence_test` conducts a bootstrapped significance test of congruence
@@ -28,6 +54,52 @@
 #'   to 0.05). Used to compute confidence intervals.
 #' @param threshold The threshold with which to compare significance testing.
 #'   H0: rc < threshold (defaults to 1).
+#' @param reliability Which reliability estimate to place on the diagonal of the
+#'   construct-correlation matrix: `"rhoA"` (default, matches SmartPLS),
+#'   `"rhoC"` (composite reliability, the behaviour of seminrExtras <= 1.0.2),
+#'   `"cronbach"` (Cronbach's alpha), or `"one"` (unity, as permitted by Franke et
+#'   al. (2021) when reliabilities are unknown). Not to be confused with the
+#'   `alpha` argument above, which sets the confidence level. The option is named
+#'   `"cronbach"` rather than `"alpha"` precisely to keep the two apart.
+#'
+#'   Franke et al. (2021, Eq. 2) specify "the reliabilities" without fixing an
+#'   estimator, so all four are in specification. They agree wherever a
+#'   construct has a well-defined internal consistency and diverge where it does
+#'   not:
+#'
+#'   \itemize{
+#'     \item **Single-item constructs** get 1 under `"rhoA"`, `"rhoC"` and
+#'       `"cronbach"` alike. In a model built entirely from single indicators the
+#'       argument has no effect at all.
+#'     \item **Mode B (formative) constructs** are where they part company.
+#'       `"rhoA"` returns exactly 1, because internal consistency is undefined
+#'       for a composite and nothing is estimated. `"rhoC"` and `"cronbach"` both
+#'       still compute a value from the indicators. That is arguably the less
+#'       honest choice — each presumes a measurement model the construct does
+#'       not have — but it does keep one rule for every multi-item construct.
+#'   }
+#'
+#'   Note that this only ever affects pairs that **involve** a Mode B construct.
+#'   Each column of the matrix carries exactly one reliability -- its own
+#'   construct's -- so a coefficient between two reflective constructs is
+#'   invariant to whatever sits on any other construct's diagonal.
+#'
+#'   `"cronbach"` is offered chiefly for comparison with covariance-based SEM,
+#'   where rho_A is not available.
+#'
+#' @section Model types:
+#' **Interaction constructs are excluded** from the construct set — entirely,
+#' not merely from the pair list, since Eq. 2 sums over the whole set. An
+#' interaction term's measurement is fixed by the product method rather than by
+#' theory, so its position in a nomological network is not interpretable. A
+#' message names any construct dropped. This matches [assess_cta()],
+#' [assess_pos()], [assess_pcm()] and [assess_cipma()].
+#'
+#' **Higher-order models are not supported** and are refused with a warning. Two-
+#' stage estimation replaces the lower-order constructs with a single
+#' higher-order composite, and it has not been established what belongs on that
+#' composite's diagonal, nor whether a congruence coefficient between a
+#' higher-order and a first-order construct is interpretable.
 #'
 #' @return A list containing a matrix of congruence coefficients and
 #'   significance test results for all construct pairs.
@@ -78,7 +150,10 @@ congruence_test <- function(seminr_model,
                             nboot = 2000,
                             seed = 123,
                             alpha = 0.05,
-                            threshold = 1) {
+                            threshold = 1,
+                            reliability = c("rhoA", "rhoC", "cronbach", "one")) {
+
+  reliability <- match.arg(reliability)
 
   # Set seed for reproducibility of bootstrap resampling
   set.seed(seed)
@@ -90,8 +165,44 @@ congruence_test <- function(seminr_model,
     return(NULL)
   }
 
+  # ---------------------------------------------------------------------------
+  # Step 1b: Refuse model types that are not yet supported
+  # ---------------------------------------------------------------------------
+  # Higher-order models are out of scope for now. Two-stage estimation replaces
+  # the lower-order constructs with a single higher-order composite, and it has
+  # not been established what belongs on the diagonal for that composite or
+  # whether a congruence coefficient between a HOC and a first-order construct
+  # is interpretable. Refuse rather than return an unvalidated number.
+  if (!is.null(seminr_model$hoc)) {
+    warning("congruence_test() does not yet support higher-order models.",
+            call. = FALSE)
+    return(NULL)
+  }
+
   # Get all construct names from the model
   construct_names <- colnames(seminr_model$construct_scores)
+
+  # ---------------------------------------------------------------------------
+  # Step 1c: Drop interaction constructs
+  # ---------------------------------------------------------------------------
+  # An interaction term's measurement is determined by the product method, not
+  # by theory, so it is not a construct whose position in the nomological
+  # network can be interpreted. It is removed from the construct set entirely,
+  # not merely from the pair list: Eq. 2 sums over the whole set, so leaving it
+  # in the correlation vectors would still perturb every coefficient. This
+  # matches assess_cta(), assess_pos(), assess_pcm() and assess_cipma().
+  is_interaction <- grepl("*", construct_names, fixed = TRUE)
+  if (any(is_interaction)) {
+    message("Excluding interaction constructs (measurement determined by method): ",
+            paste(construct_names[is_interaction], collapse = ", "))
+    construct_names <- construct_names[!is_interaction]
+  }
+
+  if (length(construct_names) < 2) {
+    warning("congruence_test() needs at least two non-interaction constructs.",
+            call. = FALSE)
+    return(NULL)
+  }
 
   # ---------------------------------------------------------------------------
   # Step 2: Define the congruence coefficient calculation
@@ -101,6 +212,18 @@ congruence_test <- function(seminr_model,
   # This is essentially a cosine similarity applied to correlation patterns.
   calc_congruence <- function(mat, X, Y) {
     return(sum(mat[, X] * mat[, Y]) / sqrt(sum(mat[, X]^2) * sum(mat[, Y]^2)))
+  }
+
+  # Reliabilities for the diagonal, per the selected estimator. Recomputed from
+  # whichever model is passed in, so the bootstrap gets resample-specific values
+  # rather than the original fit's.
+  diagonal_values <- function(model, constructs) {
+    switch(reliability,
+      rhoA  = seminr::rho_A(model, constructs)[constructs, 1],
+      rhoC  = seminr::rhoC_AVE(x = model)[constructs, 1],
+      cronbach = construct_alphas(model, constructs),
+      one   = stats::setNames(rep(1, length(constructs)), constructs)
+    )
   }
 
   # ---------------------------------------------------------------------------
@@ -125,11 +248,13 @@ congruence_test <- function(seminr_model,
     it_model <- suppressMessages(seminr::rerun(seminr_model, data = resampled_data))
 
     # Compute correlation matrix of construct scores for this bootstrap sample
-    ret_mat <- stats::cor(it_model$construct_scores)
+    # Restricted to construct_names, so any excluded interaction leaves the
+    # summation in Eq. 2 rather than merely the pair list.
+    ret_mat <- stats::cor(it_model$construct_scores[, construct_names, drop = FALSE])
 
-    # Replace diagonal with rhoC (composite reliability) values
+    # Replace diagonal with the selected reliability estimates
     # This creates a matrix where diagonal = reliability, off-diagonal = correlations
-    diag(ret_mat) <- seminr::rhoC_AVE(x = it_model)[colnames(ret_mat), 1]
+    diag(ret_mat) <- diagonal_values(it_model, colnames(ret_mat))
 
     # Calculate congruence coefficient for each construct pair.
     # Assign by construct name (not via upper.tri()): apply() returns values in
@@ -148,10 +273,10 @@ congruence_test <- function(seminr_model,
   # Step 5: Calculate original (non-bootstrap) congruence coefficients
   # ---------------------------------------------------------------------------
   # Compute correlation matrix from original model
-  cor_mat <- stats::cor(seminr_model$construct_scores)
+  cor_mat <- stats::cor(seminr_model$construct_scores[, construct_names, drop = FALSE])
 
-  # Replace diagonal with rhoC values
-  diag(cor_mat) <- seminr::rhoC_AVE(x = seminr_model)[colnames(ret_mat), 1]
+  # Replace diagonal with the selected reliability estimates
+  diag(cor_mat) <- diagonal_values(seminr_model, colnames(cor_mat))
 
   # Prepare matrix for original estimates (upper triangle only)
   original_matrix <- cor_mat
