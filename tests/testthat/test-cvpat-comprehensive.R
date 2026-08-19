@@ -1,5 +1,10 @@
 library(seminr)
 
+# Exhaustive CVPAT coverage. Skipped on CRAN for check time; the core CVPAT
+# behaviour is covered by test-cvpat.R, which still runs there.
+skip_on_cran()
+
+
 # ============================================================================
 # Setup: Create models and pre-compute results for testing
 # ============================================================================

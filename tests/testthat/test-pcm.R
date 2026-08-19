@@ -41,8 +41,8 @@ pls_multi <- estimate_pls(mobi, mobi_mm_multi, mobi_sm_multi)
 # =============================================================================
 # Run PCM on fixtures (low reps for speed)
 # =============================================================================
-pcm_simple <- assess_pcm(pls_simple, target = "Loyalty", noFolds = 10, reps = 2)
-pcm_multi  <- assess_pcm(pls_multi, target = "Loyalty", noFolds = 10, reps = 2)
+pcm_simple <- assess_pcm(pls_simple, target = "Loyalty", noFolds = 5, reps = 2)
+pcm_multi  <- assess_pcm(pls_multi, target = "Loyalty", noFolds = 5, reps = 2)
 
 # =============================================================================
 # TESTS: Internal helpers
@@ -146,7 +146,7 @@ test_that("assess_pcm returns correct class", {
 
 test_that("assess_pcm output has expected components", {
   expect_equal(pcm_simple$target, "Loyalty")
-  expect_equal(pcm_simple$noFolds, 10)
+  expect_equal(pcm_simple$noFolds, 5)
   expect_equal(pcm_simple$reps, 2)
   expect_length(pcm_simple$mediation_paths, 1)
   expect_length(pcm_simple$pcm_results, 1)
@@ -217,7 +217,7 @@ test_that("Multi-mediator PCM has results per indicator per path", {
 # =============================================================================
 
 test_that("assess_pcm auto-detects single final endogenous target", {
-  pcm_auto <- assess_pcm(pls_simple, noFolds = 10, reps = 2)
+  pcm_auto <- assess_pcm(pls_simple, noFolds = 5, reps = 2)
   expect_equal(pcm_auto$target, "Loyalty")
 })
 
@@ -328,7 +328,7 @@ test_that("PCM works end-to-end with moderation model", {
   )
   model_mod <- estimate_pls(mobi, mobi_mm_mod, mobi_sm_mod)
 
-  pcm_mod <- assess_pcm(model_mod, target = "Loyalty", noFolds = 10, reps = 2)
+  pcm_mod <- assess_pcm(model_mod, target = "Loyalty", noFolds = 5, reps = 2)
   expect_s3_class(pcm_mod, "pcm_analysis")
   # Should find mediation paths through Satisfaction, excluding Image*Value
   expect_true(length(pcm_mod$pcm_results) >= 1)
