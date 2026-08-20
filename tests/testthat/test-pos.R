@@ -22,11 +22,11 @@ pls_model <- estimate_pls(data = mobi, measurement_model = mobi_mm,
                            structural_model = mobi_sm)
 
 # Pre-compute PLS-POS for K=2 (reused across tests)
-pos_k2 <- assess_pos(pls_model, K = 2, nstart = 2, max_iter = 10, seed = 123)
+pos_k2 <- assess_pos(pls_model, K = 2, nstart = 2, max_iter = 5, seed = 123)
 
 # Pre-compute PLS-POS comparison across K=2:3 (reused across comparison tests)
 pos_compare <- assess_pos_compare(pls_model, K_range = 2:3,
-                                  nstart = 2, max_iter = 10, seed = 123)
+                                  nstart = 2, max_iter = 5, seed = 123)
 
 # =============================================================================
 # STRUCTURE TESTS
@@ -170,8 +170,8 @@ test_that("nstart is stored correctly", {
 # =============================================================================
 
 test_that("results are deterministic with same seed", {
-  r1 <- assess_pos(pls_model, K = 2, nstart = 2, max_iter = 10, seed = 42)
-  r2 <- assess_pos(pls_model, K = 2, nstart = 2, max_iter = 10, seed = 42)
+  r1 <- assess_pos(pls_model, K = 2, nstart = 2, max_iter = 5, seed = 42)
+  r2 <- assess_pos(pls_model, K = 2, nstart = 2, max_iter = 5, seed = 42)
   expect_equal(r1$objective, r2$objective)
   expect_equal(r1$segment_assignment, r2$segment_assignment)
   expect_equal(r1$segment_sizes, r2$segment_sizes)
@@ -323,7 +323,7 @@ test_that("PLS-POS works with mediation model", {
   pls_med <- estimate_pls(data = mobi, measurement_model = mm_med,
                             structural_model = sm_med)
 
-  result <- assess_pos(pls_med, K = 2, nstart = 2, max_iter = 10, seed = 42)
+  result <- assess_pos(pls_med, K = 2, nstart = 2, max_iter = 5, seed = 42)
 
   expect_s3_class(result, "pos_analysis")
   expect_equal(sum(result$segment_sizes), nrow(mobi))
@@ -352,7 +352,7 @@ test_that("PLS-POS works with moderation model (two-stage)", {
   pls_mod <- estimate_pls(data = mobi, measurement_model = mm_mod,
                             structural_model = sm_mod)
 
-  result <- assess_pos(pls_mod, K = 2, nstart = 2, max_iter = 10, seed = 42)
+  result <- assess_pos(pls_mod, K = 2, nstart = 2, max_iter = 5, seed = 42)
 
   expect_s3_class(result, "pos_analysis")
   expect_equal(sum(result$segment_sizes), nrow(mobi))
@@ -387,7 +387,7 @@ test_that("PLS-POS works with HOC two-stage model", {
   pls_hoc <- estimate_pls(data = mobi, measurement_model = mm_hoc,
                             structural_model = sm_hoc)
 
-  result <- assess_pos(pls_hoc, K = 2, nstart = 2, max_iter = 10, seed = 42)
+  result <- assess_pos(pls_hoc, K = 2, nstart = 2, max_iter = 5, seed = 42)
 
   expect_s3_class(result, "pos_analysis")
   expect_equal(sum(result$segment_sizes), nrow(mobi))

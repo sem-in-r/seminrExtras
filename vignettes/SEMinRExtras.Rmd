@@ -217,11 +217,23 @@ print(assess_results$CVPAT_compare_IA,
 
 ```
 
+> **Note on the settings used below.** To keep this vignette quick to build, the
+> live examples use reduced settings: `nboot = 200`, and explicit `noFolds` and
+> `reps` rather than the defaults. Note in particular that leaving `noFolds`
+> unset selects *leave-one-out* cross-validation, which fits the model once per
+> observation and is very slow on datasets of any size. For reported results,
+> prefer the settings shown in the code listing above (`nboot = 2000`,
+> `noFolds = 10`, `reps = 10`). The conclusions drawn in the text are unchanged;
+> only the exact figures differ.
+
 ## First, conduct CVPAT analysis of the established model.
 
 ```{r, echo=TRUE}
 # Assess the base model ----
 assess_results <- assess_cvpat(established_model,
+                               nboot = 200,
+                               noFolds = 10,
+                               reps = 1,
                                seed = 123, 
                                cores = 1)
 print(assess_results$CVPAT_compare_LM,
@@ -239,11 +251,11 @@ Now we compare the results:
 compare_results <- assess_cvpat_compare(established_model = established_model,
                                         alternative_model = competing_model,
                                         testtype = "two.sided",
-                                        nboot = 2000,
+                                        nboot = 200,
                                         technique = predict_DA,
                                         seed = 123,
-                                        noFolds = 10,
-                                        reps = 10,
+                                        noFolds = 5,
+                                        reps = 2,
                                         cores = 1)
 
 print(compare_results,
