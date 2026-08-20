@@ -5,6 +5,11 @@
 # --- Setup: pre-compute models and results -----------------------------------
 library(seminr)
 
+# Exhaustive cIPMA coverage. Skipped on CRAN for check time; still runs
+# locally and in CI.
+skip_on_cran()
+
+
 mobi_mm <- constructs(
   composite("Image",        multi_items("IMAG", 1:5)),
   composite("Expectation",  multi_items("CUEX", 1:3)),

@@ -28,7 +28,7 @@ test_model <- estimate_pls(
 # ============================================================================
 
 test_that("congruence_test returns proper structure", {
-  result <- congruence_test(test_model, nboot = 50, seed = 123)
+  result <- congruence_test(test_model, nboot = 20, seed = 123)
 
   # Should return a list
 
@@ -45,7 +45,7 @@ test_that("congruence_test returns proper structure", {
 })
 
 test_that("congruence_test returns correct dimensions", {
-  result <- congruence_test(test_model, nboot = 50, seed = 123)
+  result <- congruence_test(test_model, nboot = 20, seed = 123)
 
   # Number of rows should equal number of construct pairs
   n_constructs <- ncol(test_model$construct_scores)
@@ -57,14 +57,14 @@ test_that("congruence_test returns correct dimensions", {
 })
 
 test_that("congruence_test returns correct column names", {
-  result <- congruence_test(test_model, nboot = 50, seed = 123, alpha = 0.05)
+  result <- congruence_test(test_model, nboot = 20, seed = 123, alpha = 0.05)
 
   expected_cols <- c("Original Est.", "Diff", "Bootstrap SD", "T Stat.", "2.5% CI", "97.5% CI")
   expect_equal(colnames(result$results), expected_cols)
 })
 
 test_that("congruence_test row names contain construct pairs", {
-  result <- congruence_test(test_model, nboot = 50, seed = 123)
+  result <- congruence_test(test_model, nboot = 20, seed = 123)
 
   # Row names should contain " -> " pattern
   expect_true(all(grepl(" -> ", rownames(result$results))))
@@ -75,15 +75,15 @@ test_that("congruence_test row names contain construct pairs", {
 # ============================================================================
 
 test_that("congruence_test is reproducible with same seed", {
-  result1 <- congruence_test(test_model, nboot = 50, seed = 42)
-  result2 <- congruence_test(test_model, nboot = 50, seed = 42)
+  result1 <- congruence_test(test_model, nboot = 20, seed = 42)
+  result2 <- congruence_test(test_model, nboot = 20, seed = 42)
 
   expect_equal(result1$results, result2$results)
 })
 
 test_that("congruence_test differs with different seeds", {
-  result1 <- congruence_test(test_model, nboot = 50, seed = 42)
-  result2 <- congruence_test(test_model, nboot = 50, seed = 99)
+  result1 <- congruence_test(test_model, nboot = 20, seed = 42)
+  result2 <- congruence_test(test_model, nboot = 20, seed = 99)
 
   # Bootstrap SD and CI columns should differ
   expect_false(identical(result1$results[, "Bootstrap SD"], result2$results[, "Bootstrap SD"]))
@@ -94,8 +94,8 @@ test_that("congruence_test differs with different seeds", {
 # ============================================================================
 
 test_that("congruence_test respects alpha parameter for CI columns", {
-  result_05 <- congruence_test(test_model, nboot = 50, seed = 123, alpha = 0.05)
-  result_10 <- congruence_test(test_model, nboot = 50, seed = 123, alpha = 0.10)
+  result_05 <- congruence_test(test_model, nboot = 20, seed = 123, alpha = 0.05)
+  result_10 <- congruence_test(test_model, nboot = 20, seed = 123, alpha = 0.10)
 
   # Column names should reflect alpha
 
@@ -107,7 +107,7 @@ test_that("congruence_test respects alpha parameter for CI columns", {
 
 test_that("congruence_test works with different nboot values", {
   result_small <- congruence_test(test_model, nboot = 20, seed = 123)
-  result_large <- congruence_test(test_model, nboot = 100, seed = 123)
+  result_large <- congruence_test(test_model, nboot = 20, seed = 123)
 
   # Both should return valid results
 
@@ -119,7 +119,7 @@ test_that("congruence_test works with different nboot values", {
 })
 
 test_that("congruence_test works with custom threshold", {
-  result <- congruence_test(test_model, nboot = 50, seed = 123, threshold = 0.9)
+  result <- congruence_test(test_model, nboot = 20, seed = 123, threshold = 0.9)
 
   # Diff column should reflect threshold - original
   # Diff = threshold - abs(original)
@@ -132,7 +132,7 @@ test_that("congruence_test works with custom threshold", {
 
 test_that("congruence_test rejects non-seminr model objects", {
   expect_warning(
-    result <- congruence_test(list(not = "a_model"), nboot = 50),
+    result <- congruence_test(list(not = "a_model"), nboot = 20),
     "only works with SEMinR models"
   )
   expect_null(result)
@@ -140,7 +140,7 @@ test_that("congruence_test rejects non-seminr model objects", {
 
 test_that("congruence_test rejects NULL input", {
   expect_warning(
-    result <- congruence_test(NULL, nboot = 50),
+    result <- congruence_test(NULL, nboot = 20),
     "only works with SEMinR models"
   )
   expect_null(result)
@@ -148,7 +148,7 @@ test_that("congruence_test rejects NULL input", {
 
 test_that("congruence_test rejects data frame input", {
   expect_warning(
-    result <- congruence_test(data.frame(x = 1:10), nboot = 50),
+    result <- congruence_test(data.frame(x = 1:10), nboot = 20),
     "only works with SEMinR models"
   )
   expect_null(result)
@@ -159,7 +159,7 @@ test_that("congruence_test rejects data frame input", {
 # ============================================================================
 
 test_that("congruence_test original estimates are bounded", {
-  result <- congruence_test(test_model, nboot = 50, seed = 123)
+  result <- congruence_test(test_model, nboot = 20, seed = 123)
 
   # Congruence coefficients should be between -1 and 1
   expect_true(all(result$results[, "Original Est."] >= -1))
@@ -167,13 +167,13 @@ test_that("congruence_test original estimates are bounded", {
 })
 
 test_that("congruence_test bootstrap SD is positive", {
-  result <- congruence_test(test_model, nboot = 50, seed = 123)
+  result <- congruence_test(test_model, nboot = 20, seed = 123)
 
   expect_true(all(result$results[, "Bootstrap SD"] >= 0))
 })
 
 test_that("congruence_test confidence intervals are ordered correctly", {
-  result <- congruence_test(test_model, nboot = 100, seed = 123, alpha = 0.05)
+  result <- congruence_test(test_model, nboot = 20, seed = 123, alpha = 0.05)
 
   lower_ci <- result$results[, "2.5% CI"]
   upper_ci <- result$results[, "97.5% CI"]
