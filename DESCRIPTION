@@ -1,7 +1,7 @@
 Package: seminrExtras
 Type: Package
 Title: Conduct Additional Modeling and Analysis for 'seminr'
-Version: 1.0.3.9000
+Version: 1.0.4
 Date: 2026-08-18
 Authors@R: c(person("Soumya", "Ray", email = "soumya.ray@gmail.com", role = c("aut", "ths")),
              person("Nicholas Patrick", "Danks", email = "seminrgroup@gmail.com", role = c("aut","cre"))

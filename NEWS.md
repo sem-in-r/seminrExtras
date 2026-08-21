@@ -1,4 +1,13 @@
-# seminrExtras (development version)
+# seminrExtras 1.0.4
+
+No user-facing changes yet. This version exists so co-authors verifying the
+PLS-SEM R book can install a build distinguishable from CRAN 1.0.3:
+
+```r
+remotes::install_github("sem-in-r/seminrExtras@develop")
+```
+
+CRAN submission is on hold until textbook copyediting and errata are resolved.
 
 # seminrExtras 1.0.3
 
