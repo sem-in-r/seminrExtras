@@ -60,7 +60,7 @@ specific_effect_significance(boot_corp_rep_ext,
                              from = "COMP",
                              through = "CUSA",
                              to = "CUSL",
-                             alpha = 0.1)
+                             alpha = 0.05)
 specific_effect_significance(boot_corp_rep_ext,
                              from = "LIKE",
                              through = "CUSA",

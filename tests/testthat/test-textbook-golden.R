@@ -95,3 +95,27 @@ test_that("the sentences on p. 143 that quote Fig. 6.9 are still true", {
   expect_lt(lm$diff[lm$construct == "Overall"], 0)
   expect_lt(lm$boot_p[lm$construct == "Overall"], 0.001)
 })
+
+test_that("Fig. 8.7 specific indirect effects match the book", {
+  skip_unless_textbook()
+
+  # Both effects at alpha = 0.05 (corrected 21 Aug 2026; the printed figure has
+  # the first at alpha = 0.1 while the surrounding text claims 5%).
+  g <- golden("fig_8_7_indirect.csv")
+  model <- textbook_model_extended()
+  boot <- seminr::bootstrap_model(model, nboot = 1000, seed = 123, cores = 2)
+
+  for (i in seq_len(nrow(g))) {
+    parts <- strsplit(g$effect[i], "->", fixed = TRUE)[[1]]
+    r <- seminr::specific_effect_significance(boot, from = parts[1],
+                                              through = parts[2], to = parts[3],
+                                              alpha = 0.05)
+    expect_prints_as(unname(r[1, "Original Est."]),  g$original_est[i], paste("Fig. 8.7", g$effect[i], "est"))
+    expect_prints_as(unname(r[1, "Bootstrap SD"]),   g$boot_sd[i],      paste("Fig. 8.7", g$effect[i], "SD"))
+    expect_prints_as(unname(r[1, "T Stat."]),        g$t_stat[i],       paste("Fig. 8.7", g$effect[i], "t"))
+    expect_prints_as(unname(r[1, "2.5% CI"]),        g$ci_low[i],       paste("Fig. 8.7", g$effect[i], "CI low"))
+    expect_prints_as(unname(r[1, "97.5% CI"]),       g$ci_high[i],      paste("Fig. 8.7", g$effect[i], "CI high"))
+    # The claim the text actually makes: significant at the 5% level.
+    expect_gt(unname(r[1, "2.5% CI"]), 0)
+  }
+})

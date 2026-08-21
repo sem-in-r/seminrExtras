@@ -13,6 +13,7 @@ Change a value here only when a corrected figure has been read off a proof.
 | File | Source | Produced by |
 |---|---|---|
 | `fig_4_11_congruence.csv` | Fig. 4.11, ch. 4 | `congruence_test(corp_rep_pls_model, alpha = 0.10)` |
+| `fig_8_7_indirect.csv` | Fig. 8.7, ch. 8 (p. 185) | `specific_effect_significance(boot_corp_rep_ext, ..., alpha = 0.05)` on a `nboot = 1000, seed = 123` bootstrap |
 | `fig_6_9_cvpat.csv` | Fig. 6.9, ch. 6 (p. 143) | `assess_cvpat(corp_rep_pls_model_ext, testtype = "greater", nboot = 2000, seed = 123, technique = predict_DA, noFolds = 10, reps = 10)` |
 
 ## Fig. 4.11 — the printed proof is WRONG; these are the replacement values
@@ -49,3 +50,20 @@ printed.
 
 The `pls_loss` column is identical across the LM and IA blocks by construction
 (same model, same folds) — a free internal consistency check on the transcription.
+
+## Fig. 8.7 — corrected values, superseding the printed figure
+
+Susi requested (21 Aug 2026) that the FIRST indirect effect use `alpha = 0.05`
+rather than `alpha = 0.1`, so both effects are tested at the level the text
+claims. The printed p. 185 figure has `COMP->CUSA->CUSL` at 5%/95% =
+[0.015, 0.136]; these golden values carry the corrected 2.5%/97.5% =
+[0.003, 0.146]. Everything else in the figure was verified bit-identical.
+
+This matters beyond formatting: the body text asserts the effects are
+"significant at the specified 5% level", which was **not true** of the first
+effect as printed — its interval was computed at the 10% level. The corrected
+interval still excludes zero, but only just (lower bound 0.003 vs 0.015).
+
+The book's `demo/seminr-primer-v2-chap8.R` and the `ALL CODE FILEs` copy were
+updated to `alpha = 0.05`; `Quarto.qmd` already had it. As with the Fig. 8.12
+seed discrepancy, the printed figures track the DEMO files, not the Quarto.
