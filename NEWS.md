@@ -1,7 +1,47 @@
 # seminrExtras 1.0.4
 
-No user-facing changes yet. This version exists so co-authors verifying the
-PLS-SEM R book can install a build distinguishable from CRAN 1.0.3:
+### Fixed
+
+* `congruence_test(nboot = 0)` errored with `length of 'dimnames' [3] not equal
+  to array extent`. The bootstrap array was named `1:nboot`, which is `c(1, 0)`
+  rather than empty when `nboot` is 0. Fixing that exposed a second failure:
+  `sd()` over an empty slice returns `NA`, which then reached an `if`. Both are
+  fixed, and the inferential columns (`Bootstrap SD`, `T Stat.`, the CI bounds)
+  are now `NA` — the honest answer when there is no bootstrap distribution.
+  Point estimates are unchanged and identical to a bootstrapped run's. This is
+  the fast path for checking congruence *values* without paying for 2000
+  resamples. Found by the new textbook regression tests.
+
+### Testing
+
+* Added a **textbook regression suite** (`test-textbook-*.R`) that checks the
+  package still reproduces numbers **printed in the PLS-SEM R book**, using
+  values transcribed by hand from the page proofs as an external oracle. This
+  closes a real gap: the previous harness only compared one package version
+  against another, which cannot detect the case where both agree with each
+  other and neither agrees with the book. It was exactly that case which let
+  the 1.0.3 `reliability` default change (rho_C to rho_A) move every
+  coefficient in Fig. 4.11 unnoticed.
+
+  These tests are **excluded from CRAN, CI and cron** — `skip_on_cran()`,
+  `skip_on_ci()`, plus an explicit opt-in — because a failure needs a human to
+  decide whether the code regressed or the figure is due for regeneration. Run
+  them with:
+
+  ```r
+  Sys.setenv(SEMINR_TEXTBOOK_TESTS = "true")
+  devtools::test(filter = "textbook")
+  ```
+
+  Coverage: Fig. 4.11 congruence coefficients, Fig. 6.9 CVPAT (both LM and IA
+  benchmarks), the prose claims on p. 143 that quote Fig. 6.9, the argument
+  defaults printed in Tables 6.2/6.3, pair-label ordering, and a static seed
+  audit of the chapter demos.
+
+### Notes for co-authors
+
+This version exists so co-authors verifying the PLS-SEM R book can install a
+build distinguishable from CRAN 1.0.3:
 
 ```r
 remotes::install_github("sem-in-r/seminrExtras@develop")

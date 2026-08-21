@@ -514,3 +514,21 @@ test_that("cronbach matches seminr's own alpha for every construct", {
   }, numeric(1))
   expect_equal(unname(got), unname(ref), tolerance = 1e-10)
 })
+
+test_that("congruence_test() accepts nboot = 0 and returns point estimates", {
+  # Regression: nboot = 0 errored in <= 1.0.3 with "length of 'dimnames' [3]
+  # not equal to array extent", because the bootstrap array was named `1:nboot`
+  # (which is c(1, 0) when nboot is 0) instead of `seq_len(nboot)`. Fixing that
+  # exposed a second failure downstream, where sd() of an empty slice returned
+  # NA into an `if`. Both are fixed; the inferential columns are now NA, which
+  # is the honest answer when no bootstrap distribution exists.
+  expect_silent(res <- congruence_test(test_model, nboot = 0)$results)
+  expect_equal(nrow(res), 6L)
+  expect_false(anyNA(res[, "Original Est."]))
+  expect_true(all(is.na(res[, "Bootstrap SD"])))
+  expect_true(all(is.na(res[, "T Stat."])))
+
+  # Point estimates must be identical to a bootstrapped run's point estimates.
+  boot <- congruence_test(test_model, nboot = 10)$results
+  expect_equal(unname(res[, "Original Est."]), unname(boot[, "Original Est."]))
+})

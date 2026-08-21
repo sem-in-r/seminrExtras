@@ -238,7 +238,7 @@ congruence_test <- function(seminr_model,
   # Create 3D array to store bootstrap results: [constructs x constructs x iterations]
   ret_array <- array(NA,
                      dim = list(length(construct_names), length(construct_names), nboot),
-                     dimnames = list(construct_names, construct_names, 1:nboot))
+                     dimnames = list(construct_names, construct_names, seq_len(nboot)))
 
   for (iter in seq_len(nboot)) {
     # Resample data with replacement and re-estimate the model
@@ -325,25 +325,32 @@ congruence_test <- function(seminr_model,
         # Diff = threshold - |original| (positive if below threshold)
         boot_mean <- append(boot_mean, (threshold - abs(original_matrix[i, j])))
 
-        # Bootstrap standard deviation of congruence coefficient
-        boot_SD <- append(boot_SD, stats::sd(boot_array[i, j, ]))
+        # Bootstrap standard deviation of congruence coefficient. With
+        # nboot = 0 there is no bootstrap distribution at all, so every
+        # inferential column is NA rather than a number computed from nothing.
+        sd_ij <- if (nboot == 0) NA_real_ else stats::sd(boot_array[i, j, ])
+        boot_SD <- append(boot_SD, sd_ij)
 
         # Compute t-statistic: (threshold - |rc|) / SE
         # Guard against division by near-zero SD (indicates perfect stability)
-        if (stats::sd(boot_array[i, j, ]) < .Machine$double.eps) {
+        if (is.na(sd_ij) || sd_ij < .Machine$double.eps) {
           t_stat <- append(t_stat, NA)
         } else {
-          t_stat <- append(t_stat, (threshold - abs(original_matrix[i, j])) /
-                             stats::sd(boot_array[i, j, ]))
+          t_stat <- append(t_stat, (threshold - abs(original_matrix[i, j])) / sd_ij)
         }
 
         # Compute bootstrap confidence intervals using seminr's internal function
-        ci <- conf_int(boot_array,
-                                from = rownames(original_matrix)[i],
-                                to = colnames(original_matrix)[j],
-                                alpha = alpha)
-        lower <- append(lower, ci[[1]])
-        upper <- append(upper, ci[[2]])
+        if (nboot == 0) {
+          lower <- append(lower, NA_real_)
+          upper <- append(upper, NA_real_)
+        } else {
+          ci <- conf_int(boot_array,
+                                  from = rownames(original_matrix)[i],
+                                  to = colnames(original_matrix)[j],
+                                  alpha = alpha)
+          lower <- append(lower, ci[[1]])
+          upper <- append(upper, ci[[2]])
+        }
       }
     }
   }
