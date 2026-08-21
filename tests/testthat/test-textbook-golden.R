@@ -33,7 +33,28 @@ test_that("Fig. 4.11 congruence coefficients match the book", {
   res <- congruence_test(textbook_model_simple(), alpha = 0.10)$results
 
   expect_equal(norm_pair(rownames(res)), g$pair)
-  expect_prints_as(res[, "Original Est."], g$original_est, "Fig. 4.11 congruence coefficients")
+
+  # All six columns, not just the point estimates. congruence_test() defaults to
+  # seed = 123 and nboot = 2000, so the bootstrap columns are reproducible too --
+  # verified 21 Aug 2026, all 36 cells, max|diff| 0.00049 (3dp rounding).
+  expect_prints_as(res[, "Original Est."], g$original_est, "Fig. 4.11 rc")
+  expect_prints_as(res[, "Diff"],          g$diff,         "Fig. 4.11 Diff")
+  expect_prints_as(res[, "Bootstrap SD"],  g$boot_sd,      "Fig. 4.11 Bootstrap SD")
+  expect_prints_as(res[, "T Stat."],       g$t_stat,       "Fig. 4.11 T Stat.")
+  expect_prints_as(res[, "5% CI"],         g$ci_low,       "Fig. 4.11 5% CI")
+  expect_prints_as(res[, "95% CI"],        g$ci_high,      "Fig. 4.11 95% CI")
+
+  # Internal consistency, independent of the golden file.
+  expect_equal(unname(res[, "Diff"]), unname(1 - res[, "Original Est."]))
+  # The book's conclusion: every pair significantly below congruence of 1.
+  expect_true(all(res[, "95% CI"] < 1))
+
+  # alpha = 0.10 is DELIBERATE here, not a slip. Congruence is tested against a
+  # threshold of 1, so only one direction is meaningful: p. 105 specifies "the
+  # one-sided 95% (or 90% two-sided) bootstrap-based confidence interval".
+  # Contrast Fig. 8.7, where indirect effects are tested against zero and can be
+  # negative, so alpha is two-tailed (Table 8.1) and must be 0.05.
+  expect_identical(colnames(res)[5:6], c("5% CI", "95% CI"))
 })
 
 test_that("Fig. 4.11 pair labels are not transposed", {
