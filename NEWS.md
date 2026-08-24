@@ -1,5 +1,13 @@
 # seminrExtras 1.0.4
 
+### Demo
+
+* `demo/seminr-primer-v2-chap4.R` no longer calls `congruence_test()`. The
+  congruence treatment was **cut from chapter 4 of the PLS-SEM R book** on
+  2026-08-24: an rc significance test is work in progress, and a textbook should
+  report established procedures. `congruence_test()` itself is unaffected and
+  remains exported.
+
 ### Fixed
 
 * `congruence_test(nboot = 0)` errored with `length of 'dimnames' [3] not equal

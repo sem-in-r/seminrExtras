@@ -24,57 +24,16 @@ expect_prints_as <- function(actual, expected, label, dp = 3) {
 
 norm_pair <- function(x) gsub("\\s+", " ", trimws(x))
 
-test_that("Fig. 4.11 congruence coefficients match the book", {
-  skip_unless_textbook()
-
-  g <- golden("fig_4_11_congruence.csv")
-  # Exactly the book's chapter 4 call: no `reliability`, so the DEFAULT is
-  # under test as much as the arithmetic is.
-  res <- congruence_test(textbook_model_simple(), alpha = 0.10)$results
-
-  expect_equal(norm_pair(rownames(res)), g$pair)
-
-  # All six columns, not just the point estimates. congruence_test() defaults to
-  # seed = 123 and nboot = 2000, so the bootstrap columns are reproducible too --
-  # verified 21 Aug 2026, all 36 cells, max|diff| 0.00049 (3dp rounding).
-  expect_prints_as(res[, "Original Est."], g$original_est, "Fig. 4.11 rc")
-  expect_prints_as(res[, "Diff"],          g$diff,         "Fig. 4.11 Diff")
-  expect_prints_as(res[, "Bootstrap SD"],  g$boot_sd,      "Fig. 4.11 Bootstrap SD")
-  expect_prints_as(res[, "T Stat."],       g$t_stat,       "Fig. 4.11 T Stat.")
-  expect_prints_as(res[, "5% CI"],         g$ci_low,       "Fig. 4.11 5% CI")
-  expect_prints_as(res[, "95% CI"],        g$ci_high,      "Fig. 4.11 95% CI")
-
-  # Internal consistency, independent of the golden file.
-  expect_equal(unname(res[, "Diff"]), unname(1 - res[, "Original Est."]))
-  # The book's conclusion: every pair significantly below congruence of 1.
-  expect_true(all(res[, "95% CI"] < 1))
-
-  # alpha = 0.10 is DELIBERATE here, not a slip. Congruence is tested against a
-  # threshold of 1, so only one direction is meaningful: p. 105 specifies "the
-  # one-sided 95% (or 90% two-sided) bootstrap-based confidence interval".
-  # Contrast Fig. 8.7, where indirect effects are tested against zero and can be
-  # negative, so alpha is two-tailed (Table 8.1) and must be 0.05.
-  expect_identical(colnames(res)[5:6], c("5% CI", "95% CI"))
-})
-
-test_that("Fig. 4.11 pair labels are not transposed", {
-  skip_unless_textbook()
-
-  # Guards the combn()/upper.tri() ordering bug fixed in 1.0.2, independently
-  # of any golden file: rebuild the matrix name-indexed and compare.
-  res <- congruence_test(textbook_model_simple(), alpha = 0.10, nboot = 0)$results
-  labs <- strsplit(norm_pair(rownames(res)), " -> ", fixed = TRUE)
-
-  expect_true(all(lengths(labs) == 2))
-  # COMP -> CUSL and LIKE -> CUSA are the pair that swapped in <= 1.0.1.
-  expect_true("COMP -> CUSL" %in% norm_pair(rownames(res)))
-  expect_true("LIKE -> CUSA" %in% norm_pair(rownames(res)))
-  comp_cusl <- res[norm_pair(rownames(res)) == "COMP -> CUSL", "Original Est."]
-  like_cusa <- res[norm_pair(rownames(res)) == "LIKE -> CUSA", "Original Est."]
-  # Under the correct labelling LIKE->CUSA exceeds COMP->CUSL; the printed
-  # proof has it the other way round, which is how the transposition shows.
-  expect_gt(like_cusa, comp_cusl)
-})
+# Fig. 4.11 (congruence) was REMOVED FROM THE BOOK on 2026-08-24. Sarstedt ruled
+# that an rc significance test is work-in-progress and does not belong in a
+# textbook; Ringle had independently said the same. The whole congruence
+# treatment comes out of chapter 4 — prose, Table 4.1, the worked example, the
+# summary-box sentence, the exercise clause, the glossary and index entries, and
+# the demo code line. So there is no longer a printed Fig. 4.11 to test against.
+#
+# The values were verified correct (all 36 cells, max|diff| 0.00049) and are NOT
+# thrown away: they moved to test-congruence.R as a characterisation test of
+# congruence_test() itself, which is still an exported function.
 
 test_that("Fig. 6.9 CVPAT results match the book", {
   skip_unless_textbook()

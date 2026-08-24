@@ -117,7 +117,3 @@ sum_boot_corp_rep <- summary(boot_corp_rep, alpha = 0.10)
 
 # Extract the bootstrapped HTMT
 sum_boot_corp_rep$bootstrapped_HTMT
-
-# Calculate the congruence coefficient rc
-congruence_test(corp_rep_pls_model, alpha = 0.10)$results
-

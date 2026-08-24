@@ -1,5 +1,10 @@
 # Golden values from the printed book
 
+> **Fig. 4.11 was CUT from the book on 2026-08-24** and its golden file deleted.
+> Sarstedt: an rc significance test is work-in-progress and a textbook reports
+> established procedures. The verified values live on in `test-congruence.R` as a
+> characterisation test of `congruence_test()`, which is still exported.
+
 Numbers transcribed **by hand from the page proofs** of
 
 > Hair, Hult, Ringle, Sarstedt, Danks & Adler (2026).
@@ -12,7 +17,6 @@ Change a value here only when a corrected figure has been read off a proof.
 
 | File | Source | Produced by |
 |---|---|---|
-| `fig_4_11_congruence.csv` | Fig. 4.11, ch. 4 | `congruence_test(corp_rep_pls_model, alpha = 0.10)` |
 | `fig_8_7_indirect.csv` | Fig. 8.7, ch. 8 (p. 185) | `specific_effect_significance(boot_corp_rep_ext, ..., alpha = 0.05)` on a `nboot = 1000, seed = 123` bootstrap |
 | `fig_6_9_cvpat.csv` | Fig. 6.9, ch. 6 (p. 143) | `assess_cvpat(corp_rep_pls_model_ext, testtype = "greater", nboot = 2000, seed = 123, technique = predict_DA, noFolds = 10, reps = 10)` |
 
