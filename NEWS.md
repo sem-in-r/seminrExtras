@@ -2,6 +2,13 @@
 
 ### Demo
 
+* `demo/seminr-primer-v2-chap8.R` now uses `seed = 123` for the moderated-mediation
+  bootstrap, replacing `seed = 12345`. The PLS-SEM R book uses 123 throughout and
+  says so explicitly ("Following this convention, we set the seed = 123"), and the
+  book's own chapter 8 code box prints 123 — so the demo was the outlier, and
+  Fig. 8.12 had been generated from it rather than from the book's code. The figure
+  is being regenerated to match. No change to any other seed.
+
 * `demo/seminr-primer-v2-chap4.R` no longer calls `congruence_test()`. The
   congruence treatment was **cut from chapter 4 of the PLS-SEM R book** on
   2026-08-24: an rc significance test is work in progress, and a textbook should

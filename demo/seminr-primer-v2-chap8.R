@@ -127,7 +127,7 @@ sum_corp_rep_mod <- summary(corp_rep_pls_model_mod)
 # Bootstrap the model ----
 boot_corp_rep_mod <- bootstrap_model(
   seminr_model = corp_rep_pls_model_mod,
-  seed = 12345,
+  seed = 123,
   nboot = 1000)
 
 # Index of moderated mediation ----
