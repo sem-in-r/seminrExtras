@@ -9,6 +9,13 @@
   Fig. 8.12 had been generated from it rather than from the book's code. The figure
   is being regenerated to match. No change to any other seed.
 
+  The two index-of-moderated-mediation intervals are now wrapped in `round(., 4)`.
+  Under seed 123 the COMP upper bound is about -0.000054, which R renders as
+  `-1e-04` — the only piece of scientific notation in the book, in a screenshot, in
+  the final analysis of the final chapter. `options(scipen = )` does not fix this:
+  it chooses fixed over scientific notation but not the number of digits, so it
+  prints `-0.00005395743` instead. Rounding is the fix, and it sets no global state.
+
 * `demo/seminr-primer-v2-chap4.R` no longer calls `congruence_test()`. The
   congruence treatment was **cut from chapter 4 of the PLS-SEM R book** on
   2026-08-24: an rc significance test is work in progress, and a textbook should

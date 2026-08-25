@@ -149,7 +149,7 @@ p_val <- function(x){
 # Compute p1*p5 and 95% confidence interval for COMP
 p1_p5_comp <- boot_corp_rep_mod$boot_path["COMP", "CUSA", ] *
   boot_corp_rep_mod$boot_path["CUSA*SC", "CUSL", ]
-quantile(p1_p5_comp, probs = c(0.025, 0.975))
+round(quantile(p1_p5_comp, probs = c(0.025, 0.975)), 4)
 
 # Compute the p-value of path p1*p5 for COMP
 p_val(p1_p5_comp)
@@ -157,7 +157,7 @@ p_val(p1_p5_comp)
 # Compute p1*p5 and 95% confidence interval for LIKE
 p1_p5_like <- boot_corp_rep_mod$boot_path["LIKE", "CUSA", ] *
   boot_corp_rep_mod$boot_path["CUSA*SC", "CUSL", ]
-quantile(p1_p5_like, probs = c(0.025, 0.975))
+round(quantile(p1_p5_like, probs = c(0.025, 0.975)), 4)
 
 # Compute the p-value of path p1*p5 for LIKE
 p_val(p1_p5_like)
