@@ -1,4 +1,4 @@
-# Congruence Coefficient Testing with SEMinR
+# Congruence Coefficients with SEMinR
 library(seminr)
 library(seminrExtras)
 
@@ -25,19 +25,25 @@ mobi_pls <- estimate_pls(data = mobi,
                           structural_model  = mobi_sm)
 
 # ============================================================================
-# Congruence test (congruence_test)
+# Congruence coefficients (congruence)
 # ============================================================================
-# Tests whether the congruence coefficients between PLS composite weights
-# and bootstrapped weights are significantly close to 1 (perfect congruence).
+# The congruence coefficient rc describes how similarly two constructs relate
+# to the other constructs in the model: the cosine similarity of their two
+# columns of the construct-correlation matrix, with reliabilities on the
+# diagonal (Franke, Sarstedt & Danks, 2021, Eq. 2). A value near 1 says the two
+# constructs sit in nearly the same position in the nomological network.
+#
+# rc is an effect size. It is bounded above by 1, so sampling error can only
+# move it downwards, and no significance test for rc has been validated for
+# PLS-SEM. Read the magnitude; do not compare it to a cut-off.
 
-cong_result <- congruence_test(mobi_pls,
-                                nboot = 2000,
-                                seed = 123,
-                                alpha = 0.05,
-                                threshold = 1)
+congruence(mobi_pls)
 
-# Print results
-print(cong_result)
+# The reliability placed on the diagonal can be changed. Franke et al. (2021)
+# specify "the reliabilities" without fixing an estimator, so all four options
+# are in specification; they diverge only for Mode B constructs, where rhoA
+# returns 1 because internal consistency is undefined for a composite.
+congruence(mobi_pls, reliability = "one")
 
-# Summary with detailed bootstrap statistics
-summary(cong_result)
+# summary() adds the range and the interpretation note.
+summary(congruence(mobi_pls))

@@ -1,9 +1,10 @@
 # Golden values from the printed book
 
-> **Fig. 4.11 was CUT from the book on 2026-08-24** and its golden file deleted.
-> Sarstedt: an rc significance test is work-in-progress and a textbook reports
-> established procedures. The verified values live on in `test-congruence.R` as a
-> characterisation test of `congruence_test()`, which is still exported.
+> **Fig. 4.11 STAYS, in reduced form** (decided 2026-08-26). Sarstedt: keep
+> congruence and its computation, drop the confidence interval estimation and
+> interpretation. Ringle and Adler agreed. The figure keeps its coefficients and
+> loses the inferential columns, and is now produced by `congruence()`. A 24 Aug
+> proposal to cut congruence from the chapter entirely was never agreed.
 
 Numbers transcribed **by hand from the page proofs** of
 
@@ -19,8 +20,9 @@ Change a value here only when a corrected figure has been read off a proof.
 |---|---|---|
 | `fig_8_7_indirect.csv` | Fig. 8.7, ch. 8 (p. 185) | `specific_effect_significance(boot_corp_rep_ext, ..., alpha = 0.05)` on a `nboot = 1000, seed = 123` bootstrap |
 | `fig_6_9_cvpat.csv` | Fig. 6.9, ch. 6 (p. 143) | `assess_cvpat(corp_rep_pls_model_ext, testtype = "greater", nboot = 2000, seed = 123, technique = predict_DA, noFolds = 10, reps = 10)` |
+| `fig_4_11_congruence.csv` | Fig. 4.11, ch. 4 (p. 99) | `congruence(corp_rep_pls_model)` |
 
-## Fig. 4.11 — the printed proof is WRONG; these are the replacement values
+## Fig. 4.11 — now on its THIRD version; confirm what Springer holds
 
 `Fig.4.11_NEW.png` (the corrected screenshot supplied to Springer) is the
 source, **not** the figure currently set on p. 100 of
@@ -40,9 +42,18 @@ Correct (rho_A): 0.971, 0.848, 0.891, 0.902, 0.954, 0.967
 If Springer fails to swap the figure, the book ships mislabelled coefficients
 from a superseded default. **Confirm the replacement was applied.**
 
-The surrounding prose survives either way: every upper CI stays below 1, so
-"all constructs have a congruence coefficient significantly smaller than 1.0"
-holds under both estimators.
+Then, on 2026-08-26, the inferential columns went. `Fig.4.11_NEW.png` — the
+replacement already supplied to Springer — is therefore **also superseded**: it
+still carries Diff, Bootstrap SD, T Stat. and the two CI bounds. A third
+screenshot is needed, produced by `congruence(corp_rep_pls_model)`.
+
+The rc values are the same in all three versions of the corrected figure. Only
+the columns changed.
+
+The surrounding prose does NOT survive this one. It read "all constructs have a
+congruence coefficient significantly smaller than 1.0", a claim resting entirely
+on the CI column that has now been removed. That sentence has to be rewritten as
+a statement about magnitude, not significance.
 
 ## Fig. 6.9 — the prose quotes these numbers
 

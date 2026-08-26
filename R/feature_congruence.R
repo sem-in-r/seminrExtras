@@ -38,6 +38,86 @@ construct_alphas <- function(model, constructs) {
   }, numeric(1))
 }
 
+# =============================================================================
+# SHARED INTERNALS
+# =============================================================================
+# Both congruence_test() and congruence() compute the same coefficient from the
+# same matrix. The formula, the reliability choice and the construct set live
+# here once, so the two cannot drift apart.
+
+# Validated construct set for a congruence analysis.
+#
+# Interaction constructs are dropped from the set entirely, not merely from the
+# pair list: Eq. 2 sums over the whole set, so leaving one in would perturb
+# every coefficient. Returns NULL when the analysis cannot proceed, having
+# already warned.
+#
+# @param seminr_model A fitted seminr model.
+# @param fn_name Name of the calling function, used in messages.
+# @return Character vector of construct names, or NULL.
+# @noRd
+congruence_constructs <- function(seminr_model, fn_name) {
+  if (!validate_seminr_model(seminr_model, fn_name)) {
+    return(NULL)
+  }
+
+  # Higher-order models are out of scope. Two-stage estimation replaces the
+  # lower-order constructs with a single higher-order composite, and it has not
+  # been established what belongs on that composite's diagonal or whether a
+  # coefficient between a HOC and a first-order construct is interpretable.
+  if (!is.null(seminr_model$hoc)) {
+    warning(fn_name, "() does not yet support higher-order models.",
+            call. = FALSE)
+    return(NULL)
+  }
+
+  construct_names <- colnames(seminr_model$construct_scores)
+
+  is_interaction <- grepl("*", construct_names, fixed = TRUE)
+  if (any(is_interaction)) {
+    message("Excluding interaction constructs (measurement determined by method): ",
+            paste(construct_names[is_interaction], collapse = ", "))
+    construct_names <- construct_names[!is_interaction]
+  }
+
+  if (length(construct_names) < 2) {
+    warning(fn_name, "() needs at least two non-interaction constructs.",
+            call. = FALSE)
+    return(NULL)
+  }
+
+  construct_names
+}
+
+# The congruence coefficient itself: cosine similarity of two columns of the
+# construct-correlation matrix. rc = sum(X*Y) / sqrt(sum(X^2) * sum(Y^2)).
+# @noRd
+congruence_rc <- function(mat, X, Y) {
+  sum(mat[, X] * mat[, Y]) / sqrt(sum(mat[, X]^2) * sum(mat[, Y]^2))
+}
+
+# Reliabilities for the diagonal of the construct-correlation matrix, per the
+# selected estimator. Recomputed from whichever model is passed in, so a
+# bootstrap resample gets its own values rather than the original fit's.
+# @noRd
+congruence_diagonal <- function(model, constructs, reliability) {
+  switch(reliability,
+    rhoA  = seminr::rho_A(model, constructs)[constructs, 1],
+    rhoC  = seminr::rhoC_AVE(x = model)[constructs, 1],
+    cronbach = construct_alphas(model, constructs),
+    one   = stats::setNames(rep(1, length(constructs)), constructs)
+  )
+}
+
+# Construct-correlation matrix with the chosen reliabilities on the diagonal --
+# the matrix Eq. 2 operates on.
+# @noRd
+congruence_input_matrix <- function(model, constructs, reliability) {
+  mat <- stats::cor(model$construct_scores[, constructs, drop = FALSE])
+  diag(mat) <- congruence_diagonal(model, constructs, reliability)
+  mat
+}
+
 #' Bootstrap congruence coefficient test
 #'
 #' `congruence_test` conducts a bootstrapped significance test of congruence
@@ -159,48 +239,12 @@ congruence_test <- function(seminr_model,
   set.seed(seed)
 
   # ---------------------------------------------------------------------------
-  # Step 1: Validate the model
+  # Step 1: Validate the model and settle the construct set
   # ---------------------------------------------------------------------------
-  if (!validate_seminr_model(seminr_model, "congruence_test")) {
-    return(NULL)
-  }
-
-  # ---------------------------------------------------------------------------
-  # Step 1b: Refuse model types that are not yet supported
-  # ---------------------------------------------------------------------------
-  # Higher-order models are out of scope for now. Two-stage estimation replaces
-  # the lower-order constructs with a single higher-order composite, and it has
-  # not been established what belongs on the diagonal for that composite or
-  # whether a congruence coefficient between a HOC and a first-order construct
-  # is interpretable. Refuse rather than return an unvalidated number.
-  if (!is.null(seminr_model$hoc)) {
-    warning("congruence_test() does not yet support higher-order models.",
-            call. = FALSE)
-    return(NULL)
-  }
-
-  # Get all construct names from the model
-  construct_names <- colnames(seminr_model$construct_scores)
-
-  # ---------------------------------------------------------------------------
-  # Step 1c: Drop interaction constructs
-  # ---------------------------------------------------------------------------
-  # An interaction term's measurement is determined by the product method, not
-  # by theory, so it is not a construct whose position in the nomological
-  # network can be interpreted. It is removed from the construct set entirely,
-  # not merely from the pair list: Eq. 2 sums over the whole set, so leaving it
-  # in the correlation vectors would still perturb every coefficient. This
-  # matches assess_cta(), assess_pos(), assess_pcm() and assess_cipma().
-  is_interaction <- grepl("*", construct_names, fixed = TRUE)
-  if (any(is_interaction)) {
-    message("Excluding interaction constructs (measurement determined by method): ",
-            paste(construct_names[is_interaction], collapse = ", "))
-    construct_names <- construct_names[!is_interaction]
-  }
-
-  if (length(construct_names) < 2) {
-    warning("congruence_test() needs at least two non-interaction constructs.",
-            call. = FALSE)
+  # Shared with congruence(): higher-order models refused, interaction
+  # constructs dropped from the set entirely. See congruence_constructs().
+  construct_names <- congruence_constructs(seminr_model, "congruence_test")
+  if (is.null(construct_names)) {
     return(NULL)
   }
 
@@ -210,20 +254,13 @@ congruence_test <- function(seminr_model,
   # The congruence coefficient (rc) measures pattern similarity between two
   # vectors. Formula: rc = sum(X*Y) / sqrt(sum(X^2) * sum(Y^2))
   # This is essentially a cosine similarity applied to correlation patterns.
-  calc_congruence <- function(mat, X, Y) {
-    return(sum(mat[, X] * mat[, Y]) / sqrt(sum(mat[, X]^2) * sum(mat[, Y]^2)))
-  }
+  calc_congruence <- congruence_rc
 
   # Reliabilities for the diagonal, per the selected estimator. Recomputed from
   # whichever model is passed in, so the bootstrap gets resample-specific values
   # rather than the original fit's.
   diagonal_values <- function(model, constructs) {
-    switch(reliability,
-      rhoA  = seminr::rho_A(model, constructs)[constructs, 1],
-      rhoC  = seminr::rhoC_AVE(x = model)[constructs, 1],
-      cronbach = construct_alphas(model, constructs),
-      one   = stats::setNames(rep(1, length(constructs)), constructs)
-    )
+    congruence_diagonal(model, constructs, reliability)
   }
 
   # ---------------------------------------------------------------------------
@@ -372,4 +409,192 @@ congruence_test <- function(seminr_model,
   return_matrix <- convert_to_table_output(return_matrix)
 
   return(list(results = return_matrix))
+}
+
+# =============================================================================
+# CONGRUENCE COEFFICIENTS
+# =============================================================================
+
+#' Congruence coefficients for a PLS-SEM model
+#'
+#' `congruence()` reports the congruence coefficient rc for every pair of
+#' constructs in an estimated model, as a square table read like a correlation
+#' matrix.
+#'
+#' The congruence coefficient describes how similarly two constructs relate to
+#' the other constructs in the model. It is the cosine similarity of the two
+#' constructs' columns in the construct-correlation matrix, with reliabilities
+#' placed on the diagonal (Franke et al., 2021, Eq. 2), and is bounded above by
+#' 1. A value near 1 says the two constructs sit in nearly the same position in
+#' the nomological network; a lower value says their correlation profiles
+#' differ.
+#'
+#' The calculation is deterministic — one pass over the estimated model, no
+#' resampling — so it returns immediately.
+#'
+#' @section Interpreting rc:
+#' rc is an **effect size**, and should be read as a magnitude rather than
+#' against a cut-off. Franke et al. (2021) define congruence as
+#' *proportionality* of the two correlation profiles, phi_XZi = rho * phi_YZi,
+#' where rho need not equal 1: rho = 1 is exact equivalence and rho != 1 is weak
+#' congruence. The paper states that the DIFF and WALD procedures it evaluates
+#' do not transfer to PLS-SEM, and no significance test for rc has been
+#' validated for PLS-SEM since. Report the coefficient and interpret its size;
+#' do not report it as a test result.
+#'
+#' Note also that rc is bounded above by 1, so sampling error can only move an
+#' estimate downwards. That asymmetry is a further reason not to read a value
+#' short of 1 as evidence against congruence.
+#'
+#' @param seminr_model The estimated SEMinR model to report congruence for.
+#' @param reliability Which reliability estimate to place on the diagonal of the
+#'   construct-correlation matrix: `"rhoA"` (default, matches SmartPLS),
+#'   `"rhoC"` (composite reliability), `"cronbach"` (Cronbach's alpha), or
+#'   `"one"` (unity, as permitted by Franke et al. (2021) when reliabilities are
+#'   unknown).
+#'
+#'   Franke et al. (2021, Eq. 2) specify "the reliabilities" without fixing an
+#'   estimator, so all four are in specification. They agree wherever a
+#'   construct has a well-defined internal consistency and diverge where it does
+#'   not: single-item constructs get 1 under `"rhoA"`, `"rhoC"` and `"cronbach"`
+#'   alike, whereas Mode B (formative) constructs get exactly 1 under `"rhoA"`
+#'   — internal consistency being undefined for a composite — while `"rhoC"` and
+#'   `"cronbach"` still compute a value from the indicators. This only ever
+#'   affects pairs that involve a Mode B construct, since each column of the
+#'   matrix carries only its own construct's reliability.
+#'
+#' @section Model types:
+#' **Interaction constructs are excluded** from the construct set entirely, not
+#' merely from the pair list, since Eq. 2 sums over the whole set. A message
+#' names any construct dropped. **Higher-order models are not supported** and
+#' are refused with a warning.
+#'
+#' @return An object of class `congruence_analysis`: a list with the symmetric
+#'   matrix of congruence coefficients (`congruence`), the construct names
+#'   (`constructs`), and the reliability estimator used (`reliability`).
+#'
+#' @references Franke, G. R., Sarstedt, M., & Danks, N. P. (2021). Assessing
+#' measure congruence in nomological networks. Journal of Business Research,
+#' 130, 318-334.
+#'
+#' @examples
+#' library(seminr)
+#'
+#' corp_rep_mm <- constructs(
+#'   composite("COMP", multi_items("comp_", 1:3)),
+#'   composite("LIKE", multi_items("like_", 1:3)),
+#'   composite("CUSA", single_item("cusa")),
+#'   composite("CUSL", multi_items("cusl_", 1:3))
+#' )
+#'
+#' corp_rep_sm <- relationships(
+#'   paths(from = c("COMP", "LIKE"), to = c("CUSA", "CUSL")),
+#'   paths(from = "CUSA", to = "CUSL")
+#' )
+#'
+#' corp_rep_pls_model <- estimate_pls(
+#'   data = corp_rep_data,
+#'   measurement_model = corp_rep_mm,
+#'   structural_model  = corp_rep_sm,
+#'   missing = mean_replacement,
+#'   missing_value = "-99"
+#' )
+#'
+#' congruence(corp_rep_pls_model)
+#'
+#' @export
+congruence <- function(seminr_model,
+                       reliability = c("rhoA", "rhoC", "cronbach", "one")) {
+
+  reliability <- match.arg(reliability)
+
+  construct_names <- congruence_constructs(seminr_model, "congruence")
+  if (is.null(construct_names)) {
+    return(NULL)
+  }
+
+  # The matrix Eq. 2 operates on: construct correlations, reliabilities on the
+  # diagonal.
+  input_matrix <- congruence_input_matrix(seminr_model, construct_names, reliability)
+
+  # Symmetric by construction -- rc(X, Y) == rc(Y, X) -- so both triangles are
+  # filled and the diagonal is 1. print() shows the upper triangle only, but
+  # indexing by either pair order works.
+  rc <- matrix(1,
+               nrow = length(construct_names),
+               ncol = length(construct_names),
+               dimnames = list(construct_names, construct_names))
+
+  pairs <- t(utils::combn(construct_names, 2))
+  for (r in seq_len(nrow(pairs))) {
+    value <- congruence_rc(input_matrix, pairs[r, 1], pairs[r, 2])
+    rc[pairs[r, 1], pairs[r, 2]] <- value
+    rc[pairs[r, 2], pairs[r, 1]] <- value
+  }
+
+  output <- list(
+    congruence  = rc,
+    constructs  = construct_names,
+    reliability = reliability
+  )
+  class(output) <- c("congruence_analysis", class(output))
+  output
+}
+
+# =============================================================================
+# S3 METHODS
+# =============================================================================
+
+# Lower triangle as text, "." elsewhere. This is deliberately the layout seminr
+# uses for the HTMT table, which chapter 4 prints a few pages earlier: a reader
+# meets the two tables in the same shape, and the matrix is symmetric anyway.
+# @noRd
+format_congruence_matrix <- function(rc, digits) {
+  out <- formatC(rc, format = "f", digits = digits)
+  out[!lower.tri(rc)] <- "."
+  dimnames(out) <- dimnames(rc)
+  out
+}
+
+#' @param x A `congruence_analysis` object.
+#' @param digits Number of decimal places to print (defaults to 3).
+#' @param ... Ignored.
+#' @rdname congruence
+#' @export
+print.congruence_analysis <- function(x, digits = 3, ...) {
+  cat("Congruence Coefficients (rc)\n")
+  cat("============================\n")
+  cat("Calculation uses", x$reliability, "on the diagonal\n\n")
+  print(format_congruence_matrix(x$congruence, digits), quote = FALSE, right = TRUE)
+  invisible(x)
+}
+
+#' @param object A `congruence_analysis` object.
+#' @rdname congruence
+#' @export
+summary.congruence_analysis <- function(object, ...) {
+  class(object) <- c("summary.congruence_analysis", class(object))
+  object
+}
+
+#' @rdname congruence
+#' @export
+print.summary.congruence_analysis <- function(x, digits = 3, ...) {
+  rc <- x$congruence
+  pairwise <- rc[upper.tri(rc)]
+
+  cat("Congruence Coefficients (rc)\n")
+  cat("============================\n")
+  cat("Constructs:", length(x$constructs), " Pairs:", length(pairwise), "\n")
+  cat("Calculation uses", x$reliability, "on the diagonal\n\n")
+  print(format_congruence_matrix(rc, digits), quote = FALSE, right = TRUE)
+
+  cat(sprintf("\nRange: %.*f to %.*f   Mean: %.*f\n",
+              digits, min(pairwise), digits, max(pairwise),
+              digits, mean(pairwise)))
+  cat("\nrc is an effect size describing the similarity of two constructs'\n")
+  cat("correlation profiles. It is bounded above by 1. No significance test\n")
+  cat("for rc has been validated for PLS-SEM; read the magnitude, not a\n")
+  cat("cut-off. See Franke, Sarstedt and Danks (2021).\n")
+  invisible(x)
 }
