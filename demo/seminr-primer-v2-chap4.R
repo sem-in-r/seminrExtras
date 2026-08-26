@@ -117,3 +117,6 @@ sum_boot_corp_rep <- summary(boot_corp_rep, alpha = 0.10)
 
 # Extract the bootstrapped HTMT
 sum_boot_corp_rep$bootstrapped_HTMT
+
+# Congruence coefficients for all construct pairs
+congruence(corp_rep_pls_model)

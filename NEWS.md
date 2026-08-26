@@ -1,5 +1,28 @@
 # seminrExtras 1.0.4
 
+### New
+
+* **`congruence()`** reports the congruence coefficient rc for every pair of
+  constructs as a square table, laid out the way seminr prints HTMT so the two
+  read alike in a chapter that shows both. It is deterministic — one pass over
+  the estimated model, no resampling — so it returns immediately rather than
+  re-estimating the model 2000 times.
+
+  rc is an **effect size**, and `congruence()` reports it as one: the
+  coefficients and nothing else. Franke, Sarstedt and Danks (2021) define
+  congruence as *proportionality* of two correlation profiles, which does not
+  require rc to equal 1, and state that the DIFF and WALD procedures they
+  evaluate do not transfer to PLS-SEM. No significance test for rc has been
+  validated for PLS-SEM since. rc is also bounded above by 1, so sampling error
+  can only move an estimate downwards — testing an estimate against that
+  boundary is not informative. `summary()` prints the range and this caveat.
+
+  The formula, the reliability diagonal and the construct set are now shared
+  internals used by both `congruence()` and `congruence_test()`, so the two
+  cannot drift apart. `congruence_test()` is unchanged in behaviour — its
+  existing tests, including the 36-cell characterisation of the corporate
+  reputation model, pass untouched.
+
 ### Demo
 
 * `demo/seminr-primer-v2-chap8.R` now uses `seed = 123` for the moderated-mediation
@@ -16,11 +39,13 @@
   it chooses fixed over scientific notation but not the number of digits, so it
   prints `-0.00005395743` instead. Rounding is the fix, and it sets no global state.
 
-* `demo/seminr-primer-v2-chap4.R` no longer calls `congruence_test()`. The
-  congruence treatment was **cut from chapter 4 of the PLS-SEM R book** on
-  2026-08-24: an rc significance test is work in progress, and a textbook should
-  report established procedures. `congruence_test()` itself is unaffected and
-  remains exported.
+* `demo/seminr-primer-v2-chap4.R` now calls `congruence()` in place of
+  `congruence_test()`, matching the chapter's revised code box.
+
+* `demo/seminr-pls-congruence.R` rewritten around `congruence()`. Its previous
+  description was also wrong: it said the coefficient compares "PLS composite
+  weights and bootstrapped weights", where in fact it compares two constructs'
+  correlation profiles.
 
 ### Fixed
 
