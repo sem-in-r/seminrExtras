@@ -564,7 +564,7 @@ format_congruence_matrix <- function(rc, digits) {
 print.congruence_analysis <- function(x, digits = 3, ...) {
   cat("Congruence Coefficients (rc)\n")
   cat("============================\n")
-  cat("Reliability on the diagonal:", x$reliability, "\n\n")
+  cat("Calculation uses", x$reliability, "on the diagonal\n\n")
   print(format_congruence_matrix(x$congruence, digits), quote = FALSE, right = TRUE)
   invisible(x)
 }
@@ -586,7 +586,7 @@ print.summary.congruence_analysis <- function(x, digits = 3, ...) {
   cat("Congruence Coefficients (rc)\n")
   cat("============================\n")
   cat("Constructs:", length(x$constructs), " Pairs:", length(pairwise), "\n")
-  cat("Reliability on the diagonal:", x$reliability, "\n\n")
+  cat("Calculation uses", x$reliability, "on the diagonal\n\n")
   print(format_congruence_matrix(rc, digits), quote = FALSE, right = TRUE)
 
   cat(sprintf("\nRange: %.*f to %.*f   Mean: %.*f\n",

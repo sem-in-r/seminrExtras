@@ -189,7 +189,10 @@ test_that("print() shows the lower triangle, as seminr prints HTMT", {
   out <- capture.output(print(res))
 
   expect_true(any(grepl("Congruence Coefficients", out)))
-  expect_true(any(grepl("rhoA", out)))
+
+  # This header line is printed in Fig. 4.11 of the PLS-SEM R book, so the
+  # wording is load-bearing, not incidental.
+  expect_true(any(grepl("Calculation uses rhoA on the diagonal", out, fixed = TRUE)))
 
   # Lower triangle: the COMP row carries none, the CUSL row carries three.
   comp_row <- out[grepl("^COMP", out)]
