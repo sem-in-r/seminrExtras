@@ -128,5 +128,5 @@ Tetrad Analysis in PLS-SEM: A Multiple Testing Correction Perspective.
 \emph{Social Indicators Research} (advance online).
 }
 \seealso{
-\code{\link[=congruence_test]{congruence_test()}} for congruence coefficient testing
+\code{\link[=congruence]{congruence()}} for congruence coefficients
 }
