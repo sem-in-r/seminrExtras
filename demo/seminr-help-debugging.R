@@ -1,5 +1,7 @@
 # In this demo we seek to illustrate how users can check for potential bugs in their data and models.
 # We consider each of potential mistakes and how they might be checked.
+# Each problem below raises an error on purpose. try() prints the error and lets
+# demo() continue to the next problem.
 library(seminr)
 library(seminrExtras)
 
@@ -18,10 +20,10 @@ simple_sm <- relationships(
 
 # Note that I have specified the argument `assess_syntax` as TRUE
 # Now estimating the model should output an error
-estimate_pls(data = corp_rep,
-             measurement_model = error_mm,
-             structural_model = simple_sm,
-             assess_syntax = TRUE)
+try(estimate_pls(data = corp_rep_data,
+                 measurement_model = error_mm,
+                 structural_model = simple_sm,
+                 assess_syntax = TRUE))
 
 ## Problem 2. Misspelled construct in SM ----
 # correct measurement model
@@ -37,10 +39,10 @@ error_sm <- relationships(
   paths(from = c("CUSA"), to = c("CUSL")))
 
 # Now estimating the model should output an error
-estimate_pls(data = corp_rep,
-             measurement_model = simple_mm,
-             structural_model = error_sm,
-             assess_syntax = TRUE)
+try(estimate_pls(data = corp_rep_data,
+                 measurement_model = simple_mm,
+                 structural_model = error_sm,
+                 assess_syntax = TRUE))
 
 ## Problem 3. Missing construct in interaction ----
 # Specify the measurement model with interaction
@@ -56,10 +58,10 @@ interaction_sm <- relationships(
   paths(from = c("COMP",  "COMP*LIKE"), to = "CUSL"))
 
 # Now estimating the model should output an error
-estimate_pls(data = corp_rep_data,
-             measurement_model = interaction_mm,
-             structural_model = interaction_sm,
-             assess_syntax = TRUE)
+try(estimate_pls(data = corp_rep_data,
+                 measurement_model = interaction_mm,
+                 structural_model = interaction_sm,
+                 assess_syntax = TRUE))
 
 ## Problem 4. Incorrectly specified indicator names vs data
 # intentionally misspell the indicators of COMP as co_1 through co_3
@@ -70,10 +72,10 @@ error_mm <- constructs(
   composite("CUSA", single_item("cusa")),
   composite("CUSL", multi_items("cusl_", 1:3)))
 
-estimate_pls(data = corp_rep_data,
-             measurement_model = error_mm,
-             structural_model = error_sm,
-             assess_syntax = TRUE)
+try(estimate_pls(data = corp_rep_data,
+                 measurement_model = error_mm,
+                 structural_model = error_sm,
+                 assess_syntax = TRUE))
 
 ## But what do I do if I still have a bug?
 # Plotting the measurement model and structural model pre-estimation can
