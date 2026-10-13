@@ -1,3 +1,18 @@
+# seminrExtras (development version)
+
+### New
+
+* **`assess_micom()`** runs steps 2 and 3 of the measurement invariance of
+  composites procedure (MICOM; Henseler, Ringle & Sarstedt, 2016) for two groups,
+  following `cSEM::testMICOM()`.
+  * **Step 2:** the correlation c between composite scores built with each
+    group's weights, with a one-sided permutation test.
+  * **Step 3:** permutation tests and intervals for the difference in composite
+    means and the log ratio of variances.
+  * **Verdict:** full, partial or no measurement invariance per construct.
+  * **Speed:** the permutation refits use an internal PLS core that reproduces
+    `estimate_pls()` weights (Mode A and B; path weighting or factorial scheme).
+
 # seminrExtras 1.0.4
 
 ### New
