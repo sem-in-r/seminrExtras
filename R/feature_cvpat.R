@@ -28,7 +28,10 @@
 #' @param seed The seed for reproducibility (defaults to 123).
 #' @param technique predict_EA or predict_DA (default).
 #' @param noFolds Number of folds for k-fold cross validation.
-#' @param reps Number of repetitions for cross validation.
+#' @param reps Number of repetitions of the cross-validation, each with new
+#'   random folds. Each observation's loss is computed in every repetition and
+#'   averaged over the repetitions. `NULL` (the default) runs the
+#'   cross-validation once, the same as `reps = 1`.
 #' @param cores Number of cores for parallelization.
 #'
 #' @return A matrix of the estimated loss and results of significance testing.
@@ -150,49 +153,32 @@ assess_cvpat_compare <- function(established_model,
   }
 
   # ---------------------------------------------------------------------------
-  # Step 4: Generate out-of-sample predictions via k-fold cross-validation
+  # Step 4: Generate out-of-sample prediction errors via k-fold cross-validation
   # ---------------------------------------------------------------------------
-  # predict_pls uses k-fold CV to generate unbiased prediction errors
-  pls_predict_one <- predict_pls(established_model,
-                                 technique = technique,
-                                 noFolds = noFolds,
-                                 reps = reps,
-                                 cores = cores)
-  pls_predict_two <- predict_pls(alternative_model,
-                                 technique = technique,
-                                 noFolds = noFolds,
-                                 reps = reps,
-                                 cores = cores)
+  # predict_pls uses k-fold CV to generate unbiased prediction errors; one set
+  # of errors per repetition, each repetition with new random folds
+  errors_one <- cv_residuals_by_rep(established_model, endo_mvs1, technique,
+                                    noFolds, reps, cores)
+  errors_two <- cv_residuals_by_rep(alternative_model, endo_mvs2, technique,
+                                    noFolds, reps, cores)
 
   # ---------------------------------------------------------------------------
-  # Step 5: Extract prediction errors (residuals)
+  # Step 5: Calculate construct-level losses (mean squared error)
   # ---------------------------------------------------------------------------
-  # Residuals = actual - predicted; used to calculate loss
-  pls_error_one <- as.matrix(pls_predict_one$items$PLS_out_of_sample_residuals)
-  colnames(pls_error_one) <- endo_mvs1
-  pls_error_two <- as.matrix(pls_predict_two$items$PLS_out_of_sample_residuals)
-  colnames(pls_error_two) <- endo_mvs2
-
-  # Ensure correct column ordering
-  pls_error_one <- pls_error_one[, endo_mvs1, drop = FALSE]
-  pls_error_two <- pls_error_two[, endo_mvs2, drop = FALSE]
+  # Loss aggregates item-level squared errors to construct level. It is
+  # computed within each repetition and then averaged over repetitions.
+  lv_losses_one <- mean_lv_losses_over_reps(endo_lvs1, established_model, errors_one, "pls")
+  lv_losses_two <- mean_lv_losses_over_reps(endo_lvs2, alternative_model, errors_two, "pls")
 
   # ---------------------------------------------------------------------------
-  # Step 6: Calculate construct-level losses (mean squared error)
-  # ---------------------------------------------------------------------------
-  # Loss aggregates item-level squared errors to construct level
-  lv_losses_one <- calculate_lv_losses(endo_lvs1, established_model, pls_error_one)
-  lv_losses_two <- calculate_lv_losses(endo_lvs2, alternative_model, pls_error_two)
-
-  # ---------------------------------------------------------------------------
-  # Step 7: Calculate overall model loss
+  # Step 6: Calculate overall model loss
   # ---------------------------------------------------------------------------
   # Overall loss = mean of construct losses (equal weighting)
   pls_overall_one <- overall_loss(lv_losses_one)
   pls_overall_two <- overall_loss(lv_losses_two)
 
   # ---------------------------------------------------------------------------
-  # Step 8: Perform CVPAT comparison based on construct overlap
+  # Step 7: Perform CVPAT comparison based on construct overlap
   # ---------------------------------------------------------------------------
   if (identical(endo_lvs1, endo_lvs2)) {
     # Case A: 100% overlap - direct comparison of all constructs
@@ -226,7 +212,7 @@ assess_cvpat_compare <- function(established_model,
   }
 
   # ---------------------------------------------------------------------------
-  # Step 9: Add overall row and format output
+  # Step 8: Add overall row and format output
   # ---------------------------------------------------------------------------
   mat_one <- rbind(mat_one, unlist(c(mean(pls_overall_one),
                                      mean(pls_overall_two),
@@ -278,7 +264,10 @@ assess_cvpat_compare <- function(established_model,
 #' @param seed The seed for reproducibility (defaults to 123).
 #' @param technique predict_EA or predict_DA (default).
 #' @param noFolds Number of folds for k-fold cross validation.
-#' @param reps Number of repetitions for cross validation.
+#' @param reps Number of repetitions of the cross-validation, each with new
+#'   random folds. Each observation's loss is computed in every repetition and
+#'   averaged over the repetitions. `NULL` (the default) runs the
+#'   cross-validation once, the same as `reps = 1`.
 #' @param cores Number of cores for parallelization.
 #'
 #' @return A list containing two matrices: CVPAT_compare_LM (comparison with
@@ -377,32 +366,22 @@ assess_cvpat <- function(seminr_model,
   }
 
   # ---------------------------------------------------------------------------
-  # Step 4: Generate PLS and LM predictions via cross-validation
+  # Step 4: Generate PLS and LM prediction errors via cross-validation
   # ---------------------------------------------------------------------------
   # predict_pls returns both PLS predictions and LM (linear model) predictions
   # LM benchmark: multiple regression predicting each item from other items
-  pls_predict <- suppressWarnings(predict_pls(model = seminr_model,
-                                              technique = technique,
-                                              noFolds = noFolds,
-                                              reps = reps,
-                                              cores = cores))
-
-  # Extract prediction errors (residuals)
-  pls_error <- as.matrix(pls_predict$items$PLS_out_of_sample_residuals)
-  colnames(pls_error) <- endo_mvs
-  lm_error <- as.matrix(pls_predict$items$lm_out_of_sample_residuals)
-  colnames(lm_error) <- endo_mvs
-
-  # Ensure correct column ordering
-  pls_error <- pls_error[, endo_mvs, drop = FALSE]
-  lm_error <- lm_error[, endo_mvs, drop = FALSE]
+  # One set of errors per repetition, each repetition with new random folds
+  cv_errors <- suppressWarnings(cv_residuals_by_rep(seminr_model, endo_mvs, technique,
+                                                    noFolds, reps, cores))
 
   # ---------------------------------------------------------------------------
   # Step 5: Calculate construct-level losses for all three methods
   # ---------------------------------------------------------------------------
+  # PLS and LM losses are computed within each repetition and then averaged
+  # over repetitions; the IA benchmark involves no cross-validation
   lv_losses_ia <- calculate_lv_losses(endo_lvs, seminr_model, ia_pred_error)
-  lv_losses_lm <- calculate_lv_losses(endo_lvs, seminr_model, lm_error)
-  lv_losses_pls <- calculate_lv_losses(endo_lvs, seminr_model, pls_error)
+  lv_losses_lm <- mean_lv_losses_over_reps(endo_lvs, seminr_model, cv_errors, "lm")
+  lv_losses_pls <- mean_lv_losses_over_reps(endo_lvs, seminr_model, cv_errors, "pls")
 
   # ---------------------------------------------------------------------------
   # Step 6: Calculate overall model losses

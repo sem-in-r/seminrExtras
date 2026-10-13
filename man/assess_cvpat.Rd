@@ -28,7 +28,10 @@ assess_cvpat(
 
 \item{noFolds}{Number of folds for k-fold cross validation.}
 
-\item{reps}{Number of repetitions for cross validation.}
+\item{reps}{Number of repetitions of the cross-validation, each with new
+random folds. Each observation's loss is computed in every repetition and
+averaged over the repetitions. \code{NULL} (the default) runs the
+cross-validation once, the same as \code{reps = 1}.}
 
 \item{cores}{Number of cores for parallelization.}
 }

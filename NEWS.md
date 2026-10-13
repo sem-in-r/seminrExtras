@@ -23,6 +23,20 @@
   existing tests, including the 36-cell characterisation of the corporate
   reputation model, pass untouched.
 
+### Changed
+
+* **`assess_cvpat()` and `assess_cvpat_compare()` with `reps` greater than 1**
+  now run the cross-validation on new random folds in every repetition, compute
+  each observation's loss within each repetition, and average the losses over
+  the repetitions. More repetitions therefore reduce Monte Carlo noise without
+  changing what is estimated. Before, with seminr 2.5.0 and earlier, every
+  repetition reused the same folds, so `reps = 10` gave the result of a single
+  run. (With seminr 2.6.0, which draws new folds but averages the
+  *predictions*, the old code would have scored an ensemble of models, whose
+  loss falls as repetitions are added, and most for the linear-model benchmark,
+  whose predictions vary most across folds.) Results with `reps` greater than 1
+  change; `reps = NULL` or `reps = 1` give the same results as before.
+
 ### Demo
 
 * `demo/seminr-primer-v2-chap8.R` now uses `seed = 123` for the moderated-mediation
