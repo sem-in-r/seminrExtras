@@ -66,6 +66,16 @@ printed.
 The `pls_loss` column is identical across the LM and IA blocks by construction
 (same model, same folds) — a free internal consistency check on the transcription.
 
+**The printed Fig. 6.9 will change (13 Oct 2026).** It was produced when
+`reps` had no effect (seminr <= 2.5.0 reused the same folds in every
+repetition), so it shows a single 10-fold run. seminrExtras 1.0.4 draws new
+folds in each repetition and averages each observation's loss over the
+repetitions. Every claim in the p. 143 prose still holds, but the numbers move
+(e.g. overall vs LM -0.060 -> -0.057). Until the corrected figure has been read
+off a corrected proof, the exact-value test above fails by design; the claims
+test checks the package's output and passes. Update `fig_6_9_cvpat.csv` from
+the corrected proof, not from code.
+
 ## Fig. 8.7 — corrected values, superseding the printed figure
 
 Susi requested (21 Aug 2026) that the FIRST indirect effect use `alpha = 0.05`

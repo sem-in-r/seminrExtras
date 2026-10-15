@@ -150,6 +150,58 @@ calculate_lv_losses <- function(constructs, model, error_matrix) {
 }
 
 # =============================================================================
+# CROSS-VALIDATION REPETITION HELPERS
+# =============================================================================
+
+#' Out-of-sample PLS and LM residuals, one set per cross-validation repetition
+#'
+#' Runs predict_pls() once per repetition; each run draws new random folds. The
+#' folds, and the random number stream, are the same as for a single
+#' predict_pls(reps = reps) call, but each repetition's residuals are kept so
+#' that losses can be computed within each repetition.
+#' @noRd
+cv_residuals_by_rep <- function(model, endo_mvs, technique, noFolds, reps, cores) {
+  if (!is.null(reps) &&
+      (!is.numeric(reps) || length(reps) != 1 || is.na(reps) || reps < 1 || reps != round(reps))) {
+    stop("reps must be NULL or a whole number of at least 1.", call. = FALSE)
+  }
+  n_reps <- if (is.null(reps)) 1L else as.integer(reps)
+  lapply(seq_len(n_reps), function(i) {
+    pred <- predict_pls(model = model,
+                        technique = technique,
+                        noFolds = noFolds,
+                        reps = NULL,
+                        cores = cores)
+    pls_error <- as.matrix(pred$items$PLS_out_of_sample_residuals)
+    colnames(pls_error) <- endo_mvs
+    lm_error <- as.matrix(pred$items$lm_out_of_sample_residuals)
+    colnames(lm_error) <- endo_mvs
+    list(pls = pls_error[, endo_mvs, drop = FALSE],
+         lm = lm_error[, endo_mvs, drop = FALSE])
+  })
+}
+
+#' Construct losses averaged over cross-validation repetitions
+#'
+#' Computes each observation's construct losses within every repetition and
+#' then averages the losses. More repetitions therefore reduce Monte Carlo noise
+#' without changing what is estimated. Averaging the predictions instead would
+#' score an ensemble of models, whose loss falls as repetitions are added, and
+#' most for the benchmark whose predictions vary most across folds. A loss is NA
+#' only when it is NA in every repetition.
+#' @noRd
+mean_lv_losses_over_reps <- function(constructs, model, error_list, which) {
+  losses <- lapply(error_list, function(errors) {
+    calculate_lv_losses(constructs, model, errors[[which]])
+  })
+  sums <- Reduce(`+`, lapply(losses, function(l) { l[is.na(l)] <- 0; l }))
+  counts <- Reduce(`+`, lapply(losses, function(l) !is.na(l)))
+  means <- sums / counts
+  means[counts == 0] <- NA
+  means
+}
+
+# =============================================================================
 # BOOTSTRAP CVPAT HELPERS
 # =============================================================================
 
