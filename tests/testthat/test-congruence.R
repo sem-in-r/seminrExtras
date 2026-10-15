@@ -514,3 +514,54 @@ test_that("cronbach matches seminr's own alpha for every construct", {
   }, numeric(1))
   expect_equal(unname(got), unname(ref), tolerance = 1e-10)
 })
+
+test_that("congruence_test() accepts nboot = 0 and returns point estimates", {
+  # Regression: nboot = 0 errored in <= 1.0.3 with "length of 'dimnames' [3]
+  # not equal to array extent", because the bootstrap array was named `1:nboot`
+  # (which is c(1, 0) when nboot is 0) instead of `seq_len(nboot)`. Fixing that
+  # exposed a second failure downstream, where sd() of an empty slice returned
+  # NA into an `if`. Both are fixed; the inferential columns are now NA, which
+  # is the honest answer when no bootstrap distribution exists.
+  expect_silent(res <- congruence_test(test_model, nboot = 0)$results)
+  expect_equal(nrow(res), 6L)
+  expect_false(anyNA(res[, "Original Est."]))
+  expect_true(all(is.na(res[, "Bootstrap SD"])))
+  expect_true(all(is.na(res[, "T Stat."])))
+
+  # Point estimates must be identical to a bootstrapped run's point estimates.
+  boot <- congruence_test(test_model, nboot = 10)$results
+  expect_equal(unname(res[, "Original Est."]), unname(boot[, "Original Est."]))
+})
+
+
+fig411_model <- function() {
+  mm <- seminr::constructs(
+    seminr::composite("COMP", seminr::multi_items("comp_", 1:3)),
+    seminr::composite("LIKE", seminr::multi_items("like_", 1:3)),
+    seminr::composite("CUSA", seminr::single_item("cusa")),
+    seminr::composite("CUSL", seminr::multi_items("cusl_", 1:3)))
+  sm <- seminr::relationships(
+    seminr::paths(from = c("COMP", "LIKE"), to = c("CUSA", "CUSL")),
+    seminr::paths(from = "CUSA", to = "CUSL"))
+  seminr::estimate_pls(seminr::corp_rep_data, mm, sm,
+                       missing = seminr::mean_replacement, missing_value = "-99")
+}
+
+test_that("congruence_test() reproduces its known corporate-reputation values", {
+  # CHARACTERISATION TEST, not an oracle. These values were verified in Aug 2026
+  # against SmartPLS (point estimates, 3 d.p.) and against the corrected
+  # Fig. 4.11 screenshot before that figure was cut from the book. They lock the
+  # rho_A default and the pair ordering; they do NOT certify that H0: rc = 1 is a
+  # sound test -- it is not. See the congruence card: the test rejects ~100% of
+  # the time when the true rc is 1, because rc is a bounded cosine, and Ringle
+  # notes that Franke, Sarstedt & Danks (2021) never proposed testing rc against
+  # 1 in the first place. Reframing is a paper, not a patch.
+  skip_on_cran()
+  m <- fig411_model()
+  r <- congruence_test(m, alpha = 0.10)$results
+  expect_equal(unname(round(r[, "Original Est."], 3)),
+               c(0.971, 0.848, 0.891, 0.902, 0.954, 0.967))
+  expect_equal(gsub("\\s+", " ", trimws(rownames(r))),
+               c("COMP -> LIKE", "COMP -> CUSA", "COMP -> CUSL",
+                 "LIKE -> CUSA", "LIKE -> CUSL", "CUSA -> CUSL"))
+})

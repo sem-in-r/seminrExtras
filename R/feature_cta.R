@@ -340,7 +340,7 @@ enumerate_borrowed_tetrads <- function(own_indicators, borrowed_indicators,
 #' **Sample size:** CTA-PLS requires adequate sample sizes for reliable results.
 #' A warning is issued if N < 200.
 #'
-#' @seealso [congruence_test()] for congruence coefficient testing
+#' @seealso [congruence()] for congruence coefficients
 #'
 #' @references
 #' Gudergan, S. P., Ringle, C. M., Wende, S. & Will, A. (2008). Confirmatory

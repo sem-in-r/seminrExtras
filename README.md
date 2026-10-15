@@ -53,8 +53,8 @@ PLS-SEM models:
   - **PLS-POS** — Deterministic hill-climbing segmentation that
     maximizes the sum of R-squared across segments, making no
     distributional assumptions (Becker et al., 2013).
-- **Congruence Testing** — Bootstrapped congruence coefficient testing
-  for construct validity (Franke, Sarstedt, & Danks, 2021).
+- **Congruence Coefficients** — The congruence coefficient rc for every
+  pair of constructs (Franke, Sarstedt, & Danks, 2021).
 
 SEMinRExtras also serves to host the example models used in the PLS-SEM
 in R workbook (Hair et al., 2026).
@@ -82,7 +82,7 @@ in R workbook (Hair et al., 2026).
 | `assess_pos()` | PLS-POS prediction-oriented segmentation (Becker et al., 2013) |
 | `assess_pos_compare()` | Compare PLS-POS solutions across K values |
 | `pos_segments()` | Extract segment-specific re-estimated PLS models |
-| `congruence_test()` | Bootstrapped congruence coefficient testing |
+| `congruence()` | Congruence coefficients (rc) for all construct pairs |
 
 ## The demo files for Hair et al. (2026)
 
@@ -396,20 +396,31 @@ print(pos_compare)
 plot(pos_compare)
 ```
 
-## Congruence Testing
+## Congruence Coefficients
 
-Congruence testing (Franke, Sarstedt, & Danks, 2021) evaluates
-whether PLS composite weights are stable across bootstrap samples by
-computing congruence coefficients. A congruence coefficient close to
-1 indicates that the composite weight pattern is robust.
+The congruence coefficient rc (Franke, Sarstedt, & Danks, 2021)
+describes how similarly two constructs relate to the other constructs
+in a model: the cosine similarity of their two columns of the
+construct-correlation matrix, with reliabilities on the diagonal. A
+value near 1 says the two constructs occupy nearly the same position in
+the nomological network.
+
+`congruence()` returns the coefficient for every construct pair, laid
+out like the HTMT table. The calculation is deterministic, so it
+returns immediately.
 
 ``` r
-cong_result <- congruence_test(mobi_pls,
-                                nboot = 2000,
-                                seed = 123)
-print(cong_result)
-summary(cong_result)
+congruence(mobi_pls)
 ```
+
+rc is an **effect size**: report its magnitude rather than comparing it
+to a cut-off. Franke et al. (2021) define congruence as
+*proportionality* of the two correlation profiles, which does not
+require rc to equal 1, and state that the DIFF and WALD procedures they
+evaluate do not transfer to PLS-SEM. No significance test for rc has
+been validated for PLS-SEM since. Note too that rc is bounded above by
+1, so sampling error can only move an estimate downwards — a further
+reason not to read a value short of 1 as evidence against congruence.
 
 # References
 

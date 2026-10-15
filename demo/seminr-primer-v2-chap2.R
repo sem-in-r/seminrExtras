@@ -7,13 +7,13 @@
 vector <- c(1, 2, 3, 4, 5)
 
 # Install the SEMinR package
-install.packages(pkgs = "seminr")
+#install.packages(pkgs = "seminr") # remove the # to execute this line of code
 
 # Load the SEMinR package into the environment
 library(seminr)
 
 # Install the textbook packages from CRAN
-install.packages(pkgs = c("learnr", "paran", "psych", "seminrExtras"))
+#install.packages(pkgs = c("learnr", "paran", "psych", "seminrExtras")) # remove the # to execute this line of code
 
 # Load the learnr package into the environment
 library(learnr)

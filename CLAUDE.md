@@ -13,7 +13,7 @@ seminrExtras is a supplementary R package that extends SEMinR (Structural Equati
 - Composite Overfit Analysis (COA) - `assess_coa()`, `predictive_deviance()`, `deviance_tree()`, `unstable_params()`
 - Necessary Condition Analysis (NCA) - `assess_nca()` and `assess_nca_esse()`
 - FIMIX-PLS (Finite Mixture PLS) - `assess_fimix()`
-- Congruence testing - `congruence_test()`
+- Congruence coefficients - `congruence()`
 - Demo files for the PLS-SEM in R workbook (Hair et al., 2026)
 
 ## Design Philosophy (follows SEMinR)
@@ -152,8 +152,19 @@ usethis::use_package("pkgname", "Suggests")  # Add to Suggests
   - `assess_fimix()` - EM-based latent class segmentation for K=1..max_k
   - `fimix_segments()` - Extract segment-specific re-estimated models
 
-- **feature_congruence.R** (~235 LOC) - Congruence coefficient testing
-  - `congruence_test()` - Bootstrapped congruence testing
+- **feature_congruence.R** (~600 LOC) - Congruence coefficients
+  - `congruence()` - The congruence coefficient rc for every construct pair,
+    deterministic, reported as an effect size. This is the documented entry
+    point; the PLS-SEM R book's chapter 4 prints it.
+  - `congruence_test()` - Retained and exported, but deliberately unadvertised:
+    it is absent from the README, the vignette and the demos. It adds a
+    bootstrap significance test against H0: rc = 1, for which no PLS validation
+    exists (rc is bounded above by 1, so the test rejects near-universally).
+    Do not promote it, and do not deprecate it without asking - it is a
+    released CRAN function.
+  - Shared internals (`congruence_rc()`, `congruence_diagonal()`,
+    `congruence_constructs()`, `congruence_input_matrix()`) back both, so the
+    two cannot drift apart.
 
 - **helpers.R** (~215 LOC) - Shared validation, loss calculation, and bootstrap helpers
 

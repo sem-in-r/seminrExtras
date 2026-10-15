@@ -1,3 +1,126 @@
+# seminrExtras 1.0.4
+
+### New
+
+* **`congruence()`** reports the congruence coefficient rc for every pair of
+  constructs as a square table, laid out the way seminr prints HTMT so the two
+  read alike in a chapter that shows both. It is deterministic — one pass over
+  the estimated model, no resampling — so it returns immediately rather than
+  re-estimating the model 2000 times.
+
+  rc is an **effect size**, and `congruence()` reports it as one: the
+  coefficients and nothing else. Franke, Sarstedt and Danks (2021) define
+  congruence as *proportionality* of two correlation profiles, which does not
+  require rc to equal 1, and state that the DIFF and WALD procedures they
+  evaluate do not transfer to PLS-SEM. No significance test for rc has been
+  validated for PLS-SEM since. rc is also bounded above by 1, so sampling error
+  can only move an estimate downwards — testing an estimate against that
+  boundary is not informative. `summary()` prints the range and this caveat.
+
+  The formula, the reliability diagonal and the construct set are now shared
+  internals used by both `congruence()` and `congruence_test()`, so the two
+  cannot drift apart. `congruence_test()` is unchanged in behaviour — its
+  existing tests, including the 36-cell characterisation of the corporate
+  reputation model, pass untouched.
+
+### Changed
+
+* **`assess_cvpat()` and `assess_cvpat_compare()` with `reps` greater than 1**
+  now run the cross-validation on new random folds in every repetition, compute
+  each observation's loss within each repetition, and average the losses over
+  the repetitions. More repetitions therefore reduce Monte Carlo noise without
+  changing what is estimated. Before, with seminr 2.5.0 and earlier, every
+  repetition reused the same folds, so `reps = 10` gave the result of a single
+  run. (With seminr 2.6.0, which draws new folds but averages the
+  *predictions*, the old code would have scored an ensemble of models, whose
+  loss falls as repetitions are added, and most for the linear-model benchmark,
+  whose predictions vary most across folds.) Results with `reps` greater than 1
+  change; `reps = NULL` or `reps = 1` give the same results as before.
+
+### Demo
+
+* `demo/seminr-primer-v2-chap8.R` now uses `seed = 123` for the moderated-mediation
+  bootstrap, replacing `seed = 12345`. The PLS-SEM R book uses 123 throughout and
+  says so explicitly ("Following this convention, we set the seed = 123"), and the
+  book's own chapter 8 code box prints 123 — so the demo was the outlier, and
+  Fig. 8.12 had been generated from it rather than from the book's code. The figure
+  is being regenerated to match. No change to any other seed.
+
+  The two index-of-moderated-mediation intervals are now wrapped in `round(., 4)`.
+  Under seed 123 the COMP upper bound is about -0.000054, which R renders as
+  `-1e-04` — the only piece of scientific notation in the book, in a screenshot, in
+  the final analysis of the final chapter. `options(scipen = )` does not fix this:
+  it chooses fixed over scientific notation but not the number of digits, so it
+  prints `-0.00005395743` instead. Rounding is the fix, and it sets no global state.
+
+* `demo/seminr-primer-v2-chap4.R` now calls `congruence()` in place of
+  `congruence_test()`, matching the chapter's revised code box.
+
+* `demo("seminr-primer-v2-chap3")` and `demo("seminr-help-debugging")` stopped at
+  their first deliberate error, because `demo()` runs a file through `source()`,
+  which stops at the first error: the rest of each demo never ran. The deliberate
+  errors are now wrapped in `try()`, which prints the error and continues.
+  `seminr-help-debugging` also passed `data = corp_rep`, an object that does not
+  exist (the dataset is `corp_rep_data`); the syntax error masked this.
+
+* `demo("seminr-primer-v2-chap2")` no longer reinstalls packages from CRAN every
+  time it runs; the `install.packages()` lines are commented out, as in the
+  chapter 3 demo.
+
+* `demo/seminr-pls-congruence.R` rewritten around `congruence()`. Its previous
+  description was also wrong: it said the coefficient compares "PLS composite
+  weights and bootstrapped weights", where in fact it compares two constructs'
+  correlation profiles.
+
+### Fixed
+
+* `congruence_test(nboot = 0)` errored with `length of 'dimnames' [3] not equal
+  to array extent`. The bootstrap array was named `1:nboot`, which is `c(1, 0)`
+  rather than empty when `nboot` is 0. Fixing that exposed a second failure:
+  `sd()` over an empty slice returns `NA`, which then reached an `if`. Both are
+  fixed, and the inferential columns (`Bootstrap SD`, `T Stat.`, the CI bounds)
+  are now `NA` — the honest answer when there is no bootstrap distribution.
+  Point estimates are unchanged and identical to a bootstrapped run's. This is
+  the fast path for checking congruence *values* without paying for 2000
+  resamples. Found by the new textbook regression tests.
+
+### Testing
+
+* Added a **textbook regression suite** (`test-textbook-*.R`) that checks the
+  package still reproduces numbers **printed in the PLS-SEM R book**, using
+  values transcribed by hand from the page proofs as an external oracle. This
+  closes a real gap: the previous harness only compared one package version
+  against another, which cannot detect the case where both agree with each
+  other and neither agrees with the book. It was exactly that case which let
+  the 1.0.3 `reliability` default change (rho_C to rho_A) move every
+  coefficient in Fig. 4.11 unnoticed.
+
+  These tests are **excluded from CRAN, CI and cron** — `skip_on_cran()`,
+  `skip_on_ci()`, plus an explicit opt-in — because a failure needs a human to
+  decide whether the code regressed or the figure is due for regeneration. Run
+  them with:
+
+  ```r
+  Sys.setenv(SEMINR_TEXTBOOK_TESTS = "true")
+  devtools::test(filter = "textbook")
+  ```
+
+  Coverage: Fig. 4.11 congruence coefficients, Fig. 6.9 CVPAT (both LM and IA
+  benchmarks), the prose claims on p. 143 that quote Fig. 6.9, the argument
+  defaults printed in Tables 6.2/6.3, pair-label ordering, and a static seed
+  audit of the chapter demos.
+
+### Notes for co-authors
+
+This version exists so co-authors verifying the PLS-SEM R book can install a
+build distinguishable from CRAN 1.0.3:
+
+```r
+remotes::install_github("sem-in-r/seminrExtras@develop")
+```
+
+CRAN submission is on hold until textbook copyediting and errata are resolved.
+
 # seminrExtras 1.0.3
 
 ### Changed

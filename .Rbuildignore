@@ -18,3 +18,5 @@ README.Rmd
 ^seminrExtras_coa_demo_bugs\.md$
 ^tests/testthat/_problems$
 Rplots\.pdf$
+^RESUME\.md$
+^CRAN-SUBMISSION$
