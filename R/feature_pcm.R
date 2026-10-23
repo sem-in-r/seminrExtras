@@ -135,15 +135,13 @@ compute_pcm_for_path <- function(model, antecedent, mediator, target,
   # Build isolated sub-model
   sub_model <- build_isolated_sub_model(model, antecedent, mediator, target)
 
-  # Run DA and EA cross-validated predictions
-  pred_da <- suppressMessages(
-    predict_pls(sub_model, technique = predict_DA,
-                noFolds = noFolds, reps = reps)
-  )
-  pred_ea <- suppressMessages(
-    predict_pls(sub_model, technique = predict_EA,
-                noFolds = noFolds, reps = reps)
-  )
+  # Run DA and EA cross-validated predictions on the same folds, so the PCM
+  # compares the two techniques rather than two fold assignments
+  predictions <- suppressMessages(from_same_rng_state(list(
+    function() predict_pls(sub_model, technique = predict_DA, noFolds = noFolds, reps = reps),
+    function() predict_pls(sub_model, technique = predict_EA, noFolds = noFolds, reps = reps))))
+  pred_da <- predictions[[1]]
+  pred_ea <- predictions[[2]]
 
   # Get summary metrics
   sum_da <- summary(pred_da)

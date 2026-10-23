@@ -1,3 +1,18 @@
+# seminrExtras (development version)
+
+### Fixed
+
+* `assess_cvpat_compare()` cross-validated the two models on different folds:
+  the alternative model's repetitions continued the random number stream after
+  the established model's, so in every repetition the paired loss differences
+  mixed the models' predictive performance with two different fold
+  assignments. CVPAT's paired test (Sharma et al., 2023) assumes the same
+  folds. Both models are now cross-validated on identical folds in every
+  repetition, as are the DA and EA predictions that `assess_pcm()` compares
+  (which also set no seed). **Results of `assess_cvpat_compare()` and
+  `assess_pcm()` change.** A model compared with itself now gives a loss
+  difference of exactly zero. `assess_cvpat()` is unchanged.
+
 # seminrExtras 1.0.4
 
 ### New

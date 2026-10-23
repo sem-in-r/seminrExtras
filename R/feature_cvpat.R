@@ -157,10 +157,16 @@ assess_cvpat_compare <- function(established_model,
   # ---------------------------------------------------------------------------
   # predict_pls uses k-fold CV to generate unbiased prediction errors; one set
   # of errors per repetition, each repetition with new random folds
-  errors_one <- cv_residuals_by_rep(established_model, endo_mvs1, technique,
-                                    noFolds, reps, cores)
-  errors_two <- cv_residuals_by_rep(alternative_model, endo_mvs2, technique,
-                                    noFolds, reps, cores)
+  # Both models are cross-validated on the same folds in every repetition, so
+  # their losses are paired observation by observation, as the test assumes
+  stop_unless_same_observations(established_model, alternative_model)
+  errors <- from_same_rng_state(list(
+    function() cv_residuals_by_rep(established_model, endo_mvs1, technique,
+                                   noFolds, reps, cores),
+    function() cv_residuals_by_rep(alternative_model, endo_mvs2, technique,
+                                   noFolds, reps, cores)))
+  errors_one <- errors[[1]]
+  errors_two <- errors[[2]]
 
   # ---------------------------------------------------------------------------
   # Step 5: Calculate construct-level losses (mean squared error)

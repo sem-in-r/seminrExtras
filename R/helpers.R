@@ -301,3 +301,33 @@ cvpat_per_construct <- function(loss_one, loss_two, testtype = "two.sided", nboo
                          "Boot T value", "Boot P Value", "Perc. P Value")
   return(results)
 }
+
+#' Evaluate several computations from the same random number state
+#'
+#' Each function in `fns` is called after restoring the random number state
+#' that was current on entry, so cross-validations run inside them draw the
+#' same fold shuffles (and the same new folds in each repetition). Used to
+#' compare two models (CVPAT) or two prediction techniques (PCM) on identical
+#' folds, as the paired tests assume. Cross-validations on data with the same
+#' number of rows consume the stream identically, so their folds coincide.
+#' @noRd
+from_same_rng_state <- function(fns) {
+  if (!exists(".Random.seed", envir = globalenv(), inherits = FALSE)) {
+    stats::runif(1)
+  }
+  start_state <- get(".Random.seed", envir = globalenv(), inherits = FALSE)
+  lapply(fns, function(fn) {
+    assign(".Random.seed", start_state, envir = globalenv())
+    fn()
+  })
+}
+
+#' Stop unless the models were estimated on the same number of observations
+#' @noRd
+stop_unless_same_observations <- function(...) {
+  n_rows <- vapply(list(...), function(m) nrow(m$data), integer(1))
+  if (length(unique(n_rows)) != 1) {
+    stop("The models must be estimated on the same observations to be compared ",
+         "on the same cross-validation folds.", call. = FALSE)
+  }
+}

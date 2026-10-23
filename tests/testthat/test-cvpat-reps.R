@@ -83,10 +83,12 @@ test_that("assess_cvpat_compare averages each observation's loss over repetition
   res <- assess_cvpat_compare(reps_model_one, reps_model_two, technique = predict_DA,
                               nboot = 20, seed = seed, noFolds = 3, reps = 2)
 
-  # Established model's repetitions first, then the alternative model's
+  # Both models on the same folds: each model's repetitions start from the same
+  # random number state, so repetition i uses the same folds for both
   set.seed(seed)
   runs_one <- lapply(1:2, function(i) predict_pls(reps_model_one, technique = predict_DA,
                                                   noFolds = 3, reps = NULL))
+  set.seed(seed)
   runs_two <- lapply(1:2, function(i) predict_pls(reps_model_two, technique = predict_DA,
                                                   noFolds = 3, reps = NULL))
   endo <- c("CUSA", "CUSL")
