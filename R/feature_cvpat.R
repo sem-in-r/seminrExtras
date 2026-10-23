@@ -152,17 +152,13 @@ assess_cvpat_compare <- function(established_model,
   # ---------------------------------------------------------------------------
   # Step 4: Generate out-of-sample predictions via k-fold cross-validation
   # ---------------------------------------------------------------------------
-  # predict_pls uses k-fold CV to generate unbiased prediction errors
-  pls_predict_one <- predict_pls(established_model,
-                                 technique = technique,
-                                 noFolds = noFolds,
-                                 reps = reps,
-                                 cores = cores)
-  pls_predict_two <- predict_pls(alternative_model,
-                                 technique = technique,
-                                 noFolds = noFolds,
-                                 reps = reps,
-                                 cores = cores)
+  # predict_pls uses k-fold CV to generate unbiased prediction errors. Both
+  # models are cross-validated on the same folds, so the losses are paired
+  predictions <- predict_pls_same_folds(list(established_model, alternative_model),
+                                        list(technique, technique),
+                                        noFolds = noFolds, reps = reps, cores = cores)
+  pls_predict_one <- predictions[[1]]
+  pls_predict_two <- predictions[[2]]
 
   # ---------------------------------------------------------------------------
   # Step 5: Extract prediction errors (residuals)

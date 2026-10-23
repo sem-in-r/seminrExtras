@@ -59,6 +59,18 @@
   the fast path for checking congruence *values* without paying for 2000
   resamples. Found by the new textbook regression tests.
 
+* `assess_cvpat_compare()` cross-validated the two models on different folds:
+  each `predict_pls()` call drew its own fold shuffle, so the paired loss
+  differences mixed the models' predictive performance with the luck of two
+  fold assignments. CVPAT's paired test (Sharma et al., 2023) assumes the same
+  folds. Both models are now cross-validated on identical folds, as are the DA
+  and EA predictions that `assess_pcm()` compares (which also set no seed).
+  **Results of `assess_cvpat_compare()` and `assess_pcm()` change.** Comparing a
+  model with itself now gives a loss difference of exactly zero.
+  `assess_cvpat()` is unchanged. Together with seminr 2.6.0, which makes
+  `reps > 1` draw new folds for each repetition (it had repeated the same folds),
+  this changes the CVPAT output of the PLS-SEM in R workbook's chapter 6.
+
 ### Testing
 
 * Added a **textbook regression suite** (`test-textbook-*.R`) that checks the

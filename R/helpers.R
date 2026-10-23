@@ -249,3 +249,28 @@ cvpat_per_construct <- function(loss_one, loss_two, testtype = "two.sided", nboo
                          "Boot T value", "Boot P Value", "Perc. P Value")
   return(results)
 }
+
+#' Cross-validated predictions that share the same folds
+#'
+#' Calls seminr::predict_pls() once per model/technique pair, each time from
+#' the same random number state, so every call draws the same fold shuffles
+#' (and, with reps > 1, the same new folds per repetition). Comparisons of two
+#' models (CVPAT) or of DA against EA (PCM) are then paired on identical folds,
+#' as the tests assume. The models must be estimated on the same rows.
+#' @noRd
+predict_pls_same_folds <- function(models, techniques, noFolds, reps, cores = NULL) {
+  n_rows <- vapply(models, function(m) nrow(m$data), integer(1))
+  if (length(unique(n_rows)) != 1) {
+    stop("The models must be estimated on the same observations to be compared ",
+         "on the same cross-validation folds.", call. = FALSE)
+  }
+  if (!exists(".Random.seed", envir = globalenv(), inherits = FALSE)) {
+    stats::runif(1)
+  }
+  start_state <- get(".Random.seed", envir = globalenv(), inherits = FALSE)
+  Map(function(model, technique) {
+    assign(".Random.seed", start_state, envir = globalenv())
+    seminr::predict_pls(model, technique = technique, noFolds = noFolds,
+                        reps = reps, cores = cores)
+  }, models, techniques)
+}
