@@ -1,3 +1,18 @@
+# seminrExtras (development version)
+
+### Fixed
+
+* `assess_cvpat_compare()` cross-validated the two models on different folds:
+  the alternative model's repetitions continued the random number stream after
+  the established model's, so in every repetition the paired loss differences
+  mixed the models' predictive performance with two different fold
+  assignments. CVPAT's paired test (Sharma et al., 2023) assumes the same
+  folds. Both models are now cross-validated on identical folds in every
+  repetition, as are the DA and EA predictions that `assess_pcm()` compares
+  (which also set no seed). **Results of `assess_cvpat_compare()` and
+  `assess_pcm()` change.** A model compared with itself now gives a loss
+  difference of exactly zero. `assess_cvpat()` is unchanged.
+
 # seminrExtras 1.0.4
 
 ### New
@@ -23,6 +38,20 @@
   existing tests, including the 36-cell characterisation of the corporate
   reputation model, pass untouched.
 
+### Changed
+
+* **`assess_cvpat()` and `assess_cvpat_compare()` with `reps` greater than 1**
+  now run the cross-validation on new random folds in every repetition, compute
+  each observation's loss within each repetition, and average the losses over
+  the repetitions. More repetitions therefore reduce Monte Carlo noise without
+  changing what is estimated. Before, with seminr 2.5.0 and earlier, every
+  repetition reused the same folds, so `reps = 10` gave the result of a single
+  run. (With seminr 2.6.0, which draws new folds but averages the
+  *predictions*, the old code would have scored an ensemble of models, whose
+  loss falls as repetitions are added, and most for the linear-model benchmark,
+  whose predictions vary most across folds.) Results with `reps` greater than 1
+  change; `reps = NULL` or `reps = 1` give the same results as before.
+
 ### Demo
 
 * `demo/seminr-primer-v2-chap8.R` now uses `seed = 123` for the moderated-mediation
@@ -41,6 +70,17 @@
 
 * `demo/seminr-primer-v2-chap4.R` now calls `congruence()` in place of
   `congruence_test()`, matching the chapter's revised code box.
+
+* `demo("seminr-primer-v2-chap3")` and `demo("seminr-help-debugging")` stopped at
+  their first deliberate error, because `demo()` runs a file through `source()`,
+  which stops at the first error: the rest of each demo never ran. The deliberate
+  errors are now wrapped in `try()`, which prints the error and continues.
+  `seminr-help-debugging` also passed `data = corp_rep`, an object that does not
+  exist (the dataset is `corp_rep_data`); the syntax error masked this.
+
+* `demo("seminr-primer-v2-chap2")` no longer reinstalls packages from CRAN every
+  time it runs; the `install.packages()` lines are commented out, as in the
+  chapter 3 demo.
 
 * `demo/seminr-pls-congruence.R` rewritten around `congruence()`. Its previous
   description was also wrong: it said the coefficient compares "PLS composite

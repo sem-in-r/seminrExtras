@@ -85,11 +85,11 @@ test_that("no demo hard-codes parallel::detectCores()", {
   d <- textbook_demo_dir()
   skip_if_not(dir.exists(d), "demo/ not available")
 
-  # seminr 2.6.0 caps the IMPLICIT default at two cores for CRAN policy, but an
-  # EXPLICIT cores = parallel::detectCores() still overrides that. The book
-  # prints such a call in chapter 6, which teaches readers a pattern CRAN
-  # rejects. Informational: reported, not asserted, since it is the book's
-  # editorial choice rather than a package defect.
+  # seminr uses every core by default, and at most two only under CRAN's check
+  # limit (_R_CHECK_LIMIT_CORES_). An EXPLICIT cores = parallel::detectCores()
+  # bypasses that limit, so it must never run in a package's own checks (demos
+  # are not run by R CMD check). The book prints such calls; that is its
+  # editorial choice, not a package defect. Informational: reported, not asserted.
   hits <- character()
   for (f in list.files(d, pattern = "\\.R$", full.names = TRUE)) {
     src <- paste(strip_comments(readLines(f, warn = FALSE)), collapse = "\n")

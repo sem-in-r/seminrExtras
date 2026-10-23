@@ -126,3 +126,30 @@ test_that("CVPAT_compare can handle higher_composite\n", {
 test_that("CVPAT_assess can handle higher_composite\n", {
   expect_null(Results2)
 })
+
+test_that("assess_cvpat_compare() cross-validates both models on the same folds", {
+  mm <- seminr::constructs(
+    seminr::composite("Image",        seminr::multi_items("IMAG", 1:5)),
+    seminr::composite("Expectation",  seminr::multi_items("CUEX", 1:3)),
+    seminr::composite("Satisfaction", seminr::multi_items("CUSA", 1:3)))
+  sm <- seminr::relationships(
+    seminr::paths(from = c("Image", "Expectation"), to = "Satisfaction"))
+  model <- suppressMessages(seminr::estimate_pls(seminr::mobi[1:120, ], mm, sm))
+  # A model compared with itself on the same folds has identical losses
+  res <- suppressWarnings(assess_cvpat_compare(model, model, nboot = 20, seed = 1,
+                                               noFolds = 5, reps = 3))
+  expect_equal(unname(unclass(res)[, "Base Model Loss"]), unname(unclass(res)[, "Alt Model Loss"]))
+})
+
+test_that("from_same_rng_state() gives identical cross-validations for identical calls", {
+  mm <- seminr::constructs(
+    seminr::composite("Image",        seminr::multi_items("IMAG", 1:5)),
+    seminr::composite("Satisfaction", seminr::multi_items("CUSA", 1:3)))
+  sm <- seminr::relationships(seminr::paths(from = "Image", to = "Satisfaction"))
+  model <- suppressMessages(seminr::estimate_pls(seminr::mobi[1:120, ], mm, sm))
+  set.seed(7)
+  cv <- function() suppressMessages(seminr::predict_pls(model, technique = seminr::predict_DA,
+                                                        noFolds = 5))$items$PLS_out_of_sample
+  p <- from_same_rng_state(list(cv, cv))
+  expect_identical(p[[1]], p[[2]])
+})
