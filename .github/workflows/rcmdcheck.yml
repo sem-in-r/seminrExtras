@@ -38,7 +38,7 @@ jobs:
           r-version: ${{ matrix.config.r }}
 
       # pandoc to check markdown files
-      - uses: r-lib/actions/setup-pandoc@v1
+      - uses: r-lib/actions/setup-pandoc@v2
 
       # Modern dependency management - handles system deps, caching, and R packages
       - uses: r-lib/actions/setup-r-dependencies@v2

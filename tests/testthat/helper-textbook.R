@@ -52,6 +52,29 @@ textbook_model_extended <- function() {
                        missing = seminr::mean_replacement, missing_value = "-99")
 }
 
+# The book's moderated model (chapter 7): the extended model plus switching
+# costs (SC) and a two-stage interaction CUSA*SC on CUSL.
+textbook_model_moderated <- function() {
+  mm <- seminr::constructs(
+    seminr::composite("QUAL", seminr::multi_items("qual_", 1:8), weights = seminr::mode_B),
+    seminr::composite("PERF", seminr::multi_items("perf_", 1:5), weights = seminr::mode_B),
+    seminr::composite("CSOR", seminr::multi_items("csor_", 1:5), weights = seminr::mode_B),
+    seminr::composite("ATTR", seminr::multi_items("attr_", 1:3), weights = seminr::mode_B),
+    seminr::composite("COMP", seminr::multi_items("comp_", 1:3)),
+    seminr::composite("LIKE", seminr::multi_items("like_", 1:3)),
+    seminr::composite("CUSA", seminr::single_item("cusa")),
+    seminr::composite("SC", seminr::multi_items("switch_", 1:4)),
+    seminr::composite("CUSL", seminr::multi_items("cusl_", 1:3)),
+    seminr::interaction_term(iv = "CUSA", moderator = "SC",
+                             method = seminr::two_stage, weights = seminr::mode_A))
+  sm <- seminr::relationships(
+    seminr::paths(from = c("QUAL", "PERF", "CSOR", "ATTR"), to = c("COMP", "LIKE")),
+    seminr::paths(from = c("COMP", "LIKE"), to = c("CUSA", "CUSL")),
+    seminr::paths(from = c("CUSA", "SC", "CUSA*SC"), to = c("CUSL")))
+  seminr::estimate_pls(seminr::corp_rep_data, mm, sm,
+                       missing = seminr::mean_replacement, missing_value = "-99")
+}
+
 golden <- function(file) {
   utils::read.csv(testthat::test_path("textbook", file), stringsAsFactors = FALSE)
 }

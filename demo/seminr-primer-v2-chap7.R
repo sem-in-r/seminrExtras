@@ -43,9 +43,12 @@ corp_rep_pls_model_mod <- estimate_pls(
 sum_corp_rep_mod <- summary(corp_rep_pls_model_mod)
 
 # Bootstrap the model ----
+# seed = 25914 reproduces Fig. 7.7 exactly (seminr 2.6.0); the printed code
+# box omits it, so a run without the seed differs slightly from the figure.
 boot_corp_rep_mod <- bootstrap_model(
   seminr_model = corp_rep_pls_model_mod,
-  nboot = 1000)
+  nboot = 1000,
+  seed = 25914)
 
 # Summarize the results of the bootstrap
 sum_boot_corp_rep_mod <- summary(boot_corp_rep_mod, alpha = 0.05)

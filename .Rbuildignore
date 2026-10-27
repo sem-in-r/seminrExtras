@@ -19,3 +19,4 @@ README.Rmd
 ^tests/testthat/_problems$
 Rplots\.pdf$
 ^RESUME\.md$
+^CRAN-SUBMISSION$

@@ -61,10 +61,12 @@ simple_sm <- relationships(
 
 # Note that I have specified the argument `assess_syntax` as TRUE
 # Now estimating the model should output an error
-estimate_pls(data = corp_rep_data,
-             measurement_model = error_mm,
-             structural_model = simple_sm,
-             assess_syntax = TRUE)
+# (try() prints the error and lets demo() continue; typed at the console,
+# the call without try() shows the same error)
+try(estimate_pls(data = corp_rep_data,
+                 measurement_model = error_mm,
+                 structural_model = simple_sm,
+                 assess_syntax = TRUE))
 
 ## Plotting a model for debugging
 # Plot the measurement model
