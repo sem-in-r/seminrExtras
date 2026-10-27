@@ -142,3 +142,31 @@ test_that("Fig. 8.7 specific indirect effects match the book", {
     expect_gt(unname(r[1, "2.5% CI"]), 0)
   }
 })
+
+test_that("Fig. 7.7 bootstrapped paths of the moderated model match the book", {
+  skip_unless_textbook()
+
+  # The printed code box calls bootstrap_model() with no seed; seed = 25914
+  # (now in demo/seminr-primer-v2-chap7.R) reproduces every printed value
+  # under seminr 2.6.0 (checked 27 Oct 2026). Replicates use set.seed(seed + i),
+  # so the result does not depend on the number of cores.
+  g <- golden("fig_7_7_bootstrap.csv")
+  boot <- seminr::bootstrap_model(textbook_model_moderated(), nboot = 1000,
+                                  seed = 25914, cores = 2)
+  bp <- summary(boot, alpha = 0.05)$bootstrapped_paths
+  rownames(bp) <- gsub("\\s+", "", rownames(bp))
+
+  cols <- c(original_est = "Original Est.", boot_mean = "Bootstrap Mean",
+            boot_sd = "Bootstrap SD", t_stat = "T Stat.", ci_low = "2.5% CI",
+            ci_high = "97.5% CI", boot_p = "Bootstrap P Val")
+  expect_setequal(rownames(bp), g$path)
+  for (i in seq_len(nrow(g))) {
+    for (k in names(cols)) {
+      expect_prints_as(unname(bp[g$path[i], cols[[k]]]), g[[k]][i],
+                       paste("Fig. 7.7", g$path[i], k))
+    }
+  }
+
+  # The claim the chapter makes: the moderating effect is significant at 5%.
+  expect_lt(unname(bp["CUSA*SC->CUSL", "97.5% CI"]), 0)
+})

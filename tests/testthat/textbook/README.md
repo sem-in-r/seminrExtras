@@ -18,6 +18,7 @@ Change a value here only when a corrected figure has been read off a proof.
 
 | File | Source | Produced by |
 |---|---|---|
+| `fig_7_7_bootstrap.csv` | Fig. 7.7, ch. 7 | `summary(bootstrap_model(corp_rep_pls_model_mod, nboot = 1000, seed = 25914), alpha = 0.05)$bootstrapped_paths` |
 | `fig_8_7_indirect.csv` | Fig. 8.7, ch. 8 (p. 185) | `specific_effect_significance(boot_corp_rep_ext, ..., alpha = 0.05)` on a `nboot = 1000, seed = 123` bootstrap |
 | `fig_6_9_cvpat.csv` | Fig. 6.9, ch. 6 (p. 143) | `assess_cvpat(corp_rep_pls_model_ext, testtype = "greater", nboot = 2000, seed = 123, technique = predict_DA, noFolds = 10, reps = 10)` |
 | `fig_4_11_congruence.csv` | Fig. 4.11, ch. 4 (p. 99) | `congruence(corp_rep_pls_model)` |
@@ -92,3 +93,17 @@ interval still excludes zero, but only just (lower bound 0.003 vs 0.015).
 The book's `demo/seminr-primer-v2-chap8.R` and the `ALL CODE FILEs` copy were
 updated to `alpha = 0.05`; `Quarto.qmd` already had it. As with the Fig. 8.12
 seed discrepancy, the printed figures track the DEMO files, not the Quarto.
+
+## Fig. 7.7 — reproducible only with seed 25914
+
+The printed code box in chapter 7 calls `bootstrap_model()` **without** a seed,
+so a reader's run differs slightly from the screenshot (the text says so). On
+27 Oct 2026 `seed = 25914` was found to reproduce all 15 rows of Fig. 7.7
+exactly, under seminr 2.6.0 (CRAN) and 2.6.0.9000; the demo file now carries
+it. `seed = 56311` reproduces a different run (the one in Susi's Quarto), and
+`seed = 123`, the book's stated convention, reproduces neither.
+
+Values transcribed from the printed Fig. 7.7 screenshot. **Known text error:**
+the paragraph that reads Fig. 7.7 quotes t = -2.191, p = 0.008 and
+CI [-0.135, -0.011]; the figure shows t = -2.193, p = 0.028 and
+CI [-0.140, -0.009] (and p = 0.008 is impossible for |t| = 2.19).

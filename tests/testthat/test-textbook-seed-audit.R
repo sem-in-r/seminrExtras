@@ -38,14 +38,15 @@ test_that("every bootstrap_model() call in the book demos sets a seed", {
     }
   }
 
-  # BASELINE, not a clean bill of health. Chapter 4 and chapter 7 each contain
-  # one unseeded call (seminrExtras issue #23) and the book is going to print
-  # that way unless the decision changes. Asserting `character()` here would
+  # BASELINE, not a clean bill of health. Chapter 4 contains one unseeded call
+  # (seminrExtras issue #23) and the book is going to print that way unless the
+  # decision changes. (Chapter 7 left the baseline on 27 Oct 2026: its demo now
+  # uses seed = 25914, which reproduces Fig. 7.7.) Asserting `character()` here would
   # leave the suite permanently red, which trains you to ignore it -- so the
   # assertion is against the KNOWN set instead. Any NEW unseeded call fails
   # loudly; fixing one of the known two also fails, at which point delete it
   # from the baseline and the test goes green for good.
-  known <- c("seminr-primer-v2-chap4.R", "seminr-primer-v2-chap7.R")
+  known <- c("seminr-primer-v2-chap4.R")
   offending_files <- sort(unique(sub(":.*$", "", unseeded)))
 
   if (length(unseeded)) {
